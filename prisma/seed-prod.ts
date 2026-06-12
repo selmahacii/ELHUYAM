@@ -22,13 +22,13 @@ async function main() {
   console.log('🌱 Initialisation de l\'unique profil Administrateur...');
 
   // Hachage du mot de passe admin spécifique
-  const adminPassword = await hash('elhuyam2026', 12);
+  const adminPassword = await hash('zinebelhuyam2026', 12);
 
-  // Création du compte administrateur zinebyousfi
+  // Création du compte administrateur zinebelhuyam
   const admin = await db.user.create({
     data: {
-      name: 'zinebyousfi',
-      email: 'zinebyousfi@elhuyam.com', // Adresse email pour se connecter
+      name: 'zinebelhuyam',
+      email: 'zinebelhuyam@elhuyam.com', // Adresse email pour se connecter
       password: adminPassword,
       role: Role.ADMIN,
     },
@@ -37,7 +37,7 @@ async function main() {
   console.log(`👤 Administrateur créé avec succès !`);
   console.log(`   - Nom d'utilisateur : ${admin.name}`);
   console.log(`   - Email de connexion : ${admin.email}`);
-  console.log(`   - Mot de passe : elhuyam2026`);
+  console.log(`   - Mot de passe : zinebelhuyam2026`);
   console.log('✅ Base de données de production initialisée de manière 100% vierge !');
 }
 
