@@ -1,0 +1,352 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 97%;
+    --foreground: 0 0% 10%;
+    --card: 40 33% 97%;
+    --card-foreground: 0 0% 10%;
+    --popover: 40 33% 97%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 40 33% 97%;
+    --secondary: 35 25% 94%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 33 13% 82%;
+    --muted-foreground: 25 15% 45%;
+    --accent: 35 25% 94%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 33 13% 82%;
+    --input: 33 13% 82%;
+    --ring: 0 0% 10%;
+    --radius: 0rem;
+
+    /* Islamic identity colors */
+    --emerald:  152 60% 28%;
+    --emerald-light: 152 40% 92%;
+    --gold:     42 72% 56%;
+    --gold-muted: 42 40% 85%;
+    --ivory:    48 60% 97%;
+  }
+
+  * { @apply border-border; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    @apply bg-warm-white text-brand-900 antialiased;
+    font-family: var(--font-body), sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), Georgia, serif;
+  }
+}
+
+/* ── Islamic geometric ornament divider ─────────────────────────────────────── */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #C9A96E;
+}
+.ornament-divider::before,
+.ornament-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #C9A96E66, #C9A96E, #C9A96E66, transparent);
+}
+
+/* ── Bismillah ornament ─────────────────────────────────────────────────────── */
+.bismillah-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.bismillah-ornament::before,
+.bismillah-ornament::after {
+  content: "✦";
+  font-size: 0.5rem;
+  color: #C9A96E;
+  opacity: 0.7;
+}
+
+/* ── Arabesque pattern overlay ──────────────────────────────────────────────── */
+.arabesque-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='none' stroke='%23C9A96E' stroke-width='0.4' opacity='0.15'/%3E%3Ccircle cx='30' cy='30' r='8' fill='none' stroke='%23C9A96E' stroke-width='0.3' opacity='0.1'/%3E%3Cpath d='M30 10 L50 30 L30 50 L10 30 Z' fill='none' stroke='%23C9A96E' stroke-width='0.3' opacity='0.1'/%3E%3C/svg%3E");
+  background-size: 60px 60px;
+}
+
+/* ── Star pattern ───────────────────────────────────────────────────────────── */
+.star-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpolygon points='20,2 24,14 37,14 27,22 31,35 20,27 9,35 13,22 3,14 16,14' fill='none' stroke='%23C9A96E' stroke-width='0.5' opacity='0.12'/%3E%3C/svg%3E");
+  background-size: 40px 40px;
+}
+
+/* ── Gold shimmer text ──────────────────────────────────────────────────────── */
+.text-gold-shimmer {
+  background: linear-gradient(135deg, #C9A96E 0%, #E8C87A 40%, #A8894E 60%, #C9A96E 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gold-shimmer 4s linear infinite;
+}
+
+@keyframes gold-shimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Underline grow ─────────────────────────────────────────────────────────── */
+.underline-grow {
+  position: relative;
+}
+.underline-grow::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.3s ease;
+}
+.underline-grow:hover::after { width: 100%; }
+
+/* ── Card lift ──────────────────────────────────────────────────────────────── */
+.card-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(74, 53, 32, 0.12);
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.5; }
+  100% { transform: scale(1.5);  opacity: 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Admin SPA page transition ──────────────────────────────────────────────── */
+/* 180ms — fast enough to feel instant, slow enough to avoid flash */
+@keyframes adminPageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in       { animation: fadeIn 0.7s ease-in-out both; }
+.animate-slide-up      { animation: slideUp 0.6s ease-out both; }
+.animate-slide-in-right { animation: slideInRight 0.4s ease-out; }
+.animate-shimmer       { background-size: 200% 100%; animation: shimmer 2s linear infinite; }
+.animate-float         { animation: float 3s ease-in-out infinite; }
+.animate-spin-slow     { animation: spin-slow 12s linear infinite; }
+
+
+/* Staggered fade-in for grids */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
+/* ── Selection ──────────────────────────────────────────────────────────────── */
+::selection {
+  background-color: #E8D5B7;
+  color: #1A1A1A;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: #FAF9F6; }
+::-webkit-scrollbar-thumb  { background: #C9A96E; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9A7A52; }
+
+/* ── Quantity btn ───────────────────────────────────────────────────────────── */
+.qty-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: transparent;
+}
+.qty-btn:hover:not(:disabled) {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+}
+.qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Focus ring with brand color ─────────────────────────────────────────────*/
+*:focus-visible {
+  outline: 2px solid #C9A96E;
+  outline-offset: 2px;
+}
+
+/* ── Smooth image loading ───────────────────────────────────────────────────── */
+img { image-rendering: -webkit-optimize-contrast; }
+
+/* ── Arabic text blocks ─────────────────────────────────────────────────────── */
+/* Arabic inline text: render right-to-left within the LTR layout */
+[lang="ar"] .text-arabic,
+.text-arabic {
+  direction: rtl;
+  unicode-bidi: embed;
+  font-family: var(--font-arabic), sans-serif;
+}
+
+/* Arabic numbers stay LTR (price, quantity, etc.) */
+.font-mono,
+.tabular-nums {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Cairo font has taller line-height needs */
+:lang(ar) {
+  line-height: 1.8;
+  letter-spacing: 0;
+}
+
+/* ── Prefers-reduced-motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── View transitions (Next.js page navigation) ─────────────────────────────── */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: 200ms ease-out both fade-out-vt;
+}
+::view-transition-new(root) {
+  animation: 250ms ease-in both fade-in-vt;
+}
+
+@keyframes fade-out-vt {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
+@keyframes fade-in-vt {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Smooth image reveal (prevents layout shift) ────────────────────────────── */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  will-change: auto;
+}
+
+/* Next.js <Image> — fade in once loaded */
+img[data-nimg] {
+  transition: opacity 0.3s ease;
+}
+img[data-nimg="fill"] {
+  object-fit: cover;
+}
+
+/* ── Interactive elements: GPU-accelerated transitions ──────────────────────── */
+a, button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Card hover — use transform (compositor) not box-shadow recompute alone */
+.card-lift {
+  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease;
+}
+.card-lift:hover {
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: 0 16px 48px rgba(74, 53, 32, 0.13);
+}
+
+/* ── Page skeleton shimmer (used in loading states) ─────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #F5F0E8 25%, #EDE4D3 50%, #F5F0E8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Staggered entrance for product grids ───────────────────────────────────── */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.grid-item-enter {
+  animation: slideUpFade 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.grid-item-enter:nth-child(2)  { animation-delay: 0.04s; }
+.grid-item-enter:nth-child(3)  { animation-delay: 0.08s; }
+.grid-item-enter:nth-child(4)  { animation-delay: 0.12s; }
+.grid-item-enter:nth-child(5)  { animation-delay: 0.16s; }
+.grid-item-enter:nth-child(6)  { animation-delay: 0.20s; }
+.grid-item-enter:nth-child(7)  { animation-delay: 0.24s; }
+.grid-item-enter:nth-child(8)  { animation-delay: 0.28s; }
+
+/* ── Focus visible: accessible but elegant ──────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #C9A96E;
+  outline-offset: 3px;
+  border-radius: 1px;
+  transition: outline-offset 0.1s ease;
+}
+
+/* ── Smooth table rows ──────────────────────────────────────────────────────── */
+tr {
+  transition: background-color 0.15s ease;
+}
+
+/* ── Toast position ─────────────────────────────────────────────────────────── */
+.react-hot-toast {
+  font-family: var(--font-body), sans-serif !important;
+  font-size: 0.8125rem !important;
+}

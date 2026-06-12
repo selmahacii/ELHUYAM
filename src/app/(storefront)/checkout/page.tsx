@@ -1,0 +1,395 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useCartStore } from "@/stores/cart-store";
+import { formatPrice } from "@/lib/utils";
+import { WILAYAS, getShippingCost } from "@/lib/wilayas";
+import Image from "next/image";
+import Link from "next/link";
+import { toast } from "react-hot-toast";
+import { Check, Tag, Home, Store, Truck } from "lucide-react";
+import { useTranslations } from "next-intl";
+
+const checkoutSchema = z.object({
+  firstName: z.string().min(1, "First name required"),
+  lastName: z.string().min(1, "Last name required"),
+  phone: z.string().min(9, "Phone required"),
+  wilayaCode: z.string().min(1, "Wilaya required"),
+  deliveryType: z.enum(["DOMICILE", "STOPDESK"]),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  paymentMethod: z.enum(["cod", "stripe"]),
+  notes: z.string().optional(),
+});
+type CheckoutForm = z.infer<typeof checkoutSchema>;
+
+const inputCls = "w-full border border-neutral-200 px-4 py-3 text-sm text-black focus:outline-none focus:border-black transition-colors bg-white placeholder-neutral-300";
+const labelCls = "block text-xs uppercase tracking-[0.15em] text-black mb-1.5 font-bold";
+const errorCls = "mt-1 text-xs text-red-500";
+
+export default function CheckoutPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const { items, subtotal, clearCart } = useCartStore();
+  const [placing, setPlacing] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponValidating, setCouponValidating] = useState(false);
+  const [couponApplied, setCouponApplied] = useState(false);
+
+  const t = useTranslations("checkout");
+  const tCart = useTranslations("cart");
+  const tCommon = useTranslations("common");
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<CheckoutForm>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: { paymentMethod: "cod", deliveryType: "DOMICILE" },
+  });
+
+  const sub = subtotal();
+  const selectedWilaya = watch("wilayaCode");
+  const deliveryType = watch("deliveryType");
+  const shippingFee = selectedWilaya
+    ? getShippingCost(selectedWilaya, deliveryType, sub)
+    : null;
+  const total = Math.max(0, sub + (shippingFee ?? 0) - couponDiscount);
+
+  async function validateCoupon() {
+    if (!couponCode.trim()) return;
+    setCouponValidating(true);
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponCode,
+          subtotal: sub,
+          productIds: items.map((i) => i.productId),
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            variantId: item.variantId,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCouponDiscount(data.data.discount);
+        setCouponApplied(true);
+        toast.success(`Coupon appliqué ! Vous économisez ${formatPrice(data.data.discount)}`);
+      } else {
+        toast.error(data.error ?? "Coupon invalide");
+      }
+    } catch {
+      toast.error("Échec de la validation du coupon");
+    } finally {
+      setCouponValidating(false);
+    }
+  }
+
+  async function onSubmit(data: CheckoutForm) {
+    if (items.length === 0) { toast.error(t("emptyCart")); return; }
+    if (!data.wilayaCode) { toast.error("Veuillez sélectionner votre wilaya"); return; }
+    setPlacing(true);
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          wilayaCode: data.wilayaCode,
+          deliveryType: data.deliveryType,
+          street: data.street,
+          city: data.city,
+          paymentMethod: data.paymentMethod,
+          notes: data.notes,
+          couponCode: couponApplied ? couponCode : undefined,
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            variantId: item.variantId,
+            size: item.size,
+            color: item.color,
+          })),
+        }),
+      });
+      const result = await res.json();
+      if (!result.success) { toast.error(result.error ?? "Erreur lors de la commande"); return; }
+      const order = result.data;
+      clearCart();
+      router.push(`/checkout/success?order=${order.orderNumber}`);
+    } catch {
+      toast.error("Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setPlacing(false);
+    }
+  }
+
+  if (status === "loading") {
+    return <div className="max-w-2xl mx-auto px-4 py-24 text-center"><p className="text-neutral-500">{tCommon("loading")}</p></div>;
+  }
+  if (items.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-4">
+        <p className="text-neutral-500">{t("emptyCart")}</p>
+        <Link href="/shop" className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-neutral-900 transition-colors">
+          {tCart("continueShopping")}
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mb-10">
+        <p className="text-xs uppercase tracking-[0.3em] text-neutral-500 mb-2">{t("title")}</p>
+        <h1 className="font-display text-4xl text-black font-bold">{t("title")}</h1>
+        <div className="flex items-center gap-3 mt-4">
+          <div className="h-px flex-1 bg-neutral-200" />
+          <span className="text-soft-gold text-base">✦</span>
+          <div className="h-px flex-1 bg-neutral-200" />
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* LEFT: Form */}
+        <div className="lg:col-span-2 space-y-8">
+
+          {/* Contact */}
+          <section className="space-y-4">
+            <h2 className="font-display text-xl text-black font-bold border-b border-neutral-200 pb-3">{t("delivery")}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>{t("firstName")} *</label>
+                <input {...register("firstName")} className={inputCls} placeholder="Aïcha" autoComplete="given-name" />
+                {errors.firstName && <p className={errorCls}>{errors.firstName.message}</p>}
+              </div>
+              <div>
+                <label className={labelCls}>{t("lastName")} *</label>
+                <input {...register("lastName")} className={inputCls} placeholder="Benmoussa" autoComplete="family-name" />
+                {errors.lastName && <p className={errorCls}>{errors.lastName.message}</p>}
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelCls}>{t("phone")} *</label>
+                <input {...register("phone")} type="tel" className={inputCls} placeholder="05XXXXXXXX" autoComplete="tel" />
+                {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
+              </div>
+            </div>
+          </section>
+
+          {/* Wilaya + Delivery Type */}
+          <section className="space-y-4">
+            <h2 className="font-display text-xl text-black font-bold border-b border-neutral-200 pb-3">{t("deliveryType")}</h2>
+
+            {/* Delivery type */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: "DOMICILE", label: t("domicile"), desc: t("domicileDesc"), icon: Home },
+                { value: "STOPDESK", label: t("stopdesk"), desc: t("stopDeskDesc"), icon: Store },
+              ].map(({ value, label, desc, icon: Icon }) => (
+                <label
+                  key={value}
+                  className={`flex items-start gap-3 p-4 border-2 cursor-pointer transition-all ${
+                    deliveryType === value ? "border-black bg-neutral-50" : "border-neutral-200 hover:border-neutral-400"
+                  }`}
+                >
+                  <input type="radio" {...register("deliveryType")} value={value} className="mt-0.5 accent-black" />
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="w-3.5 h-3.5 text-neutral-800" />
+                      <p className="text-sm font-semibold text-black">{label}</p>
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {/* Wilaya selector */}
+            <div>
+              <label className={labelCls}>{t("wilaya")} *</label>
+              <select {...register("wilayaCode")} className={inputCls}>
+                <option value="">{t("selectWilaya")}</option>
+                {WILAYAS.map((w) => {
+                  const rate = deliveryType === "STOPDESK" ? w.stopdesk : w.domicile;
+                  return (
+                    <option key={w.code} value={w.code} disabled={rate === 0} className="text-black font-medium">
+                      ({w.code}) {w.name} —{" "}
+                      {rate === 0
+                        ? "Non disponible"
+                        : `${rate} DZD`}
+                    </option>
+                  );
+                })}
+              </select>
+              {errors.wilayaCode && <p className={errorCls}>{errors.wilayaCode.message}</p>}
+            </div>
+
+            {/* Shipping cost info box */}
+            {selectedWilaya && (
+              <div className={`flex items-center gap-3 px-4 py-3 border text-sm ${
+                (selectedWilaya && (deliveryType === "STOPDESK" ? WILAYAS.find(w => w.code === selectedWilaya)?.stopdesk === 0 : WILAYAS.find(w => w.code === selectedWilaya)?.domicile === 0))
+                  ? "border-red-200 bg-red-50 text-red-700 font-medium"
+                  : "border-neutral-200 bg-neutral-50 text-black font-semibold"
+              }`}>
+                <Truck className="w-4 h-4 shrink-0" />
+                {(deliveryType === "STOPDESK" ? WILAYAS.find(w => w.code === selectedWilaya)?.stopdesk === 0 : WILAYAS.find(w => w.code === selectedWilaya)?.domicile === 0) ? (
+                  <span>⚠️ Livraison <strong>non disponible</strong> pour cette option dans votre wilaya.</span>
+                ) : (
+                  <span>
+                    Frais de livraison : <strong>{formatPrice(shippingFee!)}</strong>
+                    {deliveryType === "DOMICILE" ? " (à domicile)" : " (stop desk)"}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Address details (domicile only) */}
+            {deliveryType === "DOMICILE" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>{t("street")}</label>
+                  <input {...register("street")} className={inputCls} placeholder="Rue, cité, résidence..." autoComplete="street-address" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelCls}>{t("city")}</label>
+                  <input {...register("city")} className={inputCls} placeholder="Ville / commune" autoComplete="address-level2" />
+                </div>
+              </div>
+            )}
+          </section>
+
+
+          {/* Notes */}
+          <section>
+            <h2 className="font-display text-lg text-black font-semibold mb-3">{t("notes")}</h2>
+            <textarea
+              {...register("notes")}
+              rows={3}
+              placeholder={t("notesPlaceholder")}
+              className={`${inputCls} resize-none`}
+            />
+          </section>
+        </div>
+
+        {/* RIGHT: Order summary */}
+        <div className="lg:col-span-1">
+          <div className="bg-neutral-50 border border-neutral-200 p-6 space-y-5 sticky top-28">
+            <h2 className="font-display text-xl text-black font-bold">{t("orderSummary")}</h2>
+
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {items.map((item) => (
+                <div key={item.id} className="flex gap-3 border-b border-neutral-100 pb-3 last:border-0 last:pb-0">
+                  <div className="w-14 h-14 bg-neutral-200 shrink-0 relative overflow-hidden">
+                    {item.image && <Image src={item.image} alt={item.title} fill className="object-cover" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-black truncate font-semibold">{item.title}</p>
+                    {(item.size || item.color) && (
+                      <p className="text-xs text-neutral-500">{[item.size, item.color].filter(Boolean).join(" · ")}</p>
+                    )}
+                    <p className="text-xs text-neutral-600 font-medium">Qté : {item.quantity}</p>
+                  </div>
+                  <span className="text-sm font-bold text-black shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Coupon */}
+            <div className="border-t border-neutral-200 pt-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder={t("couponPlaceholder")}
+                  disabled={couponApplied}
+                  className="flex-1 border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:border-black disabled:bg-neutral-100 disabled:text-neutral-400 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={validateCoupon}
+                  disabled={couponApplied || !couponCode || couponValidating}
+                  className="px-3 border border-neutral-200 text-black hover:border-black disabled:opacity-40 transition-colors"
+                >
+                  {couponApplied ? <Check className="w-4 h-4 text-green-600" /> : <Tag className="w-4 h-4" />}
+                </button>
+              </div>
+              {couponApplied && (
+                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Coupon appliqué
+                </p>
+              )}
+            </div>
+
+            {/* Totals */}
+            <div className="space-y-2 text-sm border-t border-neutral-200 pt-4">
+              <div className="flex justify-between text-neutral-700 font-medium">
+                <span>{t("subtotal")}</span><span>{formatPrice(sub)}</span>
+              </div>
+              <div className="flex justify-between text-neutral-700 font-medium">
+                <span>{t("shipping")}</span>
+                <span>
+                  {shippingFee === null
+                    ? <span className="text-neutral-400 italic">{t("selectWilayaFirst")}</span>
+                    : formatPrice(shippingFee)}
+                </span>
+              </div>
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <span>{t("discount")}</span><span>-{formatPrice(couponDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-black border-t border-neutral-200 pt-3 text-base">
+                <span>{t("total")}</span>
+                <span>{shippingFee === null ? "—" : formatPrice(total)}</span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={
+                !!(placing ||
+                shippingFee === null ||
+                (selectedWilaya &&
+                  (deliveryType === "STOPDESK"
+                    ? WILAYAS.find((w) => w.code === selectedWilaya)?.stopdesk === 0
+                    : WILAYAS.find((w) => w.code === selectedWilaya)?.domicile === 0)))
+              }
+              className="w-full bg-black text-white py-4 text-xs uppercase tracking-[0.25em] font-bold border border-black hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {placing ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  {t("processing")}
+                </span>
+              ) : t("placeOrder")}
+            </button>
+
+            <p className="text-xs text-neutral-500 text-center">
+              {t("termsAgreement")}{" "}
+              <Link href="/terms" className="underline hover:text-black transition-colors font-medium">
+                {t("termsLink")}
+              </Link>
+            </p>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
