@@ -41,7 +41,8 @@ export async function GET() {
     });
 
     return successResponse(items);
-  } catch {
+  } catch (error) {
+    console.error("[WISHLIST_GET_ERROR]", error);
     return errorResponse("Failed to fetch wishlist.", 500);
   }
 }
@@ -69,7 +70,8 @@ export async function POST(req: NextRequest) {
     });
 
     return successResponse({ action: "added", item }, 201);
-  } catch {
+  } catch (error) {
+    console.error("[WISHLIST_POST_ERROR]", error);
     return errorResponse("Failed to update wishlist.", 500);
   }
 }
