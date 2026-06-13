@@ -163,9 +163,13 @@ async function zrFetch<T>(
     try { json = JSON.parse(text); } catch { json = { message: text }; }
 
     if (!res.ok) {
-      const err = (json as Record<string, unknown>)?.message as string | undefined;
-      console.error(`[ZR Express API Error] Failed with message:`, err ?? `HTTP ${res.status}`);
-      return { ok: false, error: err ?? `HTTP ${res.status}` };
+      const errObj = json as any;
+      let errStr = errObj?.message || errObj?.detail;
+      if (errObj?.errors && Array.isArray(errObj.errors)) {
+        errStr = errObj.errors.map((e: any) => e.description || e.message).join(" | ");
+      }
+      console.error(`[ZR Express API Error] Failed with message:`, errStr ?? `HTTP ${res.status}`);
+      return { ok: false, error: errStr ?? `HTTP ${res.status}` };
     }
     return { ok: true, data: json as T };
   } catch (e) {
@@ -188,6 +192,30 @@ export async function zrGetStateHistory(
   parcelId: string
 ): Promise<{ ok: boolean; data?: ZRStateHistory[]; error?: string }> {
   return zrFetch<ZRStateHistory[]>(settings, `/parcels/${encodeURIComponent(parcelId)}/state-history`);
+}
+
+export async function getTerritoriesForWilaya(
+  settings: ZRSettings,
+  wilayaCode: string | null
+): Promise<{ cityTerritoryId: string; districtTerritoryId: string } | null> {
+  if (!wilayaCode) return null;
+  // Fetch wilaya
+  const wRes = await zrFetch<any>(settings, "/territories/search", {
+    method: "POST",
+    body: JSON.stringify({ page: 1, pageSize: 1, filters: [{ propertyName: "level", operator: "Equals", value: "wilaya" }, { propertyName: "code", operator: "Equals", value: wilayaCode }] })
+  });
+  if (!wRes.ok || !wRes.data?.items?.[0]) return null;
+  const wilayaId = wRes.data.items[0].id;
+
+  // Fetch first commune
+  const cRes = await zrFetch<any>(settings, "/territories/search", {
+    method: "POST",
+    body: JSON.stringify({ page: 1, pageSize: 1, filters: [{ propertyName: "parentId", operator: "Equals", value: wilayaId }] })
+  });
+  if (!cRes.ok || !cRes.data?.items?.[0]) return null;
+  const communeId = cRes.data.items[0].id;
+
+  return { cityTerritoryId: wilayaId, districtTerritoryId: communeId };
 }
 
 export async function zrCreateParcel(

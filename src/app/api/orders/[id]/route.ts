@@ -4,8 +4,9 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
-import { getZRSettings, zrCreateParcel } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
+import crypto from "crypto";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -154,22 +155,51 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         );
       }
 
-      const wilaya = getWilayaByCode(existingOrder.wilayaCode ?? "");
-      const wilayaName = wilaya ? wilaya.name : (existingOrder.shippingState ?? "Alger");
-      const description = existingOrder.items
+      const territories = await getTerritoriesForWilaya(settings, existingOrder.wilayaCode);
+      if (!territories) {
+        return errorResponse(`Impossible de trouver la wilaya code ${existingOrder.wilayaCode} sur ZR Express.`, 400);
+      }
+
+      const descriptionText = existingOrder.items
         .map((item: any) => `${item.productTitle} (x${item.quantity})`)
         .join(", ");
 
       const isPaid = (finalPaymentStatus ?? existingOrder.paymentStatus) === "PAID";
 
+      let phone = existingOrder.shippingPhone ?? "";
+      if (phone.startsWith("0")) phone = "+213" + phone.slice(1);
+
+      const orderedProducts = existingOrder.items.map((item: any) => ({
+        unitPrice: item.price,
+        quantity: item.quantity,
+        productName: item.productTitle,
+        stockType: "none",
+      }));
+
+      if (orderedProducts.length === 0) {
+        orderedProducts.push({
+          unitPrice: existingOrder.totalAmount,
+          quantity: 1,
+          productName: "Commande Générale",
+          stockType: "none",
+        });
+      }
+
       const payload = {
-        customerName: `${existingOrder.shippingFirstName ?? ""} ${existingOrder.shippingLastName ?? ""}`.trim(),
-        customerPhone: existingOrder.shippingPhone ?? "",
-        address: existingOrder.shippingStreet ?? "",
-        wilaya: wilayaName,
-        deliveryType: existingOrder.deliveryType, // DOMICILE or STOPDESK
-        amount: isPaid ? 0 : existingOrder.totalAmount, // COD amount to collect
-        description: description || "Habillements Modest Fashion",
+        customer: {
+          customerId: existingOrder.userId || crypto.randomUUID(),
+          name: `${existingOrder.shippingFirstName ?? ""} ${existingOrder.shippingLastName ?? ""}`.trim() || "Client Inconnu",
+          phone: { number1: phone || "+213000000000" }
+        },
+        deliveryAddress: {
+          street: existingOrder.shippingStreet ?? "",
+          cityTerritoryId: territories.cityTerritoryId,
+          districtTerritoryId: territories.districtTerritoryId
+        },
+        deliveryType: existingOrder.deliveryType === "STOPDESK" ? "pickup-point" : "home",
+        amount: isPaid ? 0 : existingOrder.totalAmount,
+        description: descriptionText || "Habillements Modest Fashion",
+        orderedProducts
       };
 
       const zrRes = await zrCreateParcel(settings, payload);

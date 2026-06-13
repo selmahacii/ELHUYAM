@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
+import crypto from "crypto";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -37,24 +38,53 @@ export async function POST(req: NextRequest, { params }: Props) {
       );
     }
 
-    // Get wilaya name or fallback
-    const wilaya = getWilayaByCode(order.wilayaCode ?? "");
-    const wilayaName = wilaya ? wilaya.name : (order.shippingState ?? "Alger");
+    // Get wilaya territories
+    const territories = await getTerritoriesForWilaya(settings, order.wilayaCode);
+    if (!territories) {
+      return errorResponse(`Impossible de trouver la wilaya code ${order.wilayaCode} sur ZR Express.`, 400);
+    }
 
-    // Build the package description/items list
-    const description = order.items
+    // Format phone number
+    let phone = order.shippingPhone ?? "";
+    if (phone.startsWith("0")) phone = "+213" + phone.slice(1);
+
+    // Build orderedProducts
+    const orderedProducts = order.items.map((item: any) => ({
+      unitPrice: item.price,
+      quantity: item.quantity,
+      productName: item.productTitle,
+      stockType: "none",
+    }));
+
+    if (orderedProducts.length === 0) {
+      orderedProducts.push({
+        unitPrice: order.totalAmount,
+        quantity: 1,
+        productName: "Commande Générale",
+        stockType: "none",
+      });
+    }
+
+    const descriptionText = order.items
       .map((item: any) => `${item.productTitle} (x${item.quantity})`)
       .join(", ");
 
     // Prepare ZR Express parcel payload
     const payload = {
-      customerName: `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim(),
-      customerPhone: order.shippingPhone ?? "",
-      address: order.shippingStreet ?? "",
-      wilaya: wilayaName,
-      deliveryType: order.deliveryType, // DOMICILE or STOPDESK
-      amount: order.paymentStatus === "PAID" ? 0 : order.totalAmount, // COD amount
-      description: description || "Habillements Modest Fashion",
+      customer: {
+        customerId: order.userId || crypto.randomUUID(),
+        name: `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || "Client Inconnu",
+        phone: { number1: phone || "+213000000000" }
+      },
+      deliveryAddress: {
+        street: order.shippingStreet ?? "",
+        cityTerritoryId: territories.cityTerritoryId,
+        districtTerritoryId: territories.districtTerritoryId
+      },
+      deliveryType: order.deliveryType === "STOPDESK" ? "pickup-point" : "home",
+      amount: order.paymentStatus === "PAID" ? 0 : order.totalAmount,
+      description: descriptionText || "Habillements Modest Fashion",
+      orderedProducts
     };
 
     // Call the API
