@@ -105,7 +105,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
       }
       toast.success(data.message ?? "Package successfully created!");
       setTracking(data.trackingNumber);
-      setStatus("CONFIRMED");
+      setStatus("OUT_FOR_DELIVERY");
       router.refresh();
     } catch {
       toast.error("Connection error");

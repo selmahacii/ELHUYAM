@@ -74,13 +74,13 @@ export async function POST(req: NextRequest, { params }: Props) {
           trackingNumber: parcel.trackingNumber,
           carrier: "ZR_EXPRESS",
           zrParcelId: parcel.id,
-          status: "CONFIRMED",
+          status: "OUT_FOR_DELIVERY",
         },
       }),
       db.orderStatusHistory.create({
         data: {
           orderId: order.id,
-          status: "CONFIRMED",
+          status: "OUT_FOR_DELIVERY",
           note: `Colis transmis automatiquement à ZR Express. N° Suivi: ${parcel.trackingNumber}`,
           changedById: session.user.id,
         },

@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Package, Check, Calendar, MapPin, Truck } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { getZRSettings, zrGetStateHistory } from "@/lib/zrexpress";
 
 type Props = { params: Promise<{ orderNumber: string }> };
 
@@ -36,6 +37,20 @@ export default async function OrderDetailPage({ params }: Props) {
   const currentStepIndex = order.status === "CANCELLED" || order.status === "REFUNDED"
     ? -1
     : STATUS_STEPS.indexOf(order.status);
+
+  let zrTrackingHistory: any[] | null = null;
+  if (order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED") {
+    const parcelId = order.zrParcelId || order.trackingNumber;
+    if (parcelId) {
+      const settings = await getZRSettings();
+      if (settings) {
+        const zrRes = await zrGetStateHistory(settings, parcelId);
+        if (zrRes.ok && zrRes.data) {
+          zrTrackingHistory = zrRes.data;
+        }
+      }
+    }
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-warm-white/20 min-h-screen animate-fade-in">
@@ -238,6 +253,29 @@ export default async function OrderDetailPage({ params }: Props) {
                     </div>
                   </div>
                 ))}
+                
+                {zrTrackingHistory && zrTrackingHistory.map((h: any, idx: number) => (
+                  <div key={h.id || idx} className="flex gap-4 items-start relative">
+                    <div className="w-8 h-8 rounded-full bg-brand-900 text-white border border-brand-900 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                      <Truck className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <p className="text-xs uppercase tracking-widest text-black font-semibold">
+                          {h.stateName}
+                        </p>
+                        <p className="text-[9px] uppercase tracking-widest text-brand-400">
+                          {h.stateDate ? formatDate(new Date(h.stateDate)) : ""}
+                        </p>
+                      </div>
+                      {h.note && (
+                        <p className="text-xs text-brand-600 leading-relaxed bg-brand-50/50 p-3 border-l border-brand-200">
+                          {h.note}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -310,7 +348,9 @@ export default async function OrderDetailPage({ params }: Props) {
               </div>
               <div className="space-y-1.5 pt-1">
                 <p className="text-xs uppercase tracking-widest text-brand-500 font-medium">
-                  Transporteur : <span className="text-black font-semibold">{order.carrier}</span>
+                  Transporteur : <span className="text-black font-semibold">
+                    {order.status === "OUT_FOR_DELIVERY" || order.status === "DELIVERED" ? "ZR Express" : order.carrier || "Standard"}
+                  </span>
                 </p>
                 <div className="bg-brand-50 border border-brand-100/60 py-2.5 px-4 inline-block w-full">
                   <p className="text-xs font-mono text-black tracking-wider text-center select-all">

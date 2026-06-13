@@ -144,8 +144,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     let autoParcelId = existingOrder.zrParcelId;
     let autoNoteAddition = "";
 
-    // Automatically transmit to ZR Express if status is changing to CONFIRMED
-    if (finalStatus === "CONFIRMED" && finalCarrier === "ZR_EXPRESS" && !autoTrackingNumber) {
+    // Automatically transmit to ZR Express if status is changing to OUT_FOR_DELIVERY
+    if (finalStatus === "OUT_FOR_DELIVERY" && finalCarrier === "ZR_EXPRESS" && !autoTrackingNumber) {
       const settings = await getZRSettings();
       if (!settings) {
         return errorResponse(
