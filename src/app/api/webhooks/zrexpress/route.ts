@@ -11,6 +11,7 @@ const ZR_STATE_MAP: Record<string, string> = {
   "sorti en livraison":  "OUT_FOR_DELIVERY",
   "livré":               "DELIVERED",
   "retourné":            "REFUNDED",
+  "retourné au hub":     "REFUNDED",
   "annulé":              "CANCELLED",
   // English variants
   "pending":             "PENDING",
@@ -20,6 +21,7 @@ const ZR_STATE_MAP: Record<string, string> = {
   "out for delivery":    "OUT_FOR_DELIVERY",
   "delivered":           "DELIVERED",
   "returned":            "REFUNDED",
+  "returned to hub":     "REFUNDED",
   "cancelled":           "CANCELLED",
 };
 
