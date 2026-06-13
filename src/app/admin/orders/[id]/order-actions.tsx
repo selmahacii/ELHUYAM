@@ -85,6 +85,14 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
       const data = await res.json();
       if (!data.success) { toast.error(data.error ?? "Failed to update"); return; }
       toast.success("Order updated successfully");
+      
+      if (data.data) {
+        setStatus(data.data.status);
+        setPaymentStatus(data.data.paymentStatus);
+        setTracking(data.data.trackingNumber ?? "");
+        setCarrier(data.data.carrier ?? "ZR_EXPRESS");
+      }
+      
       setNote("");
       router.refresh();
     } finally {
