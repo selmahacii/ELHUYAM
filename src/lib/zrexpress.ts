@@ -30,6 +30,71 @@ export interface ZRStateHistory {
   agentName?: string;
 }
 
+export interface ZRPhone {
+  number1?: string;
+  number2?: string;
+  number3?: string;
+}
+
+export interface ZRCoordinates {
+  lat?: number;
+  lng?: number;
+}
+
+export interface ZRAddress {
+  id?: string;
+  street?: string;
+  city?: string;
+  cityTerritoryId?: string;
+  district?: string;
+  districtTerritoryId?: string;
+  postalCode?: string;
+  country?: string;
+  isPrimary?: boolean;
+  coordinates?: ZRCoordinates;
+}
+
+export interface ZRCustomer {
+  id?: string;
+  name?: string;
+  phone?: ZRPhone;
+  dateOfBirth?: string;
+  instruction?: string;
+  timeSlot?: string;
+  deliveryPreference?: string;
+  companyId?: string;
+  companyContactPerson?: string;
+  addresses?: ZRAddress[];
+}
+
+export interface ZRPagedCustomerResponse {
+  items?: ZRCustomer[];
+  pageNumber?: number;
+  pageSize?: number;
+  totalCount?: number;
+  totalPages?: number;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
+}
+
+export interface ZRProductCreatePayload {
+  name?: string;
+  localStock?: number;
+  sku?: string;
+  categoryId?: string;
+  subCategoryId?: string;
+  basePrice?: number;
+  purchasePrice?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  weight?: number;
+}
+
+export interface ZRProductUpdatePayload extends ZRProductCreatePayload {
+  id?: string;
+}
+
 // ── Settings helpers ──────────────────────────────────────────────────────────
 
 export async function getZRSettings(): Promise<ZRSettings | null> {
@@ -73,7 +138,7 @@ async function zrFetch<T>(
     : "missing";
   
   console.log(`[ZR Express API Request] Method: ${options.method ?? "GET"} | URL: ${url}`);
-  console.log(`[ZR Express API Request] Headers: X-Tenant-Id="${settings.tenantId}" | Authorization="Bearer ${maskedKey}"`);
+  console.log(`[ZR Express API Request] Headers: X-Tenant="${settings.tenantId}" | X-Api-Key="${maskedKey}"`);
   if (options.body) {
     console.log(`[ZR Express API Request] Payload:`, options.body);
   }
@@ -83,8 +148,8 @@ async function zrFetch<T>(
       ...options,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${settings.secretKey}`,
-        "X-Tenant-Id": settings.tenantId,
+        "X-Api-Key": settings.secretKey,
+        "X-Tenant": settings.tenantId,
         ...(options.headers as Record<string, string> | undefined),
       },
       next: { revalidate: 0 },
@@ -137,10 +202,141 @@ export async function zrCreateParcel(
 
 export async function zrTestConnection(settings: ZRSettings): Promise<boolean> {
   console.log(`[ZR Express Connection Test] Initiating connection test...`);
-  const res = await zrFetch(settings, "/users/profile");
+  const res = await zrFetch(settings, "/customers/search", {
+    method: "POST",
+    body: JSON.stringify({ pageNumber: 1, pageSize: 1 })
+  });
   console.log(`[ZR Express Connection Test] Completed. Status: ${res.ok ? "SUCCESS ✓" : "FAILED ✗"}`);
   if (!res.ok) {
     console.error(`[ZR Express Connection Test] Error description: ${res.error}`);
   }
   return res.ok;
 }
+
+// ── Customers API ─────────────────────────────────────────────────────────────
+
+export async function zrSearchCustomers(
+  settings: ZRSettings,
+  payload: Record<string, unknown>
+): Promise<{ ok: boolean; data?: ZRPagedCustomerResponse; error?: string }> {
+  return zrFetch<ZRPagedCustomerResponse>(settings, "/customers/search", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function zrGetCustomerById(
+  settings: ZRSettings,
+  id: string
+): Promise<{ ok: boolean; data?: ZRCustomer; error?: string }> {
+  return zrFetch<ZRCustomer>(settings, `/customers/${encodeURIComponent(id)}`);
+}
+
+export async function zrDeleteCustomer(
+  settings: ZRSettings,
+  id: string
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/customers/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function zrCreateIndividualCustomer(
+  settings: ZRSettings,
+  payload: Record<string, unknown>
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, "/customers/individual", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function zrUpdateIndividualCustomer(
+  settings: ZRSettings,
+  id: string,
+  payload: Record<string, unknown>
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/customers/individual/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function zrDeleteCustomerAddress(
+  settings: ZRSettings,
+  customerId: string,
+  addressId: string
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/customers/${encodeURIComponent(customerId)}/address/${encodeURIComponent(addressId)}`, {
+    method: "DELETE",
+  });
+}
+
+// ── Products API ──────────────────────────────────────────────────────────────
+
+export async function zrCreateProduct(
+  settings: ZRSettings,
+  payload: ZRProductCreatePayload
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, "/products", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function zrUpdateProduct(
+  settings: ZRSettings,
+  id: string,
+  payload: ZRProductUpdatePayload
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/products/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function zrDeleteProduct(
+  settings: ZRSettings,
+  id: string
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/products/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function zrUpdateProductPrice(
+  settings: ZRSettings,
+  id: string,
+  basePrice: number
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/products/${encodeURIComponent(id)}/price`, {
+    method: "PATCH",
+    body: JSON.stringify({ id, basePrice }),
+  });
+}
+
+export async function zrUpdateProductDiscount(
+  settings: ZRSettings,
+  id: string,
+  promotionalPrice?: number,
+  promotionStart?: string,
+  promotionEnd?: string
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/products/${encodeURIComponent(id)}/discount`, {
+    method: "PATCH",
+    body: JSON.stringify({ id, promotionalPrice, promotionStart, promotionEnd }),
+  });
+}
+
+export async function zrUpdateProductLocalStock(
+  settings: ZRSettings,
+  productId: string,
+  localStock: number
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/products/product/${encodeURIComponent(productId)}/local-stock`, {
+    method: "PATCH",
+    body: JSON.stringify({ productId, localStock }),
+  });
+}
+
+
