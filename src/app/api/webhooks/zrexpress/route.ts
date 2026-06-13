@@ -36,7 +36,10 @@ export async function POST(req: NextRequest) {
     const stateName: string | undefined = body.stateName ?? body.state_name ?? body.status;
     const parcelId: string | undefined = body.id ?? body.parcelId;
 
-    if (!trackingNumber) return errorResponse("Missing trackingNumber", 400);
+    if (!trackingNumber) {
+      // Retourne un statut 200 OK pour les requêtes de test/ping afin que la validation réussisse
+      return successResponse({ message: "Test/Ping webhook received successfully" });
+    }
 
     // Find the matching order
     const order = await db.order.findFirst({
