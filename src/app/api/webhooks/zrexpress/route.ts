@@ -31,10 +31,18 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // ZR Express webhook payload shape (adapt if their actual format differs)
-    const trackingNumber: string | undefined = body.trackingNumber ?? body.tracking_number;
-    const stateName: string | undefined = body.stateName ?? body.state_name ?? body.status;
-    const parcelId: string | undefined = body.id ?? body.parcelId;
+    // Détermine si les données sont enveloppées dans un objet "data" (format Svix/ZR Express)
+    const payload = body.data || body;
+
+    const trackingNumber: string | undefined = payload.trackingNumber ?? payload.tracking_number;
+    
+    const stateName: string | undefined = 
+      (payload.state && typeof payload.state === "object" ? payload.state.name : null) ?? 
+      payload.stateName ?? 
+      payload.state_name ?? 
+      payload.status;
+
+    const parcelId: string | undefined = payload.id ?? payload.parcelId;
 
     if (!trackingNumber) {
       // Retourne un statut 200 OK pour les requêtes de test/ping afin que la validation réussisse
