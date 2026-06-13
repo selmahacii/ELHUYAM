@@ -220,32 +220,32 @@ async function FeaturedProductsSection() {
   ]);
   const isAr = locale === "ar";
   return (
-    <section className="py-24 bg-black relative overflow-hidden">
+    <section className="py-24 bg-gray-50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-start">
           <div>
             <div className="flex items-center gap-3 justify-center md:justify-start mb-4">
-              <span className={`text-sm ${isAr ? "text-brand-500" : "text-soft-gold"}`}>✦</span>
-              <span className={`text-[10px] uppercase tracking-[0.5em] ${isAr ? "text-brand-400 font-bold" : "text-neutral-400"}`}>{t("eyebrow")}</span>
+              <span className="text-sm text-black">✦</span>
+              <span className="text-[10px] uppercase tracking-[0.5em] text-black font-bold">{t("eyebrow")}</span>
             </div>
-            <h2 className={`font-display ${isAr ? "font-bold text-5xl md:text-6xl text-white leading-tight" : "text-4xl md:text-5xl font-light text-white"}`}>
+            <h2 className="font-display text-4xl md:text-5xl font-light text-black">
               {isAr ? (
                 `${t("title")} ${t("titleItalic")}`
               ) : (
                 <>
-                  {t("title")} <span className="italic font-serif text-soft-gold">{t("titleItalic")}</span>
+                  {t("title")} <span className="italic font-serif text-black">{t("titleItalic")}</span>
                 </>
               )}
             </h2>
           </div>
-          <p className="text-neutral-350 max-w-xs text-sm font-display italic leading-relaxed border-s border-neutral-800 ps-4">
+          <p className="text-black max-w-xs text-sm font-display italic leading-relaxed border-s border-black ps-4">
             {t("subtitle")}
           </p>
         </div>
 
         {products.length === 0 ? (
-          <div className="text-center py-20 border border-dashed border-neutral-800">
-            <p className="font-display text-xl text-neutral-500 opacity-40">{t("empty")}</p>
+          <div className="text-center py-20 border border-dashed border-gray-300">
+            <p className="font-display text-xl text-gray-500 opacity-40">{t("empty")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
@@ -259,10 +259,10 @@ async function FeaturedProductsSection() {
 
         <div className="text-center mt-16">
           <Link href="/shop" className="group inline-flex flex-col items-center gap-2">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-white font-semibold group-hover:text-soft-gold transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-black font-semibold group-hover:text-neutral-600 transition-colors">
               {t("viewAll")}
             </span>
-            <div className="w-12 h-px bg-white group-hover:bg-soft-gold group-hover:w-24 transition-all duration-500" />
+            <div className="w-12 h-px bg-black group-hover:bg-neutral-600 group-hover:w-24 transition-all duration-500" />
           </Link>
         </div>
       </div>
