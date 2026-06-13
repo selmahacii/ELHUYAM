@@ -58,10 +58,10 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
   let lowStockProductIds: string[] = [];
   if (sp.lowStock === "true") {
     const rawLowStockProducts = await db.$queryRaw<any[]>`
-      SELECT id FROM Product P
+      SELECT id FROM "Product" P
       WHERE P.archived = false AND (
-        (P.stock <= P.lowStockThreshold AND NOT EXISTS (SELECT 1 FROM ProductVariant V WHERE V.productId = P.id))
-        OR EXISTS (SELECT 1 FROM ProductVariant V WHERE V.productId = P.id AND V.stock <= P.lowStockThreshold)
+        (P.stock <= P."lowStockThreshold" AND NOT EXISTS (SELECT 1 FROM "ProductVariant" V WHERE V."productId" = P.id))
+        OR EXISTS (SELECT 1 FROM "ProductVariant" V WHERE V."productId" = P.id AND V.stock <= P."lowStockThreshold")
       )
     `;
     lowStockProductIds = rawLowStockProducts.map((p: any) => p.id);
@@ -103,16 +103,16 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
       db.product.count({ where: { archived: false } }),
       Promise.all([
         db.$queryRaw<any[]>`
-          SELECT COUNT(*) as count FROM Product P
+          SELECT COUNT(*) as count FROM "Product" P
           WHERE P.archived = false
-          AND P.stock <= P.lowStockThreshold
-          AND NOT EXISTS (SELECT 1 FROM ProductVariant V WHERE V.productId = P.id)
+          AND P.stock <= P."lowStockThreshold"
+          AND NOT EXISTS (SELECT 1 FROM "ProductVariant" V WHERE V."productId" = P.id)
         `,
         db.$queryRaw<any[]>`
-          SELECT COUNT(*) as count FROM ProductVariant V
-          INNER JOIN Product P ON V.productId = P.id
+          SELECT COUNT(*) as count FROM "ProductVariant" V
+          INNER JOIN "Product" P ON V."productId" = P.id
           WHERE P.archived = false
-          AND V.stock <= P.lowStockThreshold
+          AND V.stock <= P."lowStockThreshold"
         `
       ]).then(([pRaw, vRaw]) => Number(pRaw[0]?.count ?? 0) + Number(vRaw[0]?.count ?? 0)),
       db.product.count({ where: { featured: true, archived: false } }),
