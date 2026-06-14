@@ -84,7 +84,8 @@ export async function POST(req: NextRequest, { params }: Props) {
       deliveryType: order.deliveryType === "STOPDESK" ? "pickup-point" : "home",
       amount: order.paymentStatus === "PAID" ? 0 : order.totalAmount,
       description: descriptionText || "Habillements Modest Fashion",
-      orderedProducts
+      orderedProducts,
+      externalId: order.orderNumber
     };
 
     // Call the API

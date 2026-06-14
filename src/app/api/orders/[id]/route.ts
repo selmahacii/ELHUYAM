@@ -199,7 +199,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         deliveryType: existingOrder.deliveryType === "STOPDESK" ? "pickup-point" : "home",
         amount: isPaid ? 0 : existingOrder.totalAmount,
         description: descriptionText || "Habillements Modest Fashion",
-        orderedProducts
+        orderedProducts,
+        externalId: existingOrder.orderNumber
       };
 
       const zrRes = await zrCreateParcel(settings, payload);
