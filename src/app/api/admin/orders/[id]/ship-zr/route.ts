@@ -96,7 +96,6 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     const parcel = res.data;
 
-    // Update order with tracking number and carrier info
     await db.$transaction([
       db.order.update({
         where: { id: order.id },
