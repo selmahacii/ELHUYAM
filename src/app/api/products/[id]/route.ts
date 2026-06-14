@@ -91,6 +91,15 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     const { id } = await params;
     
+    // Load the product to get its categoryId
+    const product = await db.product.findUnique({
+      where: { id },
+      select: { categoryId: true },
+    });
+    if (!product) return errorResponse("Product not found", 404);
+
+    const categoryId = product.categoryId;
+
     // Vérifier si le produit est lié à des commandes existantes
     const orderItemsCount = await db.orderItem.count({ where: { productId: id } });
     
@@ -102,6 +111,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     // Hard-delete s'il n'a jamais été commandé
     await db.product.delete({ where: { id } });
+
+    // Clean up empty category if it has no remaining products
+    if (categoryId) {
+      const remainingCount = await db.product.count({ where: { categoryId } });
+      if (remainingCount === 0) {
+        await db.category.delete({ where: { id: categoryId } });
+        return successResponse({ message: "Produit et sa catégorie vide supprimés définitivement." });
+      }
+    }
+
     return successResponse({ message: "Produit supprimé définitivement." });
   } catch (error) {
     console.error("[PRODUCT_DELETE_ERROR]", error);
