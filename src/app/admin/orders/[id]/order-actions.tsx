@@ -129,6 +129,10 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
     carrier !== (order.carrier ?? "") ||
     note.length > 0;
 
+  const allowedStatuses = tracking && carrier === "ZR_EXPRESS"
+    ? ORDER_STATUSES.filter((s) => s.value === status || s.value === "CANCELLED")
+    : ORDER_STATUSES;
+
   return (
     <>
       {/* Destructive action confirmation dialog */}
@@ -170,22 +174,22 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
         </div>
       )}
 
-      <div className="bg-white border border-black/10 p-5 space-y-4">
-        <h3 className="font-display text-base text-black font-semibold border-b border-black/10 pb-3">
+      <div className="bg-white border border-zinc-200 shadow-sm p-5 space-y-4">
+        <h3 className="font-display text-base text-zinc-900 font-semibold border-b border-zinc-150 pb-3">
           Update Order
         </h3>
 
         {/* Order status */}
         <div>
-          <label className="block text-xs uppercase tracking-widest text-black mb-2 font-medium">
+          <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2 font-medium">
             Order Status
           </label>
           <select
             value={status}
             onChange={(e) => handleStatusChange(e.target.value)}
-            className="w-full border border-black/20 px-3 py-2 text-sm bg-white text-black focus:outline-none focus:border-black transition-colors"
+            className="w-full border border-zinc-250 px-3 py-2 text-sm bg-white text-zinc-900 focus:outline-none focus:border-zinc-900 transition-colors"
           >
-            {ORDER_STATUSES.map((s) => (
+            {allowedStatuses.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
