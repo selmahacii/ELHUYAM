@@ -231,7 +231,8 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
               value={tracking}
               onChange={(e) => setTracking(e.target.value)}
               placeholder={carrier === "ZR_EXPRESS" ? "e.g., ZR-2024-XXXXXX" : "Tracking number..."}
-              className="border-black/20 focus:border-black text-black bg-white"
+              className="border-black/20 focus:border-black text-black bg-white disabled:bg-zinc-50 disabled:text-zinc-500 disabled:cursor-not-allowed"
+              disabled={carrier === "ZR_EXPRESS" && !!tracking}
             />
             {carrier === "ZR_EXPRESS" && tracking && (
               <p className="text-[10px] text-emerald-600 flex items-center gap-1">
