@@ -111,8 +111,8 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
         toast.error(data.error ?? "Transmission failed");
         return;
       }
-      toast.success(data.message ?? "Package successfully created!");
-      setTracking(data.trackingNumber);
+      toast.success(data.data?.message ?? "Package successfully created!");
+      setTracking(data.data?.trackingNumber ?? "");
       setStatus("OUT_FOR_DELIVERY");
       router.refresh();
     } catch {
@@ -129,7 +129,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
     carrier !== (order.carrier ?? "") ||
     note.length > 0;
 
-  const allowedStatuses = order.carrier === "ZR_EXPRESS"
+  const allowedStatuses = order.carrier === "ZR_EXPRESS" || (!!tracking && carrier === "ZR_EXPRESS")
     ? ORDER_STATUSES.filter((s) => s.value === status || s.value === "CANCELLED")
     : ORDER_STATUSES;
 

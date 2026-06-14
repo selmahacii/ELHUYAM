@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, zrDeleteParcel } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import crypto from "crypto";
 
@@ -144,6 +144,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     let autoTrackingNumber = finalTracking;
     let autoParcelId = existingOrder.zrParcelId;
     let autoNoteAddition = "";
+
+    // If status is changing to CANCELLED and it was sent to ZR Express
+    if (status === "CANCELLED" && existingOrder.status !== "CANCELLED" && existingOrder.carrier === "ZR_EXPRESS" && existingOrder.zrParcelId) {
+      const settings = await getZRSettings();
+      if (settings) {
+        const deleteRes = await zrDeleteParcel(settings, existingOrder.zrParcelId);
+        if (deleteRes.ok) {
+          console.log(`[ZR Express] Parcel ${existingOrder.zrParcelId} deleted successfully due to order cancellation.`);
+          autoNoteAddition = " [Deleted from ZR Express platform]";
+        } else {
+          console.error(`[ZR Express] Failed to delete parcel ${existingOrder.zrParcelId}:`, deleteRes.error);
+          autoNoteAddition = ` [Failed to delete from ZR Express: ${deleteRes.error}]`;
+        }
+      }
+    }
 
     // Automatically transmit to ZR Express if status is changing to OUT_FOR_DELIVERY
     if (finalStatus === "OUT_FOR_DELIVERY" && finalCarrier === "ZR_EXPRESS" && !autoTrackingNumber) {

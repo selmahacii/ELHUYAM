@@ -305,6 +305,15 @@ export async function zrDeleteCustomer(
   });
 }
 
+export async function zrDeleteParcel(
+  settings: ZRSettings,
+  id: string
+): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
+  return zrFetch<{ id?: string }>(settings, `/parcels/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function zrCreateIndividualCustomer(
   settings: ZRSettings,
   payload: Record<string, unknown>
