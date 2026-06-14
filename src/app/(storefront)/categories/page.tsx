@@ -49,14 +49,13 @@ export default async function CategoriesPage() {
         <div className="absolute inset-0 star-pattern opacity-[0.05]" />
         
         <div className="relative z-10 max-w-4xl mx-auto px-4">
-          <h1 className="font-display text-4xl md:text-6xl text-brand-900 font-light tracking-widest uppercase mb-4 animate-fade-in">
+          <h1 className="font-display text-4xl md:text-6xl text-black font-light tracking-widest uppercase mb-4 animate-fade-in">
             {locale === "ar" ? t("title") : (
               <>
-                {t("title")} <span className="italic font-serif text-soft-gold">{t("titleItalic")}</span>
+                {t("title")} <span className="italic font-serif text-black">{t("titleItalic")}</span>
               </>
             )}
           </h1>
-          
           <div className="ornament-divider max-w-xs mx-auto my-6">
             <span className="text-soft-gold text-xs">✦</span>
           </div>
