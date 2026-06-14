@@ -231,7 +231,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const params = await searchParams;
   const [categories, t, locale] = await Promise.all([
     db.category.findMany({
-      where: { parentId: null },
+      where: { parentId: null, slug: { not: "uncategorized" } },
       orderBy: { sortOrder: "asc" },
     }),
     getTranslations("shop"),

@@ -14,7 +14,7 @@ export default async function Footer() {
     contactTitleSetting
   ] = await Promise.all([
     db.category.findMany({
-      where: { parentId: null },
+      where: { parentId: null, slug: { not: "uncategorized" } },
       orderBy: { sortOrder: "asc" },
       select: { name: true, slug: true },
     }),

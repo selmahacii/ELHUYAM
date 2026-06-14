@@ -25,7 +25,7 @@ async function getFeaturedProducts() {
 
 async function getFeaturedCategories() {
   const categories = await db.category.findMany({
-    where: { featured: true, parentId: null },
+    where: { featured: true, parentId: null, slug: { not: "uncategorized" } },
     orderBy: { sortOrder: "asc" },
     take: 4,
   });
@@ -34,7 +34,7 @@ async function getFeaturedCategories() {
 
   // Fallback: if no categories are featured, just return the first 4 categories
   return db.category.findMany({
-    where: { parentId: null },
+    where: { parentId: null, slug: { not: "uncategorized" } },
     orderBy: { sortOrder: "asc" },
     take: 4,
   });
