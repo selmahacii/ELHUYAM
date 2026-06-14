@@ -225,8 +225,8 @@ async function FeaturedProductsSection() {
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-start">
           <div>
             <div className="flex items-center gap-3 justify-center md:justify-start mb-4">
-              <span className="text-sm text-neutral-400">✦</span>
-              <span className="text-[10px] uppercase tracking-[0.5em] text-neutral-400 font-bold">{t("eyebrow")}</span>
+              <span className={`text-sm ${isAr ? "text-brand-800" : "text-brand-400"}`}>✦</span>
+              <span className={`text-[10px] uppercase tracking-[0.5em] font-bold ${isAr ? "text-brand-800" : "text-brand-400"}`}>{t("eyebrow")}</span>
             </div>
             <h2 className="font-display text-4xl md:text-5xl font-light text-black">
               {isAr ? (
@@ -290,8 +290,8 @@ async function BestsellersSection() {
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-start">
           <div>
             <div className="flex items-center gap-3 justify-center md:justify-start mb-4">
-              <span className="text-neutral-400 text-sm">✦</span>
-              <span className="text-[10px] uppercase tracking-[0.5em] text-neutral-400 font-bold">{t("eyebrow")}</span>
+              <span className={`text-sm ${isAr ? "text-brand-800" : "text-brand-400"}`}>✦</span>
+              <span className={`text-[10px] uppercase tracking-[0.5em] font-bold ${isAr ? "text-brand-800" : "text-brand-400"}`}>{t("eyebrow")}</span>
             </div>
             <h2 className="font-display text-4xl md:text-5xl font-light text-black">
               {isAr ? (
