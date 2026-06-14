@@ -35,7 +35,7 @@ export default async function CategoriesPage() {
     db.category.findMany({
       where: { parentId: null },
       orderBy: { sortOrder: "asc" },
-      include: { _count: { select: { products: true } } },
+      include: { _count: { select: { products: { where: { archived: false } } } } },
     }),
     getTranslations("categoriesPage"),
     getLocale(),
