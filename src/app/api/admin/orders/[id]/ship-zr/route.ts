@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import crypto from "crypto";
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     }
 
     // Get wilaya territories
-    const territories = await getTerritoriesForWilaya(settings, order.wilayaCode);
+    const territories = await getTerritoriesForWilaya(settings, order.wilayaCode, order.shippingCity);
     if (!territories) {
       return errorResponse(`Impossible de trouver la wilaya code ${order.wilayaCode} sur ZR Express.`, 400);
     }
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     // Prepare ZR Express parcel payload
     const payload = {
       customer: {
-        customerId: order.userId || crypto.randomUUID(),
+        customerId: toUUID(order.userId),
         name: `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || "Client Inconnu",
         phone: { number1: phone || "+213000000000" }
       },

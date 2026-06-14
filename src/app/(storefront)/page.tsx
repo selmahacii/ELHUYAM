@@ -158,12 +158,12 @@ async function CategoriesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 md:mb-16">
           <span className={`text-[10px] uppercase tracking-[0.5em] mb-2 md:mb-4 block ${isAr ? "text-brand-800 font-bold" : "text-brand-400"}`}>{t("eyebrow")}</span>
-          <h2 className={`font-display ${isAr ? "font-bold text-5xl md:text-6xl text-black leading-tight" : "text-4xl md:text-5xl font-light text-brand-900"}`}>
+          <h2 className={`font-display ${isAr ? "font-bold text-5xl md:text-6xl text-black leading-tight" : "text-4xl md:text-5xl font-light text-black"}`}>
             {isAr ? (
               `${t("title")} ${t("titleItalic")}`
             ) : (
               <>
-                {t("title")} <span className="italic font-serif text-brand-600">{t("titleItalic")}</span>
+                {t("title")} <span className="italic font-serif text-black">{t("titleItalic")}</span>
               </>
             )}
           </h2>

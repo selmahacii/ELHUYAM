@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import crypto from "crypto";
+
 
 const ZR_BASE = "https://api.zrexpress.app";
 const ZR_VERSION = "1";
@@ -203,7 +205,7 @@ async function fetchAllTerritories(settings: ZRSettings): Promise<any[]> {
   while (true) {
     const res = await zrFetch<any>(settings, "/territories/search", {
       method: "POST",
-      body: JSON.stringify({ page, pageSize: 1000 })
+      body: JSON.stringify({ pageNumber: page, pageSize: 1000 })
     });
     if (!res.ok || !res.data || !res.data.items) break;
     allItems = allItems.concat(res.data.items);
@@ -214,9 +216,18 @@ async function fetchAllTerritories(settings: ZRSettings): Promise<any[]> {
   return allItems;
 }
 
+export function toUUID(val?: string | null): string {
+  if (!val) return crypto.randomUUID();
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(val)) return val;
+  const hash = crypto.createHash("md5").update(val).digest("hex");
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20)}`;
+}
+
 export async function getTerritoriesForWilaya(
   settings: ZRSettings,
-  wilayaCode: string | null
+  wilayaCode: string | null,
+  communeName?: string | null
 ): Promise<{ cityTerritoryId: string; districtTerritoryId: string } | null> {
   if (!wilayaCode) return null;
   const territories = await fetchAllTerritories(settings);
@@ -224,8 +235,21 @@ export async function getTerritoriesForWilaya(
   const wilaya = territories.find(t => t.level === "wilaya" && String(t.code) === String(wilayaCode));
   if (!wilaya) return null;
 
-  const commune = territories.find(t => t.parentId === wilaya.id);
-  if (!commune) return null;
+  const communes = territories.filter(t => t.parentId === wilaya.id);
+  if (communes.length === 0) return null;
+
+  let commune = communes[0];
+  if (communeName) {
+    const cleanName = communeName.toLowerCase().trim();
+    const match = communes.find(
+      c => c.name.toLowerCase().trim() === cleanName || 
+           c.nameArabic?.toLowerCase().trim() === cleanName ||
+           c.name.toLowerCase().replace(/[^a-z0-9]/g, "") === cleanName.replace(/[^a-z0-9]/g, "")
+    );
+    if (match) {
+      commune = match;
+    }
+  }
 
   return { cityTerritoryId: wilaya.id, districtTerritoryId: commune.id };
 }

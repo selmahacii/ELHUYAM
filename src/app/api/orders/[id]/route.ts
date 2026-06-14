@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import crypto from "crypto";
 
@@ -155,7 +155,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         );
       }
 
-      const territories = await getTerritoriesForWilaya(settings, existingOrder.wilayaCode);
+      const territories = await getTerritoriesForWilaya(settings, existingOrder.wilayaCode, existingOrder.shippingCity);
       if (!territories) {
         return errorResponse(`Impossible de trouver la wilaya code ${existingOrder.wilayaCode} sur ZR Express.`, 400);
       }
@@ -187,7 +187,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
       const payload = {
         customer: {
-          customerId: existingOrder.userId || crypto.randomUUID(),
+          customerId: toUUID(existingOrder.userId),
           name: `${existingOrder.shippingFirstName ?? ""} ${existingOrder.shippingLastName ?? ""}`.trim() || "Client Inconnu",
           phone: { number1: phone || "+213000000000" }
         },
