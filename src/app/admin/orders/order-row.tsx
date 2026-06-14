@@ -269,13 +269,11 @@ export default function OrderRow({ order, role }: OrderRowProps) {
           </span>
         )}
       </td>
-
       {/* 5. Total Price Amount */}
       <td className="px-4 py-3 font-bold text-slate-900 text-xs sm:text-sm">
         {formatPrice(order.totalAmount)}
       </td>
-
-      {/* 6. Dynamic Payment Status Select */}
+      {/* 6. Dynamic Payment Stats Select */}
       <td className="px-4 py-3">
         <select
           value={paymentStatus}
