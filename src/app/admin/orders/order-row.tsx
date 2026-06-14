@@ -36,9 +36,22 @@ interface OrderRowProps {
     shippingFirstName?: string | null;
     shippingLastName?: string | null;
     notes?: string | null;
+    trackingNumber?: string | null;
+    carrier?: string | null;
   };
   role?: string;
 }
+
+const ORDER_STATUSES = [
+  { value: "PENDING",          label: "Pending" },
+  { value: "CONFIRMED",        label: "Confirmed" },
+  { value: "PROCESSING",       label: "Processing" },
+  { value: "SHIPPED",          label: "Shipped" },
+  { value: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
+  { value: "DELIVERED",        label: "Delivered" },
+  { value: "CANCELLED",        label: "Cancelled" },
+  { value: "REFUNDED",         label: "Refunded" },
+];
 
 export default function OrderRow({ order, role }: OrderRowProps) {
   const router = useRouter();
@@ -279,21 +292,23 @@ export default function OrderRow({ order, role }: OrderRowProps) {
 
       {/* 7. Dynamic Order Status Select */}
       <td className="px-4 py-3">
-        <select
-          value={status}
-          disabled={updating}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          className={`text-[9.5px] font-extrabold tracking-wider uppercase px-2 py-1 border rounded-lg cursor-pointer focus:outline-none focus:ring-4 transition-all w-36 text-center bg-white ${statusStyles}`}
-        >
-          <option value="PENDING">Pending</option>
-          <option value="CONFIRMED">Confirmed</option>
-          <option value="PROCESSING">Processing</option>
-          <option value="SHIPPED">Shipped</option>
-          <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-          <option value="DELIVERED">Delivered</option>
-          <option value="CANCELLED">Cancelled</option>
-          <option value="REFUNDED">Refunded</option>
-        </select>
+        {(() => {
+          const allowedStatuses = order.trackingNumber && order.carrier === "ZR_EXPRESS"
+            ? ORDER_STATUSES.filter((s) => s.value === status || s.value === "CANCELLED")
+            : ORDER_STATUSES;
+          return (
+            <select
+              value={status}
+              disabled={updating}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              className={`text-[9.5px] font-extrabold tracking-wider uppercase px-2 py-1 border rounded-lg cursor-pointer focus:outline-none focus:ring-4 transition-all w-36 text-center bg-white ${statusStyles}`}
+            >
+              {allowedStatuses.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          );
+        })()}
       </td>
 
       {/* 8. Creation Order Date */}
