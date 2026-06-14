@@ -291,7 +291,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
       {/* 7. Dynamic Order Status Select */}
       <td className="px-4 py-3">
         {(() => {
-          const allowedStatuses = order.trackingNumber && order.carrier === "ZR_EXPRESS"
+          const allowedStatuses = order.carrier === "ZR_EXPRESS"
             ? ORDER_STATUSES.filter((s) => s.value === status || s.value === "CANCELLED")
             : ORDER_STATUSES;
           return (

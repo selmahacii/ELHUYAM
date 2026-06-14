@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import crypto from "crypto";
 
@@ -91,11 +91,16 @@ export async function POST(req: NextRequest, { params }: Props) {
     // Call the API
     const res = await zrCreateParcel(settings, payload);
 
-    if (!res.ok || !res.data) {
+    if (!res.ok || !res.data || !res.data.id) {
       return errorResponse(res.error ?? "Erreur lors de la création du colis chez ZR Express", 400);
     }
 
-    const parcel = res.data;
+    const createdId = res.data.id;
+    const parcelDetails = await zrGetParcelByTracking(settings, createdId);
+    if (!parcelDetails.ok || !parcelDetails.data) {
+      return errorResponse(parcelDetails.error ?? "Impossible de récupérer les détails du colis chez ZR Express", 400);
+    }
+    const parcel = parcelDetails.data;
 
     // Update order with tracking number and carrier in
     await db.$transaction([
@@ -112,7 +117,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         data: {
           orderId: order.id,
           status: "OUT_FOR_DELIVERY",
-          note: `Colis transmis automatiquement à ZR Express. N° Suivi: ${parcel.trackingNumber}`,
+          note: `Parcel automatically transmitted to ZR Express. Tracking N°: ${parcel.trackingNumber}`,
           changedById: session.user.id,
         },
       }),
