@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 import ProductForm from "@/components/admin/product-form";
 
 export default async function NewProductPage() {
-  const categories = await db.category.findMany({ orderBy: { sortOrder: "asc" } });
+  const categories = await db.category.findMany({ where: { slug: { not: "uncategorized" } }, orderBy: { sortOrder: "asc" } });
   return (
     <div className="max-w-3xl space-y-6">
       <div>

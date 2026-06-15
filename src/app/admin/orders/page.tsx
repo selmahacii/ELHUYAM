@@ -100,6 +100,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
       orderBy: { title: "asc" },
     }),
     db.category.findMany({
+      where: { slug: { not: "uncategorized" } },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),

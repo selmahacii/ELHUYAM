@@ -97,7 +97,7 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
       take: limit,
     }),
     db.product.count({ where }),
-    db.category.findMany({ orderBy: { sortOrder: "asc" } }),
+    db.category.findMany({ where: { slug: { not: "uncategorized" } }, orderBy: { sortOrder: "asc" } }),
     // Global metrics counters
     Promise.all([
       db.product.count({ where: { archived: false } }),
