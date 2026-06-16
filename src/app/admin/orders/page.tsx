@@ -106,13 +106,59 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
     }),
     db.order.aggregate({
       where: { ...where, status: "DELIVERED" },
-      _sum: { totalAmount: true },
+      _sum: { subtotal: true, discount: true },
     }),
   ]);
 
+  // Find returned (REFUNDED) orders for users, phones, or names in the current page
+  const userIds = orders.map((o: any) => o.userId).filter(Boolean);
+  const phones = orders.map((o: any) => o.shippingPhone?.trim()).filter(Boolean) as string[];
+  const names = orders.map((o: any) => ({
+    first: o.shippingFirstName?.trim(),
+    last: o.shippingLastName?.trim()
+  })).filter((n: any) => n.first || n.last);
+
+  const refundedOrders = (userIds.length > 0 || phones.length > 0 || names.length > 0)
+    ? await db.order.findMany({
+        where: {
+          status: "REFUNDED",
+          OR: [
+            ...(userIds.length > 0 ? [{ userId: { in: userIds } }] : []),
+            ...(phones.length > 0 ? [{ shippingPhone: { in: phones } }] : []),
+            ...(names.length > 0 ? names.map((n: any) => ({
+              shippingFirstName: { equals: n.first, mode: "insensitive" as const },
+              shippingLastName: { equals: n.last, mode: "insensitive" as const }
+            })) : [])
+          ]
+        },
+        select: {
+          userId: true,
+          shippingPhone: true,
+          shippingFirstName: true,
+          shippingLastName: true
+        }
+      })
+    : [];
+
+  const refundedUserIds = new Set(refundedOrders.map((o: any) => o.userId).filter(Boolean));
+  const refundedPhones = new Set(refundedOrders.map((o: any) => o.shippingPhone?.trim()).filter(Boolean));
+  const refundedNames = new Set(refundedOrders.map((o: any) => `${o.shippingFirstName?.trim().toLowerCase()} ${o.shippingLastName?.trim().toLowerCase()}`));
+
+  const ordersWithAlert = orders.map((order: any) => {
+    const nameKey = `${order.shippingFirstName?.trim().toLowerCase()} ${order.shippingLastName?.trim().toLowerCase()}`;
+    const hasReturnedOrders = 
+      (order.userId && refundedUserIds.has(order.userId)) || 
+      (order.shippingPhone && refundedPhones.has(order.shippingPhone.trim())) ||
+      refundedNames.has(nameKey);
+    return {
+      ...order,
+      hasReturnedOrders
+    };
+  });
+
   const [pendingCount, processingCount, shippedCount, deliveredCount, cancelledCount] = statusCounts;
   const totalPages = Math.ceil(total / limit);
-  const totalRevenue = totalRevenueResult._sum.totalAmount ?? 0;
+  const totalRevenue = Math.max(0, (totalRevenueResult._sum.subtotal ?? 0) - (totalRevenueResult._sum.discount ?? 0));
 
   const tabs = [
     { label: "All", status: null, count: null },
@@ -313,7 +359,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
                   </td>
                 </tr>
               )}
-              {orders.map((order: any) => (
+              {ordersWithAlert.map((order: any) => (
                 <OrderRow key={order.id} order={order} role={role} />
               ))}
             </tbody>

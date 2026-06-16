@@ -30,6 +30,22 @@ export async function POST(req: NextRequest) {
       street, city, couponCode, paymentMethod, notes,
     } = parsed.data;
 
+    // Check if client is banned (by session id, input phone, or input name)
+    const bannedUser = await db.user.findFirst({
+      where: {
+        isBanned: true,
+        OR: [
+          ...(session?.user?.id ? [{ id: session.user.id }] : []),
+          { phone: phone.trim() },
+          { name: { equals: `${firstName.trim()} ${lastName.trim()}`, mode: "insensitive" as const } }
+        ]
+      }
+    });
+
+    if (bannedUser) {
+      return errorResponse("Ce client est suspendu et ne peut pas passer de commande.", 403);
+    }
+
     // 2. Identify or Auto-Create Customer Account (satisfies DB foreign key constraint)
     let userId: string;
     let dbUser = null;

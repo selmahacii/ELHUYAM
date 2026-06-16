@@ -346,20 +346,24 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                 <span>Subtotal</span>
                 <span className="font-mono">{formatPrice(order.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-zinc-500">
-                <span>Shipping fee</span>
-                <span className="font-mono">{order.shippingFee === 0 ? "Free" : formatPrice(order.shippingFee)}</span>
-              </div>
               {order.discount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-medium">
                   <span>Discount {order.couponCode && `(${order.couponCode})`}</span>
                   <span className="font-mono">-{formatPrice(order.discount)}</span>
                 </div>
               )}
+              <div className="flex justify-between text-zinc-500 border-t border-dashed border-zinc-150 pt-1.5 font-medium">
+                <span>Basket Total (Excl. Shipping)</span>
+                <span className="font-mono">{formatPrice(order.subtotal - order.discount)}</span>
+              </div>
+              <div className="flex justify-between text-zinc-500">
+                <span>Shipping fee</span>
+                <span className="font-mono">{order.shippingFee === 0 ? "Free" : formatPrice(order.shippingFee)}</span>
+              </div>
             </div>
             
             <div className="flex justify-between font-bold text-zinc-900 text-xs border-t border-zinc-150 pt-2.5">
-              <span>Total Amount</span>
+              <span>Total (Incl. Shipping)</span>
               <span className="text-sm text-zinc-950 font-mono">{formatPrice(order.totalAmount)}</span>
             </div>
             

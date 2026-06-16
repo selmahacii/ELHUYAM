@@ -24,6 +24,8 @@ interface OrderRowProps {
     orderNumber: string;
     createdAt: Date;
     totalAmount: number;
+    subtotal: number;
+    discount: number;
     paymentStatus: string;
     status: string;
     user?: {
@@ -38,6 +40,7 @@ interface OrderRowProps {
     notes?: string | null;
     trackingNumber?: string | null;
     carrier?: string | null;
+    hasReturnedOrders?: boolean;
   };
   role?: string;
 }
@@ -221,6 +224,14 @@ export default function OrderRow({ order, role }: OrderRowProps) {
           <p className="text-slate-900 font-bold text-xs">
             {resolvedName}
           </p>
+          {order.hasReturnedOrders && (
+            <span 
+              className="bg-rose-50 text-rose-700 border border-rose-200 text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full shrink-0 scale-90 cursor-help"
+              title="Ce client a déjà effectué un retour (commande remboursée/retournée)"
+            >
+              Retourneur
+            </span>
+          )}
           {isGuest && (
             <span className="bg-amber-50 text-amber-700 border border-amber-100 text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.2 rounded-full shrink-0 scale-90">
               Guest
@@ -271,21 +282,34 @@ export default function OrderRow({ order, role }: OrderRowProps) {
       </td>
       {/* 5. Total Price Amount */}
       <td className="px-4 py-3 font-bold text-slate-900 text-xs sm:text-sm">
-        {formatPrice(order.totalAmount)}
+        {formatPrice(order.subtotal - order.discount)}
       </td>
-      {/* 6. Dynamic Payment Stats Select */}
+      {/* 6. Dynamic Payment Stats Badge (No select dropdown) */}
       <td className="px-4 py-3">
-        <select
-          value={paymentStatus}
-          disabled={updating || (role === "CONFIRMATRICE" && paymentStatus !== "PAID")}
-          onChange={(e) => handlePaymentStatusChange(e.target.value)}
-          className={`text-[9.5px] font-extrabold tracking-wider uppercase px-2 py-1 border rounded-lg cursor-pointer focus:outline-none focus:ring-4 transition-all w-28 text-center bg-white ${paymentStyles}`}
-        >
-          <option value="PENDING">Pending</option>
-          <option value="PAID">Paid</option>
-          <option value="FAILED">Failed</option>
-          <option value="REFUNDED">Refunded</option>
-        </select>
+        {(() => {
+          const displayStatus = 
+            status === "DELIVERED" ? "PAID" :
+            status === "REFUNDED" ? "REFUNDED" :
+            paymentStatus;
+
+          const displayLabel = 
+            displayStatus === "PAID" ? "Paid" :
+            displayStatus === "FAILED" ? "Failed" :
+            displayStatus === "REFUNDED" ? "Unpaid (Returned)" :
+            "Pending";
+
+          const badgeStyles =
+            displayStatus === "PAID" ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold" :
+            displayStatus === "FAILED" ? "bg-rose-50 text-rose-700 border-rose-200 font-bold" :
+            displayStatus === "REFUNDED" ? "bg-rose-50 text-rose-700 border-rose-200 font-bold" :
+            "bg-amber-50/70 text-amber-700 border-amber-200 font-bold";
+
+          return (
+            <span className={`inline-block text-[9.5px] uppercase tracking-wider px-2.5 py-1 border rounded-lg text-center w-28 ${badgeStyles}`}>
+              {displayLabel}
+            </span>
+          );
+        })()}
       </td>
 
       {/* 7. Dynamic Order Status Select */}

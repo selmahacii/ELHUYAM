@@ -57,6 +57,8 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
       setStatus(newStatus);
       if (newStatus === "DELIVERED") {
         setPaymentStatus("PAID");
+      } else if (newStatus === "REFUNDED") {
+        setPaymentStatus("REFUNDED");
       }
     }
   }
@@ -64,6 +66,9 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
   function confirmDestructive() {
     if (pendingStatus) {
       setStatus(pendingStatus);
+      if (pendingStatus === "REFUNDED") {
+        setPaymentStatus("REFUNDED");
+      }
       setPendingStatus(null);
     }
   }
@@ -71,12 +76,17 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
   async function handleSave() {
     setSaving(true);
     try {
+      const nextPaymentStatus = 
+        status === "DELIVERED" ? "PAID" :
+        status === "REFUNDED" ? "REFUNDED" :
+        paymentStatus;
+
       const res = await fetch(`/api/orders/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status,
-          paymentStatus,
+          paymentStatus: nextPaymentStatus,
           trackingNumber: tracking || null,
           carrier: carrier || null,
           note: note || undefined,
@@ -129,7 +139,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
     carrier !== (order.carrier ?? "") ||
     note.length > 0;
 
-  const allowedStatuses = order.carrier === "ZR_EXPRESS" || (!!tracking && carrier === "ZR_EXPRESS")
+  const allowedStatuses = order.carrier === "ZR_EXPRESS"
     ? ORDER_STATUSES.filter((s) => s.value === status || s.value === "CANCELLED")
     : ORDER_STATUSES;
 
@@ -202,18 +212,35 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
 
         {/* Payment status */}
         <div>
-          <label className="block text-xs uppercase tracking-widest text-black mb-2 font-medium">
+          <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2 font-medium">
             Payment Status
           </label>
-          <select
-            value={paymentStatus}
-            onChange={(e) => setPaymentStatus(e.target.value)}
-            className="w-full border border-black/20 px-3 py-2 text-sm bg-white text-black focus:outline-none focus:border-black transition-colors"
-          >
-            {paymentStatuses.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+          <div className="flex">
+            {(() => {
+              const displayStatus = 
+                status === "DELIVERED" ? "PAID" :
+                status === "REFUNDED" ? "REFUNDED" :
+                paymentStatus;
+
+              const displayLabel = 
+                displayStatus === "PAID" ? "Paid" :
+                displayStatus === "FAILED" ? "Failed" :
+                displayStatus === "REFUNDED" ? "Unpaid (Returned)" :
+                "Pending";
+
+              const badgeStyles =
+                displayStatus === "PAID" ? "bg-emerald-50 text-emerald-700 border-emerald-250 font-bold" :
+                displayStatus === "FAILED" ? "bg-rose-50 text-rose-700 border-rose-250 font-bold" :
+                displayStatus === "REFUNDED" ? "bg-rose-50 text-rose-700 border-rose-250 font-bold" :
+                "bg-amber-50/70 text-amber-700 border-amber-250 font-bold";
+
+              return (
+                <span className={`text-[10px] font-extrabold tracking-wider uppercase px-3 py-1.5 border rounded-lg text-center ${badgeStyles}`}>
+                  {displayLabel}
+                </span>
+              );
+            })()}
+          </div>
         </div>
 
         {/* Tracking info — shown when shipping-related */}

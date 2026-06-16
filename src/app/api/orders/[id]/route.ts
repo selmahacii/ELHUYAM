@@ -130,10 +130,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
  
-    // Determine final payment status (Auto-settle payment to PAID when order is DELIVERED)
+    // Determine final payment status (Auto-settle payment to PAID when order is DELIVERED, and to REFUNDED when REFUNDED)
     let finalPaymentStatus = paymentStatus;
     if (status === "DELIVERED") {
       finalPaymentStatus = "PAID";
+    } else if (status === "REFUNDED") {
+      finalPaymentStatus = "REFUNDED";
     }
 
     // Capture target carrier and tracking info
