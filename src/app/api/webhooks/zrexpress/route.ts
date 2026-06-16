@@ -23,6 +23,9 @@ const ZR_STATE_MAP: Record<string, string> = {
   "returned":            "REFUNDED",
   "returned to hub":     "REFUNDED",
   "cancelled":           "CANCELLED",
+  "deleted":             "CANCELLED",
+  "supprimé":            "CANCELLED",
+  "supprime":            "CANCELLED",
 };
 
 function mapZRState(stateName: string): string | null {
@@ -45,6 +48,7 @@ export async function POST(req: NextRequest) {
       payload.status;
 
     const parcelId: string | undefined = payload.id ?? payload.parcelId;
+    const eventType: string | undefined = body.eventType ?? body.type ?? payload.eventType ?? payload.type;
 
     if (!trackingNumber) {
       // Retourne un statut 200 OK pour les requêtes de test/ping afin que la validation réussisse
@@ -64,7 +68,13 @@ export async function POST(req: NextRequest) {
     if (!order) return successResponse({ message: "Order not found — ignored" });
 
     // Map ZR state to our status
-    const newStatus = stateName ? mapZRState(stateName) : null;
+    let newStatus = stateName ? mapZRState(stateName) : null;
+    let noteText = `ZR Express: ${stateName || eventType}`;
+
+    if (eventType === "parcel.deleted" || eventType === "parcel.cancelled") {
+      newStatus = "CANCELLED";
+      noteText = `ZR Express: Colis supprimé/annulé (Event: ${eventType})`;
+    }
 
     if (newStatus && newStatus !== order.status) {
       await db.$transaction([
@@ -76,7 +86,7 @@ export async function POST(req: NextRequest) {
           data: {
             orderId: order.id,
             status: newStatus as never,
-            note: `ZR Express: ${stateName}`,
+            note: noteText,
           },
         }),
       ]);
