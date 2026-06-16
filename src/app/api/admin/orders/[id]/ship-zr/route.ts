@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, getBestHubForWilaya } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, getBestHubForWilaya, zrFindParcelByExternalId } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import crypto from "crypto";
 
@@ -101,42 +101,57 @@ export async function POST(req: NextRequest, { params }: Props) {
     };
 
     // Call the API
-    const res = await zrCreateParcel(settings, payload);
+    let res = await zrCreateParcel(settings, payload);
+    let trackingNumber = "";
+    let autoParcelId = "";
 
     if (!res.ok || !res.data || !res.data.id) {
-      return errorResponse(res.error ?? "Erreur lors de la création du colis chez ZR Express", 400);
+      const errMsg = res.error ?? "";
+      if (errMsg.toLowerCase().includes("already exists")) {
+        // Recover existing parcel details
+        const recoverRes = await zrFindParcelByExternalId(settings, order.orderNumber);
+        if (recoverRes.ok && recoverRes.data) {
+          trackingNumber = recoverRes.data.trackingNumber ?? "";
+          autoParcelId = recoverRes.data.id;
+        } else {
+          return errorResponse(
+            `Colis déjà créé chez ZR Express, mais échec de récupération des détails : ${recoverRes.error}`,
+            400
+          );
+        }
+      } else {
+        return errorResponse(res.error ?? "Erreur lors de la création du colis chez ZR Express", 400);
+      }
+    } else {
+      const createdId = res.data.id;
+      const parcelDetails = await zrGetParcelByTracking(settings, createdId);
+      if (!parcelDetails.ok || !parcelDetails.data) {
+        return errorResponse(parcelDetails.error ?? "Impossible de récupérer les détails du colis chez ZR Express", 400);
+      }
+      trackingNumber = parcelDetails.data.trackingNumber ?? "";
+      autoParcelId = parcelDetails.data.id;
     }
 
-    const createdId = res.data.id;
-    const parcelDetails = await zrGetParcelByTracking(settings, createdId);
-    if (!parcelDetails.ok || !parcelDetails.data) {
-      return errorResponse(parcelDetails.error ?? "Impossible de récupérer les détails du colis chez ZR Express", 400);
-    }
-    const parcel = parcelDetails.data;
-
-    // Update order with tracking number and carrier in
-    await db.$transaction([
-      db.order.update({
-        where: { id: order.id },
-        data: {
-          trackingNumber: parcel.trackingNumber,
-          carrier: "ZR_EXPRESS",
-          zrParcelId: parcel.id,
-          status: "OUT_FOR_DELIVERY",
+    // Update order in db
+    await db.order.update({
+      where: { id },
+      data: {
+        status: "OUT_FOR_DELIVERY",
+        trackingNumber: trackingNumber,
+        carrier: "ZR_EXPRESS",
+        zrParcelId: autoParcelId,
+        statusHistory: {
+          create: {
+            status: "OUT_FOR_DELIVERY",
+            note: `Transmis manuellement à ZR Express. N° Suivi: ${trackingNumber}`,
+            changedById: session?.user?.id,
+          },
         },
-      }),
-      db.orderStatusHistory.create({
-        data: {
-          orderId: order.id,
-          status: "OUT_FOR_DELIVERY",
-          note: `Parcel automatically transmitted to ZR Express. Tracking N°: ${parcel.trackingNumber}`,
-          changedById: session.user.id,
-        },
-      }),
-    ]);
+      },
+    });
 
     return successResponse({
-      trackingNumber: parcel.trackingNumber,
+      trackingNumber: trackingNumber,
       message: "Colis transmis avec succès à ZR Express",
     });
   } catch (e) {

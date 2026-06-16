@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, zrDeleteParcel, getBestHubForWilaya } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, zrDeleteParcel, getBestHubForWilaya, zrFindParcelByExternalId } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import crypto from "crypto";
 
@@ -237,22 +237,36 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
       const zrRes = await zrCreateParcel(settings, payload);
       if (!zrRes.ok || !zrRes.data || !zrRes.data.id) {
-        return errorResponse(
-          `Erreur lors de la création du colis chez ZR Express : ${zrRes.error ?? "API inaccessible"}`,
-          400
-        );
+        const errMsg = zrRes.error ?? "";
+        if (errMsg.toLowerCase().includes("already exists")) {
+          // Recover existing parcel details
+          const recoverRes = await zrFindParcelByExternalId(settings, existingOrder.orderNumber);
+          if (recoverRes.ok && recoverRes.data) {
+            autoTrackingNumber = recoverRes.data.trackingNumber ?? "";
+            autoParcelId = recoverRes.data.id;
+          } else {
+            return errorResponse(
+              `Colis déjà créé chez ZR Express, mais échec de récupération des détails : ${recoverRes.error}`,
+              400
+            );
+          }
+        } else {
+          return errorResponse(
+            `Erreur lors de la création du colis chez ZR Express : ${zrRes.error ?? "API inaccessible"}`,
+            400
+          );
+        }
+      } else {
+        const detailsRes = await zrGetParcelByTracking(settings, zrRes.data.id);
+        if (!detailsRes.ok || !detailsRes.data) {
+          return errorResponse(
+            `Impossible de récupérer les détails du colis chez ZR Express : ${detailsRes.error ?? "API inaccessible"}`,
+            400
+          );
+        }
+        autoTrackingNumber = detailsRes.data.trackingNumber ?? "";
+        autoParcelId = detailsRes.data.id;
       }
-
-      const detailsRes = await zrGetParcelByTracking(settings, zrRes.data.id);
-      if (!detailsRes.ok || !detailsRes.data) {
-        return errorResponse(
-          `Impossible de récupérer les détails du colis chez ZR Express : ${detailsRes.error ?? "API inaccessible"}`,
-          400
-        );
-      }
-
-      autoTrackingNumber = detailsRes.data.trackingNumber;
-      autoParcelId = detailsRes.data.id;
       autoNoteAddition = ` [Automatically transmitted to ZR Express. Tracking N°: ${autoTrackingNumber}]`;
     }
  

@@ -441,4 +441,53 @@ export async function zrUpdateProductLocalStock(
   });
 }
 
+export async function zrFindParcelByExternalId(
+  settings: ZRSettings,
+  externalId: string
+): Promise<{ ok: boolean; data?: ZRParcel; error?: string }> {
+  try {
+    // 1. Get first page to find totalPages
+    const firstRes = await zrFetch<{ totalPages?: number; items?: any[] }>(settings, "/parcels/search", {
+      method: "POST",
+      body: JSON.stringify({ pageNumber: 1, pageSize: 100 })
+    });
+    if (!firstRes.ok || !firstRes.data) {
+      return { ok: false, error: firstRes.error ?? "Failed to fetch search pages" };
+    }
+
+    const totalPages = firstRes.data.totalPages || 1;
+    
+    // Check first page items first
+    if (firstRes.data.items) {
+      const match = firstRes.data.items.find((item: any) => item.externalId === externalId);
+      if (match) {
+        return { ok: true, data: { id: match.id, trackingNumber: match.trackingNumber, status: match.state?.name, stateName: match.state?.description } };
+      }
+    }
+
+    // 2. Search last 3 pages in reverse order (since default sorting is oldest first, newest are at the end)
+    const startPage = totalPages;
+    const endPage = Math.max(1, totalPages - 2);
+
+    for (let page = startPage; page >= endPage; page--) {
+      if (page === 1) continue; // already checked page 1
+      const res = await zrFetch<{ items?: any[] }>(settings, "/parcels/search", {
+        method: "POST",
+        body: JSON.stringify({ pageNumber: page, pageSize: 100 })
+      });
+      if (res.ok && res.data?.items) {
+        const match = res.data.items.find((item: any) => item.externalId === externalId);
+        if (match) {
+          return { ok: true, data: { id: match.id, trackingNumber: match.trackingNumber, status: match.state?.name, stateName: match.state?.description } };
+        }
+      }
+    }
+
+    return { ok: false, error: `No parcel found with external ID '${externalId}'` };
+  } catch (e: any) {
+    return { ok: false, error: e.message || "Failed to search parcels" };
+  }
+}
+
+
 
