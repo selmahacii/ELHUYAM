@@ -232,7 +232,7 @@ export async function getTerritoriesForWilaya(
   if (!wilayaCode) return null;
   const territories = await fetchAllTerritories(settings);
   
-  const wilaya = territories.find(t => t.level === "wilaya" && String(t.code) === String(wilayaCode));
+  const wilaya = territories.find(t => t.level === "wilaya" && (String(t.code) === String(wilayaCode) || Number(t.code) === Number(wilayaCode)));
   if (!wilaya) return null;
 
   const communes = territories.filter(t => t.parentId === wilaya.id);
@@ -252,6 +252,35 @@ export async function getTerritoriesForWilaya(
   }
 
   return { cityTerritoryId: wilaya.id, districtTerritoryId: commune.id };
+}
+
+export async function getBestHubForWilaya(
+  settings: ZRSettings,
+  cityTerritoryId: string,
+  communeName?: string | null
+): Promise<string | null> {
+  const res = await zrFetch<{ items?: any[] }>(settings, "/hubs/search", {
+    method: "POST",
+    body: JSON.stringify({ pageNumber: 1, pageSize: 1000 })
+  });
+  if (!res.ok || !res.data || !res.data.items) return null;
+  
+  const wilayaHubs = res.data.items.filter(
+    (h: any) => h.address?.cityTerritoryId === cityTerritoryId && h.isPickupPoint
+  );
+  if (wilayaHubs.length === 0) return null;
+  
+  if (communeName) {
+    const cleanCommune = communeName.toLowerCase().trim();
+    const match = wilayaHubs.find(
+      (h: any) =>
+        h.name.toLowerCase().includes(cleanCommune) ||
+        h.address?.district?.toLowerCase().trim() === cleanCommune
+    );
+    if (match) return match.id;
+  }
+  
+  return wilayaHubs[0].id;
 }
 
 export async function zrCreateParcel(

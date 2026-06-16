@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, getBestHubForWilaya } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import crypto from "crypto";
 
@@ -69,6 +69,17 @@ export async function POST(req: NextRequest, { params }: Props) {
       .map((item: any) => `${item.productTitle} (x${item.quantity})`)
       .join(", ");
 
+    let hubId: string | null = null;
+    if (order.deliveryType === "STOPDESK") {
+      hubId = await getBestHubForWilaya(settings, territories.cityTerritoryId, order.shippingCity);
+      if (!hubId) {
+        return errorResponse(
+          "Aucun point de retrait (hub) disponible pour cette wilaya chez ZR Express.",
+          400
+        );
+      }
+    }
+
     // Prepare ZR Express parcel payload
     const payload = {
       customer: {
@@ -82,6 +93,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         districtTerritoryId: territories.districtTerritoryId
       },
       deliveryType: order.deliveryType === "STOPDESK" ? "pickup-point" : "home",
+      ...(order.deliveryType === "STOPDESK" && hubId ? { hubId } : {}),
       amount: order.paymentStatus === "PAID" ? 0 : order.totalAmount,
       description: descriptionText || "Habillements Modest Fashion",
       orderedProducts,

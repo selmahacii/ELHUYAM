@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, zrDeleteParcel } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, zrDeleteParcel, getBestHubForWilaya } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import crypto from "crypto";
 
@@ -205,6 +205,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         });
       }
 
+      let hubId: string | null = null;
+      if (existingOrder.deliveryType === "STOPDESK") {
+        hubId = await getBestHubForWilaya(settings, territories.cityTerritoryId, existingOrder.shippingCity);
+        if (!hubId) {
+          return errorResponse(
+            "Aucun point de retrait (hub) disponible pour cette wilaya chez ZR Express.",
+            400
+          );
+        }
+      }
+
       const payload = {
         customer: {
           customerId: toUUID(existingOrder.userId),
@@ -217,6 +228,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           districtTerritoryId: territories.districtTerritoryId
         },
         deliveryType: existingOrder.deliveryType === "STOPDESK" ? "pickup-point" : "home",
+        ...(existingOrder.deliveryType === "STOPDESK" && hubId ? { hubId } : {}),
         amount: isPaid ? 0 : existingOrder.totalAmount,
         description: descriptionText || "Habillements Modest Fashion",
         orderedProducts,
