@@ -139,9 +139,10 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
     carrier !== (order.carrier ?? "") ||
     note.length > 0;
 
-  const allowedStatuses = order.carrier === "ZR_EXPRESS"
+  const isTransmitted = !!order.trackingNumber && order.carrier === "ZR_EXPRESS";
+  const allowedStatuses = isTransmitted
     ? ORDER_STATUSES.filter((s) => s.value === status || s.value === "CANCELLED")
-    : ORDER_STATUSES;
+    : ORDER_STATUSES.filter((s) => ["PENDING", "CONFIRMED", "OUT_FOR_DELIVERY", "CANCELLED"].includes(s.value) || s.value === status);
 
   return (
     <>

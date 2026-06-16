@@ -139,8 +139,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     // Capture target carrier and tracking info
-    const finalCarrier = carrier !== undefined ? carrier : existingOrder.carrier;
     const finalStatus = status !== undefined ? status : existingOrder.status;
+    let finalCarrier = carrier !== undefined ? carrier : existingOrder.carrier;
+    if (finalStatus === "OUT_FOR_DELIVERY" && !finalCarrier) {
+      finalCarrier = "ZR_EXPRESS";
+    }
     const finalTracking = trackingNumber !== undefined ? trackingNumber : existingOrder.trackingNumber;
 
     let autoTrackingNumber = finalTracking;
