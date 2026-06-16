@@ -5,17 +5,13 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-hot-toast";
-import { AlertTriangle, Truck } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 const ORDER_STATUSES = [
   { value: "PENDING",          label: "Pending" },
   { value: "CONFIRMED",        label: "Confirmed" },
-  { value: "PROCESSING",       label: "Processing" },
-  { value: "SHIPPED",          label: "Shipped" },
   { value: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
-  { value: "DELIVERED",        label: "Delivered" },
   { value: "CANCELLED",        label: "Cancelled" },
-  { value: "REFUNDED",         label: "Refunded" },
 ];
 
 const ALL_PAYMENT_STATUSES = [
@@ -44,7 +40,6 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
-  const [transmitting, setTransmitting] = useState(false);
 
   const paymentStatuses = role === "CONFIRMATRICE" && paymentStatus !== "PAID"
     ? ALL_PAYMENT_STATUSES.filter((s) => s.value !== "PAID")
@@ -110,27 +105,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
     }
   }
 
-  async function handleTransmitZR() {
-    setTransmitting(true);
-    try {
-      const res = await fetch(`/api/admin/orders/${order.id}/ship-zr`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (!data.success) {
-        toast.error(data.error ?? "Transmission failed");
-        return;
-      }
-      toast.success(data.data?.message ?? "Package successfully created!");
-      setTracking(data.data?.trackingNumber ?? "");
-      setStatus("OUT_FOR_DELIVERY");
-      router.refresh();
-    } catch {
-      toast.error("Connection error");
-    } finally {
-      setTransmitting(false);
-    }
-  }
+
 
   const hasChanges =
     status !== order.status ||
@@ -140,9 +115,15 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
     note.length > 0;
 
   const isTransmitted = !!order.trackingNumber && order.carrier === "ZR_EXPRESS";
+  const baseStatuses = [...ORDER_STATUSES];
+  if (!baseStatuses.some((s) => s.value === status)) {
+    let label = status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, " ");
+    if (status === "OUT_FOR_DELIVERY") label = "Out for Delivery";
+    baseStatuses.push({ value: status, label });
+  }
   const allowedStatuses = isTransmitted
-    ? ORDER_STATUSES.filter((s) => s.value === status || s.value === "CANCELLED")
-    : ORDER_STATUSES.filter((s) => ["PENDING", "CONFIRMED", "OUT_FOR_DELIVERY", "CANCELLED"].includes(s.value) || s.value === status);
+    ? baseStatuses.filter((s) => s.value === status || s.value === "CANCELLED")
+    : baseStatuses;
 
   return (
     <>
@@ -288,17 +269,6 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
           />
         </div>
 
-        {carrier === "ZR_EXPRESS" && !tracking && (
-          <Button
-            type="button"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 py-2 px-4 shadow-sm border border-emerald-500 hover:border-emerald-600 transition-all font-medium text-sm"
-            onClick={handleTransmitZR}
-            loading={transmitting}
-          >
-            <Truck className="w-4 h-4 animate-bounce" />
-            Transmit to ZR Express
-          </Button>
-        )}
 
         <Button
           className="w-full bg-black hover:bg-gray-800 text-white transition-colors"

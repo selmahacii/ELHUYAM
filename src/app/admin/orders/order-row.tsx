@@ -48,12 +48,8 @@ interface OrderRowProps {
 const ORDER_STATUSES = [
   { value: "PENDING",          label: "Pending" },
   { value: "CONFIRMED",        label: "Confirmed" },
-  { value: "PROCESSING",       label: "Processing" },
-  { value: "SHIPPED",          label: "Shipped" },
   { value: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
-  { value: "DELIVERED",        label: "Delivered" },
   { value: "CANCELLED",        label: "Cancelled" },
-  { value: "REFUNDED",         label: "Refunded" },
 ];
 
 export default function OrderRow({ order, role }: OrderRowProps) {
@@ -316,9 +312,15 @@ export default function OrderRow({ order, role }: OrderRowProps) {
       <td className="px-4 py-3">
         {(() => {
           const isTransmitted = !!order.trackingNumber && order.carrier === "ZR_EXPRESS";
+          const baseStatuses = [...ORDER_STATUSES];
+          if (!baseStatuses.some((s) => s.value === status)) {
+            let label = status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, " ");
+            if (status === "OUT_FOR_DELIVERY") label = "Out for Delivery";
+            baseStatuses.push({ value: status, label });
+          }
           const allowedStatuses = isTransmitted
-            ? ORDER_STATUSES.filter((s) => s.value === status || s.value === "CANCELLED")
-            : ORDER_STATUSES.filter((s) => ["PENDING", "CONFIRMED", "OUT_FOR_DELIVERY", "CANCELLED"].includes(s.value) || s.value === status);
+            ? baseStatuses.filter((s) => s.value === status || s.value === "CANCELLED")
+            : baseStatuses;
           return (
             <select
               value={status}

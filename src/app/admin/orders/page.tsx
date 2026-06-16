@@ -71,7 +71,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
     db.order.count({ where }),
     // Count per status for tab badges
     Promise.all(
-      ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map((s) =>
+      ["PENDING", "CONFIRMED", "OUT_FOR_DELIVERY", "CANCELLED"].map((s) =>
         db.order.count({ where: { ...where, status: s as never } })
       )
     ),
@@ -156,16 +156,15 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
     };
   });
 
-  const [pendingCount, processingCount, shippedCount, deliveredCount, cancelledCount] = statusCounts;
+  const [pendingCount, confirmedCount, outForDeliveryCount, cancelledCount] = statusCounts;
   const totalPages = Math.ceil(total / limit);
   const totalRevenue = Math.max(0, (totalRevenueResult._sum.subtotal ?? 0) - (totalRevenueResult._sum.discount ?? 0));
 
   const tabs = [
     { label: "All", status: null, count: null },
     { label: "Pending", status: "PENDING", count: pendingCount },
-    { label: "Processing", status: "PROCESSING", count: processingCount },
-    { label: "Shipped", status: "SHIPPED", count: shippedCount },
-    { label: "Delivered", status: "DELIVERED", count: deliveredCount },
+    { label: "Confirmed", status: "CONFIRMED", count: confirmedCount },
+    { label: "Out for Delivery", status: "OUT_FOR_DELIVERY", count: outForDeliveryCount },
     { label: "Cancelled", status: "CANCELLED", count: cancelledCount },
   ];
 
