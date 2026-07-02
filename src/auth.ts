@@ -5,19 +5,17 @@ import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { loginSchema } from "@/lib/validations";
+import { authConfig } from "./auth.config";
 
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days (vs NextAuth default 30 days)
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(db),
   session: {
     strategy: "jwt",
     maxAge: SESSION_MAX_AGE,
     updateAge: 24 * 60 * 60, // Refresh token once per day on activity
-  },
-  pages: {
-    signIn: "/auth/login",
-    error: "/auth/error",
   },
   providers: [
     GoogleProvider({
@@ -72,25 +70,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id as string;
-        token.role = (user as { role?: string }).role ?? "CUSTOMER";
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-      }
-      return session;
-    },
-    async redirect({ url, baseUrl }) {
-      if (url.startsWith(baseUrl)) return url;
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      return baseUrl;
-    },
-  },
 });

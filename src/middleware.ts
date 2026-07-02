@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
 import { NextResponse } from "next/server";
 
 const ADMIN_ROUTES = /^\/admin(\/.*)?$/;
@@ -7,6 +8,8 @@ const PROTECTED_ROUTES = /^\/(account|wishlist)(\/.*)?$/;
 
 // Roles that can access the admin panel
 const ADMIN_ROLES = new Set(["ADMIN", "CONFIRMATRICE"]);
+
+const { auth } = NextAuth(authConfig);
 
 export default auth((req: any) => {
   const { nextUrl, auth: session } = req;

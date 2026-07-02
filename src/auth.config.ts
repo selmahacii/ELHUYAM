@@ -1,0 +1,30 @@
+import type { NextAuthConfig } from "next-auth";
+
+export const authConfig = {
+  pages: {
+    signIn: "/auth/login",
+    error: "/auth/error",
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id as string;
+        token.role = (user as { role?: string }).role ?? "CUSTOMER";
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+      }
+      return session;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith(baseUrl)) return url;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      return baseUrl;
+    },
+  },
+  providers: [], // Providers that require Node.js (like bcrypt/Prisma) will be added in auth.ts
+} satisfies NextAuthConfig;
