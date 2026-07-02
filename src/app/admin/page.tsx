@@ -119,19 +119,19 @@ async function getDashboardData(period: string) {
   const [pendingOrders, lowStockProductsRaw, lowStockVariantsRaw, recentOrders, staffActivity] = await Promise.all([
     db.order.count({ where: { status: "PENDING" } }),
     db.$queryRaw<any[]>`
-      SELECT id, title, stock FROM Product P
+      SELECT id, title, stock FROM "Product" P
       WHERE P.archived = false
-      AND P.stock <= P.lowStockThreshold
-      AND NOT EXISTS (SELECT 1 FROM ProductVariant V WHERE V.productId = P.id)
+      AND P.stock <= P."lowStockThreshold"
+      AND NOT EXISTS (SELECT 1 FROM "ProductVariant" V WHERE V."productId" = P.id)
       ORDER BY P.stock ASC
       LIMIT 5
     `,
     db.$queryRaw<any[]>`
-      SELECT V.id, V.size, V.color, V.stock, P.id as productId, P.title as productTitle
-      FROM ProductVariant V
-      INNER JOIN Product P ON V.productId = P.id
+      SELECT V.id, V.size, V.color, V.stock, P.id as "productId", P.title as "productTitle"
+      FROM "ProductVariant" V
+      INNER JOIN "Product" P ON V."productId" = P.id
       WHERE P.archived = false
-      AND V.stock <= P.lowStockThreshold
+      AND V.stock <= P."lowStockThreshold"
       ORDER BY V.stock ASC
       LIMIT 5
     `,
