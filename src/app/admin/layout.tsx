@@ -17,16 +17,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const [pendingOrdersCount, lowStockProductsRaw, lowStockVariantsRaw] = await Promise.all([
     db.order.count({ where: { status: "PENDING" } }),
     db.$queryRaw<any[]>`
-      SELECT COUNT(*) as count FROM Product P
+      SELECT COUNT(*) as count FROM "Product" P
       WHERE P.archived = false
-      AND P.stock <= P.lowStockThreshold
-      AND NOT EXISTS (SELECT 1 FROM ProductVariant V WHERE V.productId = P.id)
+      AND P.stock <= P."lowStockThreshold"
+      AND NOT EXISTS (SELECT 1 FROM "ProductVariant" V WHERE V."productId" = P.id)
     `,
     db.$queryRaw<any[]>`
-      SELECT COUNT(*) as count FROM ProductVariant V
-      INNER JOIN Product P ON V.productId = P.id
+      SELECT COUNT(*) as count FROM "ProductVariant" V
+      INNER JOIN "Product" P ON V."productId" = P.id
       WHERE P.archived = false
-      AND V.stock <= P.lowStockThreshold
+      AND V.stock <= P."lowStockThreshold"
     `,
   ]);
   const lowStockProductsCount = Number(lowStockProductsRaw[0]?.count ?? 0);
