@@ -2,9 +2,8 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel, getTerritoriesForWilaya, toUUID, zrGetParcelByTracking, getBestHubForWilaya, zrFindParcelByExternalId } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
-import crypto from "crypto";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -38,120 +37,58 @@ export async function POST(req: NextRequest, { params }: Props) {
       );
     }
 
-    // Get wilaya territories
-    const territories = await getTerritoriesForWilaya(settings, order.wilayaCode, order.shippingCity);
-    if (!territories) {
-      return errorResponse(`Impossible de trouver la wilaya code ${order.wilayaCode} sur ZR Express.`, 400);
-    }
+    // Get wilaya name or fallback
+    const wilaya = getWilayaByCode(order.wilayaCode ?? "");
+    const wilayaName = wilaya ? wilaya.name : (order.shippingState ?? "Alger");
 
-    // Format phone number
-    let phone = order.shippingPhone ?? "";
-    if (phone.startsWith("0")) phone = "+213" + phone.slice(1);
-
-    // Build orderedProducts
-    const orderedProducts = order.items.map((item: any) => ({
-      unitPrice: item.price,
-      quantity: item.quantity,
-      productName: item.productTitle,
-      stockType: "none",
-    }));
-
-    if (orderedProducts.length === 0) {
-      orderedProducts.push({
-        unitPrice: order.totalAmount,
-        quantity: 1,
-        productName: "Commande Générale",
-        stockType: "none",
-      });
-    }
-
-    const descriptionText = order.items
+    // Build the package description/items list
+    const description = order.items
       .map((item: any) => `${item.productTitle} (x${item.quantity})`)
       .join(", ");
 
-    let hubId: string | null = null;
-    if (order.deliveryType === "STOPDESK") {
-      hubId = await getBestHubForWilaya(settings, territories.cityTerritoryId, order.shippingCity);
-      if (!hubId) {
-        return errorResponse(
-          "Aucun point de retrait (hub) disponible pour cette wilaya chez ZR Express.",
-          400
-        );
-      }
-    }
-
     // Prepare ZR Express parcel payload
     const payload = {
-      customer: {
-        customerId: toUUID(order.userId),
-        name: `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || "Client Inconnu",
-        phone: { number1: phone || "+213000000000" }
-      },
-      deliveryAddress: {
-        street: order.shippingStreet ?? "",
-        cityTerritoryId: territories.cityTerritoryId,
-        districtTerritoryId: territories.districtTerritoryId
-      },
-      deliveryType: order.deliveryType === "STOPDESK" ? "pickup-point" : "home",
-      ...(order.deliveryType === "STOPDESK" && hubId ? { hubId } : {}),
-      amount: order.paymentStatus === "PAID" ? 0 : order.totalAmount,
-      description: descriptionText || "Habillements Modest Fashion",
-      orderedProducts,
-      externalId: order.orderNumber
+      customerName: `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim(),
+      customerPhone: order.shippingPhone ?? "",
+      address: order.shippingStreet ?? "",
+      wilaya: wilayaName,
+      deliveryType: order.deliveryType, // DOMICILE or STOPDESK
+      amount: order.paymentStatus === "PAID" ? 0 : order.totalAmount, // COD amount
+      description: description || "Habillements Modest Fashion",
     };
 
     // Call the API
-    let res = await zrCreateParcel(settings, payload);
-    let trackingNumber = "";
-    let autoParcelId = "";
+    const res = await zrCreateParcel(settings, payload);
 
-    if (!res.ok || !res.data || !res.data.id) {
-      const errMsg = res.error ?? "";
-      if (errMsg.toLowerCase().includes("already exists")) {
-        // Recover existing parcel details
-        const recoverRes = await zrFindParcelByExternalId(settings, order.orderNumber);
-        if (recoverRes.ok && recoverRes.data) {
-          trackingNumber = recoverRes.data.trackingNumber ?? "";
-          autoParcelId = recoverRes.data.id;
-        } else {
-          return errorResponse(
-            `Colis déjà créé chez ZR Express, mais échec de récupération des détails : ${recoverRes.error}`,
-            400
-          );
-        }
-      } else {
-        return errorResponse(res.error ?? "Erreur lors de la création du colis chez ZR Express", 400);
-      }
-    } else {
-      const createdId = res.data.id;
-      const parcelDetails = await zrGetParcelByTracking(settings, createdId);
-      if (!parcelDetails.ok || !parcelDetails.data) {
-        return errorResponse(parcelDetails.error ?? "Impossible de récupérer les détails du colis chez ZR Express", 400);
-      }
-      trackingNumber = parcelDetails.data.trackingNumber ?? "";
-      autoParcelId = parcelDetails.data.id;
+    if (!res.ok || !res.data) {
+      return errorResponse(res.error ?? "Erreur lors de la création du colis chez ZR Express", 400);
     }
 
-    // Update order in db
-    await db.order.update({
-      where: { id },
-      data: {
-        status: "OUT_FOR_DELIVERY",
-        trackingNumber: trackingNumber,
-        carrier: "ZR_EXPRESS",
-        zrParcelId: autoParcelId,
-        statusHistory: {
-          create: {
-            status: "OUT_FOR_DELIVERY",
-            note: `Transmis manuellement à ZR Express. N° Suivi: ${trackingNumber}`,
-            changedById: session?.user?.id,
-          },
+    const parcel = res.data;
+
+    // Update order with tracking number and carrier info
+    await db.$transaction([
+      db.order.update({
+        where: { id: order.id },
+        data: {
+          trackingNumber: parcel.trackingNumber,
+          carrier: "ZR_EXPRESS",
+          zrParcelId: parcel.id,
+          status: "CONFIRMED",
         },
-      },
-    });
+      }),
+      db.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          status: "CONFIRMED",
+          note: `Colis transmis automatiquement à ZR Express. N° Suivi: ${parcel.trackingNumber}`,
+          changedById: session.user.id,
+        },
+      }),
+    ]);
 
     return successResponse({
-      trackingNumber: trackingNumber,
+      trackingNumber: parcel.trackingNumber,
       message: "Colis transmis avec succès à ZR Express",
     });
   } catch (e) {

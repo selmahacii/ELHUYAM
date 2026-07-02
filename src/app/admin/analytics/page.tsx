@@ -29,14 +29,14 @@ export default async function AdminAnalyticsPage({ searchParams }: SearchParams)
     topProducts,
     lowStockProducts,
   ] = await Promise.all([
-    db.order.aggregate({ where: { paymentStatus: "PAID" }, _sum: { subtotal: true, discount: true } }),
+    db.order.aggregate({ where: { paymentStatus: "PAID" }, _sum: { totalAmount: true } }),
     db.order.count(),
     db.user.count({ where: { role: "CUSTOMER" } }),
     db.product.count({ where: { archived: false } }),
     db.order.count({ where: { status: "PENDING" } }),
-    db.order.aggregate({ where: { createdAt: { gte: from }, paymentStatus: "PAID" }, _sum: { subtotal: true, discount: true }, _count: { id: true } }),
-    db.order.aggregate({ where: { createdAt: { gte: prevFrom, lt: from }, paymentStatus: "PAID" }, _sum: { subtotal: true, discount: true }, _count: { id: true } }),
-    db.order.groupBy({ by: ["createdAt"], where: { createdAt: { gte: from }, paymentStatus: "PAID" }, _sum: { subtotal: true, discount: true }, _count: { id: true } }),
+    db.order.aggregate({ where: { createdAt: { gte: from }, paymentStatus: "PAID" }, _sum: { totalAmount: true }, _count: { id: true } }),
+    db.order.aggregate({ where: { createdAt: { gte: prevFrom, lt: from }, paymentStatus: "PAID" }, _sum: { totalAmount: true }, _count: { id: true } }),
+    db.order.groupBy({ by: ["createdAt"], where: { createdAt: { gte: from }, paymentStatus: "PAID" }, _sum: { totalAmount: true }, _count: { id: true } }),
     db.order.groupBy({ by: ["status"], _count: { id: true } }),
     db.orderItem.groupBy({ by: ["productId"], _sum: { quantity: true }, orderBy: { _sum: { quantity: "desc" } }, take: 5 }),
     db.product.findMany({ where: { archived: false, stock: { lte: 5 } }, select: { id: true, title: true, stock: true }, orderBy: { stock: "asc" }, take: 8 }),
@@ -63,14 +63,14 @@ export default async function AdminAnalyticsPage({ searchParams }: SearchParams)
   for (const row of revenueData) {
     const day = format(new Date(row.createdAt), "yyyy-MM-dd");
     if (revenueByDay[day]) {
-      revenueByDay[day].revenue += Math.max(0, Number(row._sum.subtotal ?? 0) - Number(row._sum.discount ?? 0));
+      revenueByDay[day].revenue += Number(row._sum.totalAmount ?? 0);
       revenueByDay[day].orders += row._count.id;
     }
   }
   const revenueChart = Object.entries(revenueByDay).map(([date, val]) => ({ date, ...val }));
 
-  const pRevenue = Math.max(0, Number(periodAgg._sum.subtotal ?? 0) - Number(periodAgg._sum.discount ?? 0));
-  const prevRevenue = Math.max(0, Number(prevAgg._sum.subtotal ?? 0) - Number(prevAgg._sum.discount ?? 0));
+  const pRevenue = Number(periodAgg._sum.totalAmount ?? 0);
+  const prevRevenue = Number(prevAgg._sum.totalAmount ?? 0);
   const revenueChange = prevRevenue > 0 ? ((pRevenue - prevRevenue) / prevRevenue) * 100 : 0;
   const ordersChange = prevAgg._count.id > 0 ? ((periodAgg._count.id - prevAgg._count.id) / prevAgg._count.id) * 100 : 0;
 
@@ -83,7 +83,7 @@ export default async function AdminAnalyticsPage({ searchParams }: SearchParams)
   const kpis = [
     { 
       label: "Revenue", 
-      value: formatPrice(Math.max(0, Number(totalRevenue._sum.subtotal ?? 0) - Number(totalRevenue._sum.discount ?? 0))), 
+      value: formatPrice(Number(totalRevenue._sum.totalAmount ?? 0)), 
       sub: `${formatPrice(pRevenue)} this period`, 
       change: revenueChange,
       icon: Coins,

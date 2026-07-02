@@ -52,8 +52,8 @@ const getCachedDashboardAggregates = (period: string) => unstable_cache(
       wilayaData,
       deliveryTypeData,
     ] = await Promise.all([
-      db.order.aggregate({ where: { createdAt: { gte: currentFrom }, paymentStatus: "PAID" }, _sum: { subtotal: true, discount: true } }),
-      db.order.aggregate({ where: { createdAt: { gte: previousFrom, lt: currentFrom }, paymentStatus: "PAID" }, _sum: { subtotal: true, discount: true } }),
+      db.order.aggregate({ where: { createdAt: { gte: currentFrom }, paymentStatus: "PAID" }, _sum: { totalAmount: true } }),
+      db.order.aggregate({ where: { createdAt: { gte: previousFrom, lt: currentFrom }, paymentStatus: "PAID" }, _sum: { totalAmount: true } }),
       db.order.count({ where: { createdAt: { gte: currentFrom } } }),
       db.order.count({ where: { createdAt: { gte: previousFrom, lt: currentFrom } } }),
       db.user.count({ where: { role: "CUSTOMER", createdAt: { gte: currentFrom } } }),
@@ -73,7 +73,7 @@ const getCachedDashboardAggregates = (period: string) => unstable_cache(
       }),
       db.order.aggregate({
         where: { createdAt: { gte: currentFrom }, status: { in: ["SHIPPED", "OUT_FOR_DELIVERY"] }, paymentStatus: "PENDING" },
-        _sum: { subtotal: true, discount: true }
+        _sum: { totalAmount: true }
       }),
       db.review.count({ where: { status: "PENDING" } }),
       db.publicReview.count({ where: { status: "PENDING" } }),
@@ -81,7 +81,7 @@ const getCachedDashboardAggregates = (period: string) => unstable_cache(
         by: ["wilayaCode"],
         where: { createdAt: { gte: currentFrom } },
         _count: { id: true },
-        _sum: { subtotal: true, discount: true },
+        _sum: { totalAmount: true },
         orderBy: { _count: { id: "desc" } },
         take: 5
       }),
@@ -119,19 +119,19 @@ async function getDashboardData(period: string) {
   const [pendingOrders, lowStockProductsRaw, lowStockVariantsRaw, recentOrders, staffActivity] = await Promise.all([
     db.order.count({ where: { status: "PENDING" } }),
     db.$queryRaw<any[]>`
-      SELECT id, title, stock FROM "Product" P
+      SELECT id, title, stock FROM Product P
       WHERE P.archived = false
-      AND P.stock <= P."lowStockThreshold"
-      AND NOT EXISTS (SELECT 1 FROM "ProductVariant" V WHERE V."productId" = P.id)
+      AND P.stock <= P.lowStockThreshold
+      AND NOT EXISTS (SELECT 1 FROM ProductVariant V WHERE V.productId = P.id)
       ORDER BY P.stock ASC
       LIMIT 5
     `,
     db.$queryRaw<any[]>`
-      SELECT V.id, V.size, V.color, V.stock, P.id as "productId", P.title as "productTitle"
-      FROM "ProductVariant" V
-      INNER JOIN "Product" P ON V."productId" = P.id
+      SELECT V.id, V.size, V.color, V.stock, P.id as productId, P.title as productTitle
+      FROM ProductVariant V
+      INNER JOIN Product P ON V.productId = P.id
       WHERE P.archived = false
-      AND V.stock <= P."lowStockThreshold"
+      AND V.stock <= P.lowStockThreshold
       ORDER BY V.stock ASC
       LIMIT 5
     `,
@@ -173,9 +173,9 @@ async function getDashboardData(period: string) {
     return Math.round(((current - previous) / previous) * 100 * 10) / 10;
   }
 
-  const currentRev = Math.max(0, Number(aggregates.currentRevenue._sum.subtotal ?? 0) - Number(aggregates.currentRevenue._sum.discount ?? 0));
-  const prevRev = Math.max(0, Number(aggregates.previousRevenue._sum.subtotal ?? 0) - Number(aggregates.previousRevenue._sum.discount ?? 0));
-  const transitRev = Math.max(0, Number(aggregates.revenueTransit._sum.subtotal ?? 0) - Number(aggregates.revenueTransit._sum.discount ?? 0));
+  const currentRev = Number(aggregates.currentRevenue._sum.totalAmount ?? 0);
+  const prevRev = Number(aggregates.previousRevenue._sum.totalAmount ?? 0);
+  const transitRev = Number(aggregates.revenueTransit._sum.totalAmount ?? 0);
   const totalPendingReviews = aggregates.pendingProductReviews + aggregates.pendingPublicReviews;
 
   const labelSuffix = period === "day" ? " Today" : period === "week" ? " (7d)" : " (30d)";
@@ -263,7 +263,7 @@ export default async function AdminDashboard({ searchParams }: SearchParams) {
       code: w.wilayaCode ?? "UNKNOWN",
       name: wilaya ? wilaya.nameAr : "غير محدد",
       count: w._count.id,
-      total: Math.max(0, (w._sum.subtotal ?? 0) - (w._sum.discount ?? 0)),
+      total: w._sum.totalAmount ?? 0,
     };
   });
 

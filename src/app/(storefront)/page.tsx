@@ -25,7 +25,7 @@ async function getFeaturedProducts() {
 
 async function getFeaturedCategories() {
   const categories = await db.category.findMany({
-    where: { featured: true, parentId: null, slug: { not: "uncategorized" } },
+    where: { featured: true, parentId: null },
     orderBy: { sortOrder: "asc" },
     take: 4,
   });
@@ -34,7 +34,7 @@ async function getFeaturedCategories() {
 
   // Fallback: if no categories are featured, just return the first 4 categories
   return db.category.findMany({
-    where: { parentId: null, slug: { not: "uncategorized" } },
+    where: { parentId: null },
     orderBy: { sortOrder: "asc" },
     take: 4,
   });
@@ -158,12 +158,12 @@ async function CategoriesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10 md:mb-16">
           <span className={`text-[10px] uppercase tracking-[0.5em] mb-2 md:mb-4 block ${isAr ? "text-brand-800 font-bold" : "text-brand-400"}`}>{t("eyebrow")}</span>
-          <h2 className={`font-display ${isAr ? "font-bold text-5xl md:text-6xl text-black leading-tight" : "text-4xl md:text-5xl font-light text-black"}`}>
+          <h2 className={`font-display ${isAr ? "font-bold text-5xl md:text-6xl text-black leading-tight" : "text-4xl md:text-5xl font-light text-brand-900"}`}>
             {isAr ? (
               `${t("title")} ${t("titleItalic")}`
             ) : (
               <>
-                {t("title")} <span className="italic font-serif text-black">{t("titleItalic")}</span>
+                {t("title")} <span className="italic font-serif text-brand-600">{t("titleItalic")}</span>
               </>
             )}
           </h2>
@@ -220,25 +220,25 @@ async function FeaturedProductsSection() {
   ]);
   const isAr = locale === "ar";
   return (
-    <section className="py-24 bg-white relative overflow-hidden">
+    <section className="py-24 bg-gray-50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-start">
           <div>
             <div className="flex items-center gap-3 justify-center md:justify-start mb-4">
-              <span className={`text-sm ${isAr ? "text-brand-800" : "text-brand-400"}`}>✦</span>
-              <span className={`text-[10px] uppercase tracking-[0.5em] font-bold ${isAr ? "text-brand-800" : "text-brand-400"}`}>{t("eyebrow")}</span>
+              <span className={`text-sm ${isAr ? "text-brand-700" : "text-brand-400"}`}>✦</span>
+              <span className={`text-[10px] uppercase tracking-[0.5em] ${isAr ? "text-brand-800 font-bold" : "text-brand-400"}`}>{t("eyebrow")}</span>
             </div>
-            <h2 className="font-display text-4xl md:text-5xl font-light text-black">
+            <h2 className={`font-display ${isAr ? "font-bold text-5xl md:text-6xl text-black leading-tight" : "text-4xl md:text-5xl font-light text-brand-900"}`}>
               {isAr ? (
                 `${t("title")} ${t("titleItalic")}`
               ) : (
                 <>
-                  {t("title")} <span className="italic font-serif text-black">{t("titleItalic")}</span>
+                  {t("title")} <span className="italic font-serif text-brand-600">{t("titleItalic")}</span>
                 </>
               )}
             </h2>
           </div>
-          <p className="text-neutral-600 max-w-xs text-sm font-display italic leading-relaxed border-s border-neutral-200 ps-4">
+          <p className="text-brand-700/80 max-w-xs text-sm font-display italic leading-relaxed border-s border-brand-200 ps-4">
             {t("subtitle")}
           </p>
         </div>
@@ -259,10 +259,10 @@ async function FeaturedProductsSection() {
 
         <div className="text-center mt-16">
           <Link href="/shop" className="group inline-flex flex-col items-center gap-2">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-black font-semibold group-hover:text-neutral-600 transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-brand-900 font-semibold group-hover:text-brand-500 transition-colors">
               {t("viewAll")}
             </span>
-            <div className="w-12 h-px bg-black group-hover:bg-neutral-600 group-hover:w-24 transition-all duration-500" />
+            <div className="w-12 h-px bg-brand-900 group-hover:w-24 transition-all duration-500" />
           </Link>
         </div>
       </div>
@@ -285,27 +285,27 @@ async function BestsellersSection() {
   const isAr = locale === "ar";
 
   return (
-    <section className="py-24 bg-white border-t border-gray-100">
+    <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-16 gap-6 text-center md:text-start">
           <div>
             <div className="flex items-center gap-3 justify-center md:justify-start mb-4">
-              <span className={`text-sm ${isAr ? "text-brand-800" : "text-brand-400"}`}>✦</span>
-              <span className={`text-[10px] uppercase tracking-[0.5em] font-bold ${isAr ? "text-brand-800" : "text-brand-400"}`}>{t("eyebrow")}</span>
+              <span className="text-gold-500 text-sm">✦</span>
+              <span className={`text-[10px] uppercase tracking-[0.5em] ${isAr ? "text-brand-800 font-bold" : "text-brand-400"}`}>{t("eyebrow")}</span>
             </div>
-            <h2 className="font-display text-4xl md:text-5xl font-light text-black">
+            <h2 className={`font-display ${isAr ? "font-bold text-5xl md:text-6xl text-black leading-tight" : "text-4xl md:text-5xl font-light text-brand-900"}`}>
               {isAr ? (
                 `${t("title")} ${t("titleItalic")}`
               ) : (
                 <>
-                  {t("title")} <span className="italic font-serif text-black">{t("titleItalic")}</span>
+                  {t("title")} <span className="italic font-serif text-brand-600">{t("titleItalic")}</span>
                 </>
               )}
             </h2>
           </div>
           <Link
             href="/shop?bestseller=true"
-            className="hidden md:flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-black hover:text-neutral-600 transition-colors font-semibold"
+            className="hidden md:flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-brand-700 hover:text-brand-900 transition-colors font-semibold"
           >
             {t("viewAll")} <ArrowRight className="w-3 h-3" />
           </Link>

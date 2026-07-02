@@ -19,7 +19,7 @@ import {
 import { subDays, startOfDay } from "date-fns";
 
 interface SearchParams { 
-  searchParams: Promise<{ status?: string; search?: string; page?: string; period?: string }> 
+  searchParams: Promise<{ status?: string; search?: string; page?: string; period?: string; type?: string }> 
 }
 
 export default async function AdminOrdersPage({ searchParams }: SearchParams) {
@@ -39,6 +39,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
 
   const where = {
     ...(sp.status ? { status: sp.status as never } : {}),
+    ...(sp.type === "national" ? { isInternational: false } : sp.type === "international" ? { isInternational: true } : {}),
     ...(periodDate ? { createdAt: { gte: periodDate } } : {}),
     ...(sp.search ? {
       OR: [
@@ -71,7 +72,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
     db.order.count({ where }),
     // Count per status for tab badges
     Promise.all(
-      ["PENDING", "CONFIRMED", "OUT_FOR_DELIVERY", "CANCELLED"].map((s) =>
+      ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map((s) =>
         db.order.count({ where: { ...where, status: s as never } })
       )
     ),
@@ -100,71 +101,25 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
       orderBy: { title: "asc" },
     }),
     db.category.findMany({
-      where: { slug: { not: "uncategorized" } },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
     db.order.aggregate({
       where: { ...where, status: "DELIVERED" },
-      _sum: { subtotal: true, discount: true },
+      _sum: { totalAmount: true },
     }),
   ]);
 
-  // Find returned (REFUNDED) orders for users, phones, or names in the current page
-  const userIds = orders.map((o: any) => o.userId).filter(Boolean);
-  const phones = orders.map((o: any) => o.shippingPhone?.trim()).filter(Boolean) as string[];
-  const names = orders.map((o: any) => ({
-    first: o.shippingFirstName?.trim(),
-    last: o.shippingLastName?.trim()
-  })).filter((n: any) => n.first || n.last);
-
-  const refundedOrders = (userIds.length > 0 || phones.length > 0 || names.length > 0)
-    ? await db.order.findMany({
-        where: {
-          status: "REFUNDED",
-          OR: [
-            ...(userIds.length > 0 ? [{ userId: { in: userIds } }] : []),
-            ...(phones.length > 0 ? [{ shippingPhone: { in: phones } }] : []),
-            ...(names.length > 0 ? names.map((n: any) => ({
-              shippingFirstName: { equals: n.first, mode: "insensitive" as const },
-              shippingLastName: { equals: n.last, mode: "insensitive" as const }
-            })) : [])
-          ]
-        },
-        select: {
-          userId: true,
-          shippingPhone: true,
-          shippingFirstName: true,
-          shippingLastName: true
-        }
-      })
-    : [];
-
-  const refundedUserIds = new Set(refundedOrders.map((o: any) => o.userId).filter(Boolean));
-  const refundedPhones = new Set(refundedOrders.map((o: any) => o.shippingPhone?.trim()).filter(Boolean));
-  const refundedNames = new Set(refundedOrders.map((o: any) => `${o.shippingFirstName?.trim().toLowerCase()} ${o.shippingLastName?.trim().toLowerCase()}`));
-
-  const ordersWithAlert = orders.map((order: any) => {
-    const nameKey = `${order.shippingFirstName?.trim().toLowerCase()} ${order.shippingLastName?.trim().toLowerCase()}`;
-    const hasReturnedOrders = 
-      (order.userId && refundedUserIds.has(order.userId)) || 
-      (order.shippingPhone && refundedPhones.has(order.shippingPhone.trim())) ||
-      refundedNames.has(nameKey);
-    return {
-      ...order,
-      hasReturnedOrders
-    };
-  });
-
-  const [pendingCount, confirmedCount, outForDeliveryCount, cancelledCount] = statusCounts;
+  const [pendingCount, processingCount, shippedCount, deliveredCount, cancelledCount] = statusCounts;
   const totalPages = Math.ceil(total / limit);
-  const totalRevenue = Math.max(0, (totalRevenueResult._sum.subtotal ?? 0) - (totalRevenueResult._sum.discount ?? 0));
+  const totalRevenue = totalRevenueResult._sum.totalAmount ?? 0;
 
   const tabs = [
     { label: "All", status: null, count: null },
     { label: "Pending", status: "PENDING", count: pendingCount },
-    { label: "Confirmed", status: "CONFIRMED", count: confirmedCount },
-    { label: "Out for Delivery", status: "OUT_FOR_DELIVERY", count: outForDeliveryCount },
+    { label: "Processing", status: "PROCESSING", count: processingCount },
+    { label: "Shipped", status: "SHIPPED", count: shippedCount },
+    { label: "Delivered", status: "DELIVERED", count: deliveredCount },
     { label: "Cancelled", status: "CANCELLED", count: cancelledCount },
   ];
 
@@ -173,7 +128,17 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
     if (status) params.set("status", status);
     if (sp.search) params.set("search", sp.search);
     if (sp.period) params.set("period", sp.period);
+    if (sp.type) params.set("type", sp.type);
     if (p) params.set("page", String(p));
+    return `/admin/orders${params.toString() ? `?${params.toString()}` : ""}`;
+  };
+
+  const buildTypeLink = (type: string | null) => {
+    const params = new URLSearchParams();
+    if (sp.status) params.set("status", sp.status);
+    if (sp.search) params.set("search", sp.search);
+    if (sp.period) params.set("period", sp.period);
+    if (type) params.set("type", type);
     return `/admin/orders${params.toString() ? `?${params.toString()}` : ""}`;
   };
 
@@ -305,33 +270,58 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
         </form>
       </div>
 
-      {/* ── Status Tab Navigation ─────────────────────────────────────────────── */}
-      <div className="flex gap-1 flex-wrap border-b border-gray-200 pb-0">
-        {tabs.map(({ label, status, count }) => {
-          const isActive = (status === null && !sp.status) || sp.status === status;
-          return (
-            <Link
-              key={label}
-              href={buildLink(status)}
-              className={`flex items-center gap-1.5 px-4 py-3 text-xs uppercase tracking-wider border-b-2 font-bold transition-all -mb-px ${
-                isActive
-                  ? "border-slate-900 text-slate-950"
-                  : "border-transparent text-slate-400 hover:text-slate-900"
-              }`}
-            >
-              <span>{label}</span>
-              {count !== null && count > 0 && (
-                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                  isActive 
-                    ? "bg-slate-950 text-white shadow-sm" 
-                    : "bg-slate-50 text-slate-650 border border-slate-200"
-                }`}>
-                  {count}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      {/* ── Type & Status Navigation ──────────────────────────────────────────── */}
+      <div className="flex flex-col gap-4">
+        <div className="flex gap-2">
+          {[
+            { label: "Toutes (All)", type: null },
+            { label: "Nationales", type: "national" },
+            { label: "Internationales", type: "international" },
+          ].map(({ label, type }) => {
+            const isActive = (type === null && !sp.type) || sp.type === type;
+            return (
+              <Link
+                key={label}
+                href={buildTypeLink(type)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm border ${
+                  isActive
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : "bg-white border-gray-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-1 flex-wrap border-b border-gray-200 pb-0">
+          {tabs.map(({ label, status, count }) => {
+            const isActive = (status === null && !sp.status) || sp.status === status;
+            return (
+              <Link
+                key={label}
+                href={buildLink(status)}
+                className={`flex items-center gap-1.5 px-4 py-3 text-xs uppercase tracking-wider border-b-2 font-bold transition-all -mb-px ${
+                  isActive
+                    ? "border-slate-900 text-slate-950"
+                    : "border-transparent text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                <span>{label}</span>
+                {count !== null && count > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                    isActive 
+                      ? "bg-slate-950 text-white shadow-sm" 
+                      : "bg-slate-50 text-slate-650 border border-slate-200"
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Table Container ───────────────────────────────────────────────────── */}
@@ -358,7 +348,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
                   </td>
                 </tr>
               )}
-              {ordersWithAlert.map((order: any) => (
+              {orders.map((order: any) => (
                 <OrderRow key={order.id} order={order} role={role} />
               ))}
             </tbody>

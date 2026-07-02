@@ -177,8 +177,8 @@ export default function Navbar() {
         <div
           className={cn(
             "transition-all duration-300 relative z-50",
-            "bg-warm-white/95 backdrop-blur-md border-b border-transparent lg:bg-transparent lg:shadow-none lg:border-none",
-            (scrolled || mobileOpen) && "shadow-luxury border-brand-100/30 lg:bg-warm-white/95 lg:backdrop-blur-md lg:shadow-luxury lg:border-none"
+            "bg-warm-white/95 backdrop-blur-md shadow-none lg:bg-transparent lg:shadow-none",
+            (scrolled || mobileOpen) && "lg:bg-warm-white/95 lg:backdrop-blur-md lg:shadow-luxury"
           )}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -408,7 +408,7 @@ export default function Navbar() {
                 href="/"
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs uppercase tracking-wider font-semibold transition-all duration-150",
+                  "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[11px] uppercase tracking-[0.15em] font-medium transition-all duration-150",
                   pathname === "/"
                     ? "bg-black text-white"
                     : "text-black hover:bg-black/[0.04] active:bg-black/[0.08]"
@@ -425,7 +425,7 @@ export default function Navbar() {
                       <button
                         onClick={() => setMobileCollectionsOpen(!mobileCollectionsOpen)}
                         className={cn(
-                          "flex items-center justify-between w-full px-4 py-3.5 rounded-2xl text-xs uppercase tracking-wider font-semibold transition-all duration-150",
+                          "flex items-center justify-between w-full px-4 py-3.5 rounded-2xl text-[11px] uppercase tracking-[0.15em] font-medium transition-all duration-150",
                           mobileCollectionsOpen
                             ? "bg-black text-white"
                             : "text-black hover:bg-black/[0.04]"
@@ -450,14 +450,14 @@ export default function Navbar() {
                               <Link
                                 href={`/shop?category=${cat.slug}`}
                                 onClick={() => setMobileOpen(false)}
-                                className="flex items-center justify-between px-4 py-3 text-[11px] uppercase tracking-wider rtl:tracking-normal font-semibold text-black hover:bg-black/[0.05] transition-colors border-b border-brand-100/40 last:border-0"
+                                className="flex items-center justify-between px-4 py-3 text-[10px] uppercase tracking-widest rtl:tracking-normal font-semibold text-black hover:bg-black/[0.05] transition-colors border-b border-brand-100/40 last:border-0"
                               >
-                                <span className="flex items-center gap-2.5">
+                                <span className="flex items-center gap-2">
                                   <span className="text-soft-gold text-[8px]">◆</span>
                                   {translateCategoryName(cat.name)}
                                 </span>
                                 {(subCategoriesMap[cat.id]?.length ?? 0) > 0 && (
-                                  <ChevronRight className="w-3.5 h-3.5 text-brand-400 rtl:rotate-180" />
+                                  <ChevronRight className="w-3 h-3 text-brand-400 rtl:rotate-180" />
                                 )}
                               </Link>
                               {(subCategoriesMap[cat.id]?.length ?? 0) > 0 && (
@@ -467,7 +467,7 @@ export default function Navbar() {
                                       key={sub.id}
                                       href={`/shop?category=${sub.slug}`}
                                       onClick={() => setMobileOpen(false)}
-                                      className="block py-2.5 pr-4 rtl:pr-0 rtl:pl-4 text-[10px] uppercase tracking-wider rtl:tracking-normal text-black/80 hover:text-black transition-colors border-b border-brand-100/30 last:border-0"
+                                      className="block py-2 pr-4 rtl:pr-0 rtl:pl-4 text-[9px] uppercase tracking-widest rtl:tracking-normal text-black/80 hover:text-black transition-colors border-b border-brand-100/30 last:border-0"
                                     >
                                       {translateCategoryName(sub.name)}
                                     </Link>
@@ -484,7 +484,7 @@ export default function Navbar() {
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs uppercase tracking-wider font-semibold transition-all duration-150",
+                        "flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[11px] uppercase tracking-[0.15em] font-medium transition-all duration-150",
                         pathname === link.href
                           ? "bg-black text-white"
                           : "text-black hover:bg-black/[0.04] active:bg-black/[0.08]"

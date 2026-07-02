@@ -1,6 +1,4 @@
 import { db } from "@/lib/db";
-import crypto from "crypto";
-
 
 const ZR_BASE = "https://api.zrexpress.app";
 const ZR_VERSION = "1";
@@ -30,71 +28,6 @@ export interface ZRStateHistory {
   stateDate: string;
   note?: string;
   agentName?: string;
-}
-
-export interface ZRPhone {
-  number1?: string;
-  number2?: string;
-  number3?: string;
-}
-
-export interface ZRCoordinates {
-  lat?: number;
-  lng?: number;
-}
-
-export interface ZRAddress {
-  id?: string;
-  street?: string;
-  city?: string;
-  cityTerritoryId?: string;
-  district?: string;
-  districtTerritoryId?: string;
-  postalCode?: string;
-  country?: string;
-  isPrimary?: boolean;
-  coordinates?: ZRCoordinates;
-}
-
-export interface ZRCustomer {
-  id?: string;
-  name?: string;
-  phone?: ZRPhone;
-  dateOfBirth?: string;
-  instruction?: string;
-  timeSlot?: string;
-  deliveryPreference?: string;
-  companyId?: string;
-  companyContactPerson?: string;
-  addresses?: ZRAddress[];
-}
-
-export interface ZRPagedCustomerResponse {
-  items?: ZRCustomer[];
-  pageNumber?: number;
-  pageSize?: number;
-  totalCount?: number;
-  totalPages?: number;
-  hasPrevious?: boolean;
-  hasNext?: boolean;
-}
-
-export interface ZRProductCreatePayload {
-  name?: string;
-  localStock?: number;
-  sku?: string;
-  categoryId?: string;
-  subCategoryId?: string;
-  basePrice?: number;
-  purchasePrice?: number;
-  length?: number;
-  width?: number;
-  height?: number;
-  weight?: number;
-}
-
-export interface ZRProductUpdatePayload extends ZRProductCreatePayload {
-  id?: string;
 }
 
 // ── Settings helpers ──────────────────────────────────────────────────────────
@@ -140,7 +73,7 @@ async function zrFetch<T>(
     : "missing";
   
   console.log(`[ZR Express API Request] Method: ${options.method ?? "GET"} | URL: ${url}`);
-  console.log(`[ZR Express API Request] Headers: X-Tenant="${settings.tenantId}" | X-Api-Key="${maskedKey}"`);
+  console.log(`[ZR Express API Request] Headers: X-Tenant-Id="${settings.tenantId}" | Authorization="Bearer ${maskedKey}"`);
   if (options.body) {
     console.log(`[ZR Express API Request] Payload:`, options.body);
   }
@@ -150,8 +83,8 @@ async function zrFetch<T>(
       ...options,
       headers: {
         "Content-Type": "application/json",
-        "X-Api-Key": settings.secretKey,
-        "X-Tenant": settings.tenantId,
+        Authorization: `Bearer ${settings.secretKey}`,
+        "X-Tenant-Id": settings.tenantId,
         ...(options.headers as Record<string, string> | undefined),
       },
       next: { revalidate: 0 },
@@ -165,13 +98,9 @@ async function zrFetch<T>(
     try { json = JSON.parse(text); } catch { json = { message: text }; }
 
     if (!res.ok) {
-      const errObj = json as any;
-      let errStr = errObj?.message || errObj?.detail;
-      if (errObj?.errors && Array.isArray(errObj.errors)) {
-        errStr = errObj.errors.map((e: any) => e.description || e.message).join(" | ");
-      }
-      console.error(`[ZR Express API Error] Failed with message:`, errStr ?? `HTTP ${res.status}`);
-      return { ok: false, error: errStr ?? `HTTP ${res.status}` };
+      const err = (json as Record<string, unknown>)?.message as string | undefined;
+      console.error(`[ZR Express API Error] Failed with message:`, err ?? `HTTP ${res.status}`);
+      return { ok: false, error: err ?? `HTTP ${res.status}` };
     }
     return { ok: true, data: json as T };
   } catch (e) {
@@ -196,93 +125,6 @@ export async function zrGetStateHistory(
   return zrFetch<ZRStateHistory[]>(settings, `/parcels/${encodeURIComponent(parcelId)}/state-history`);
 }
 
-let cachedTerritories: any[] | null = null;
-
-async function fetchAllTerritories(settings: ZRSettings): Promise<any[]> {
-  if (cachedTerritories) return cachedTerritories;
-  let allItems: any[] = [];
-  let page = 1;
-  while (true) {
-    const res = await zrFetch<any>(settings, "/territories/search", {
-      method: "POST",
-      body: JSON.stringify({ pageNumber: page, pageSize: 1000 })
-    });
-    if (!res.ok || !res.data || !res.data.items) break;
-    allItems = allItems.concat(res.data.items);
-    if (!res.data.hasNext) break;
-    page++;
-  }
-  if (allItems.length > 0) cachedTerritories = allItems;
-  return allItems;
-}
-
-export function toUUID(val?: string | null): string {
-  if (!val) return crypto.randomUUID();
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (uuidRegex.test(val)) return val;
-  const hash = crypto.createHash("md5").update(val).digest("hex");
-  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20)}`;
-}
-
-export async function getTerritoriesForWilaya(
-  settings: ZRSettings,
-  wilayaCode: string | null,
-  communeName?: string | null
-): Promise<{ cityTerritoryId: string; districtTerritoryId: string } | null> {
-  if (!wilayaCode) return null;
-  const territories = await fetchAllTerritories(settings);
-  
-  const wilaya = territories.find(t => t.level === "wilaya" && (String(t.code) === String(wilayaCode) || Number(t.code) === Number(wilayaCode)));
-  if (!wilaya) return null;
-
-  const communes = territories.filter(t => t.parentId === wilaya.id);
-  if (communes.length === 0) return null;
-
-  let commune = communes[0];
-  if (communeName) {
-    const cleanName = communeName.toLowerCase().trim();
-    const match = communes.find(
-      c => c.name.toLowerCase().trim() === cleanName || 
-           c.nameArabic?.toLowerCase().trim() === cleanName ||
-           c.name.toLowerCase().replace(/[^a-z0-9]/g, "") === cleanName.replace(/[^a-z0-9]/g, "")
-    );
-    if (match) {
-      commune = match;
-    }
-  }
-
-  return { cityTerritoryId: wilaya.id, districtTerritoryId: commune.id };
-}
-
-export async function getBestHubForWilaya(
-  settings: ZRSettings,
-  cityTerritoryId: string,
-  communeName?: string | null
-): Promise<string | null> {
-  const res = await zrFetch<{ items?: any[] }>(settings, "/hubs/search", {
-    method: "POST",
-    body: JSON.stringify({ pageNumber: 1, pageSize: 1000 })
-  });
-  if (!res.ok || !res.data || !res.data.items) return null;
-  
-  const wilayaHubs = res.data.items.filter(
-    (h: any) => h.address?.cityTerritoryId === cityTerritoryId && h.isPickupPoint
-  );
-  if (wilayaHubs.length === 0) return null;
-  
-  if (communeName) {
-    const cleanCommune = communeName.toLowerCase().trim();
-    const match = wilayaHubs.find(
-      (h: any) =>
-        h.name.toLowerCase().includes(cleanCommune) ||
-        h.address?.district?.toLowerCase().trim() === cleanCommune
-    );
-    if (match) return match.id;
-  }
-  
-  return wilayaHubs[0].id;
-}
-
 export async function zrCreateParcel(
   settings: ZRSettings,
   payload: Record<string, unknown>
@@ -295,199 +137,10 @@ export async function zrCreateParcel(
 
 export async function zrTestConnection(settings: ZRSettings): Promise<boolean> {
   console.log(`[ZR Express Connection Test] Initiating connection test...`);
-  const res = await zrFetch(settings, "/customers/search", {
-    method: "POST",
-    body: JSON.stringify({ pageNumber: 1, pageSize: 1 })
-  });
+  const res = await zrFetch(settings, "/users/profile");
   console.log(`[ZR Express Connection Test] Completed. Status: ${res.ok ? "SUCCESS ✓" : "FAILED ✗"}`);
   if (!res.ok) {
     console.error(`[ZR Express Connection Test] Error description: ${res.error}`);
   }
   return res.ok;
 }
-
-// ── Customers API ─────────────────────────────────────────────────────────────
-
-export async function zrSearchCustomers(
-  settings: ZRSettings,
-  payload: Record<string, unknown>
-): Promise<{ ok: boolean; data?: ZRPagedCustomerResponse; error?: string }> {
-  return zrFetch<ZRPagedCustomerResponse>(settings, "/customers/search", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function zrGetCustomerById(
-  settings: ZRSettings,
-  id: string
-): Promise<{ ok: boolean; data?: ZRCustomer; error?: string }> {
-  return zrFetch<ZRCustomer>(settings, `/customers/${encodeURIComponent(id)}`);
-}
-
-export async function zrDeleteCustomer(
-  settings: ZRSettings,
-  id: string
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/customers/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-  });
-}
-
-export async function zrDeleteParcel(
-  settings: ZRSettings,
-  id: string
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/parcels/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-  });
-}
-
-export async function zrCreateIndividualCustomer(
-  settings: ZRSettings,
-  payload: Record<string, unknown>
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, "/customers/individual", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function zrUpdateIndividualCustomer(
-  settings: ZRSettings,
-  id: string,
-  payload: Record<string, unknown>
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/customers/individual/${encodeURIComponent(id)}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function zrDeleteCustomerAddress(
-  settings: ZRSettings,
-  customerId: string,
-  addressId: string
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/customers/${encodeURIComponent(customerId)}/address/${encodeURIComponent(addressId)}`, {
-    method: "DELETE",
-  });
-}
-
-// ── Products API ──────────────────────────────────────────────────────────────
-
-export async function zrCreateProduct(
-  settings: ZRSettings,
-  payload: ZRProductCreatePayload
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, "/products", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function zrUpdateProduct(
-  settings: ZRSettings,
-  id: string,
-  payload: ZRProductUpdatePayload
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/products/${encodeURIComponent(id)}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function zrDeleteProduct(
-  settings: ZRSettings,
-  id: string
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/products/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-  });
-}
-
-export async function zrUpdateProductPrice(
-  settings: ZRSettings,
-  id: string,
-  basePrice: number
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/products/${encodeURIComponent(id)}/price`, {
-    method: "PATCH",
-    body: JSON.stringify({ id, basePrice }),
-  });
-}
-
-export async function zrUpdateProductDiscount(
-  settings: ZRSettings,
-  id: string,
-  promotionalPrice?: number,
-  promotionStart?: string,
-  promotionEnd?: string
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/products/${encodeURIComponent(id)}/discount`, {
-    method: "PATCH",
-    body: JSON.stringify({ id, promotionalPrice, promotionStart, promotionEnd }),
-  });
-}
-
-export async function zrUpdateProductLocalStock(
-  settings: ZRSettings,
-  productId: string,
-  localStock: number
-): Promise<{ ok: boolean; data?: { id?: string }; error?: string }> {
-  return zrFetch<{ id?: string }>(settings, `/products/product/${encodeURIComponent(productId)}/local-stock`, {
-    method: "PATCH",
-    body: JSON.stringify({ productId, localStock }),
-  });
-}
-
-export async function zrFindParcelByExternalId(
-  settings: ZRSettings,
-  externalId: string
-): Promise<{ ok: boolean; data?: ZRParcel; error?: string }> {
-  try {
-    // 1. Get first page to find totalPages
-    const firstRes = await zrFetch<{ totalPages?: number; items?: any[] }>(settings, "/parcels/search", {
-      method: "POST",
-      body: JSON.stringify({ pageNumber: 1, pageSize: 100 })
-    });
-    if (!firstRes.ok || !firstRes.data) {
-      return { ok: false, error: firstRes.error ?? "Failed to fetch search pages" };
-    }
-
-    const totalPages = firstRes.data.totalPages || 1;
-    
-    // Check first page items first
-    if (firstRes.data.items) {
-      const match = firstRes.data.items.find((item: any) => item.externalId === externalId);
-      if (match) {
-        return { ok: true, data: { id: match.id, trackingNumber: match.trackingNumber, status: match.state?.name, stateName: match.state?.description } };
-      }
-    }
-
-    // 2. Search last 3 pages in reverse order (since default sorting is oldest first, newest are at the end)
-    const startPage = totalPages;
-    const endPage = Math.max(1, totalPages - 2);
-
-    for (let page = startPage; page >= endPage; page--) {
-      if (page === 1) continue; // already checked page 1
-      const res = await zrFetch<{ items?: any[] }>(settings, "/parcels/search", {
-        method: "POST",
-        body: JSON.stringify({ pageNumber: page, pageSize: 100 })
-      });
-      if (res.ok && res.data?.items) {
-        const match = res.data.items.find((item: any) => item.externalId === externalId);
-        if (match) {
-          return { ok: true, data: { id: match.id, trackingNumber: match.trackingNumber, status: match.state?.name, stateName: match.state?.description } };
-        }
-      }
-    }
-
-    return { ok: false, error: `No parcel found with external ID '${externalId}'` };
-  } catch (e: any) {
-    return { ok: false, error: e.message || "Failed to search parcels" };
-  }
-}
-
-
-

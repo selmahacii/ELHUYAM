@@ -5,13 +5,17 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-hot-toast";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Truck } from "lucide-react";
 
 const ORDER_STATUSES = [
   { value: "PENDING",          label: "Pending" },
   { value: "CONFIRMED",        label: "Confirmed" },
+  { value: "PROCESSING",       label: "Processing" },
+  { value: "SHIPPED",          label: "Shipped" },
   { value: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
+  { value: "DELIVERED",        label: "Delivered" },
   { value: "CANCELLED",        label: "Cancelled" },
+  { value: "REFUNDED",         label: "Refunded" },
 ];
 
 const ALL_PAYMENT_STATUSES = [
@@ -40,6 +44,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  const [transmitting, setTransmitting] = useState(false);
 
   const paymentStatuses = role === "CONFIRMATRICE" && paymentStatus !== "PAID"
     ? ALL_PAYMENT_STATUSES.filter((s) => s.value !== "PAID")
@@ -52,8 +57,6 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
       setStatus(newStatus);
       if (newStatus === "DELIVERED") {
         setPaymentStatus("PAID");
-      } else if (newStatus === "REFUNDED") {
-        setPaymentStatus("REFUNDED");
       }
     }
   }
@@ -61,9 +64,6 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
   function confirmDestructive() {
     if (pendingStatus) {
       setStatus(pendingStatus);
-      if (pendingStatus === "REFUNDED") {
-        setPaymentStatus("REFUNDED");
-      }
       setPendingStatus(null);
     }
   }
@@ -71,17 +71,12 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
   async function handleSave() {
     setSaving(true);
     try {
-      const nextPaymentStatus = 
-        status === "DELIVERED" ? "PAID" :
-        status === "REFUNDED" ? "REFUNDED" :
-        paymentStatus;
-
       const res = await fetch(`/api/orders/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status,
-          paymentStatus: nextPaymentStatus,
+          paymentStatus,
           trackingNumber: tracking || null,
           carrier: carrier || null,
           note: note || undefined,
@@ -90,14 +85,6 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
       const data = await res.json();
       if (!data.success) { toast.error(data.error ?? "Failed to update"); return; }
       toast.success("Order updated successfully");
-      
-      if (data.data) {
-        setStatus(data.data.status);
-        setPaymentStatus(data.data.paymentStatus);
-        setTracking(data.data.trackingNumber ?? "");
-        setCarrier(data.data.carrier ?? "ZR_EXPRESS");
-      }
-      
       setNote("");
       router.refresh();
     } finally {
@@ -105,7 +92,27 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
     }
   }
 
-
+  async function handleTransmitZR() {
+    setTransmitting(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/ship-zr`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(data.error ?? "Transmission failed");
+        return;
+      }
+      toast.success(data.message ?? "Package successfully created!");
+      setTracking(data.trackingNumber);
+      setStatus("CONFIRMED");
+      router.refresh();
+    } catch {
+      toast.error("Connection error");
+    } finally {
+      setTransmitting(false);
+    }
+  }
 
   const hasChanges =
     status !== order.status ||
@@ -113,17 +120,6 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
     tracking !== (order.trackingNumber ?? "") ||
     carrier !== (order.carrier ?? "") ||
     note.length > 0;
-
-  const isTransmitted = !!order.trackingNumber && order.carrier === "ZR_EXPRESS";
-  const baseStatuses = [...ORDER_STATUSES];
-  if (!baseStatuses.some((s) => s.value === status)) {
-    let label = status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, " ");
-    if (status === "OUT_FOR_DELIVERY") label = "Out for Delivery";
-    baseStatuses.push({ value: status, label });
-  }
-  const allowedStatuses = isTransmitted
-    ? baseStatuses.filter((s) => s.value === status || s.value === "CANCELLED")
-    : baseStatuses;
 
   return (
     <>
@@ -166,22 +162,28 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
         </div>
       )}
 
-      <div className="bg-white border border-zinc-200 shadow-sm p-5 space-y-4">
-        <h3 className="font-display text-base text-zinc-900 font-semibold border-b border-zinc-150 pb-3">
+      <div className="bg-white border border-black/10 p-5 space-y-4">
+        <h3 className="font-display text-base text-black font-semibold border-b border-black/10 pb-3">
           Update Order
         </h3>
 
         {/* Order status */}
         <div>
-          <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2 font-medium">
+          <label className="block text-xs uppercase tracking-widest text-black mb-2 font-medium">
             Order Status
           </label>
           <select
             value={status}
             onChange={(e) => handleStatusChange(e.target.value)}
-            className="w-full border border-zinc-250 px-3 py-2 text-sm bg-white text-zinc-900 focus:outline-none focus:border-zinc-900 transition-colors"
+            className="w-full border border-black/20 px-3 py-2 text-sm bg-white text-black focus:outline-none focus:border-black transition-colors disabled:opacity-75"
           >
-            {allowedStatuses.map((s) => (
+            {(!!tracking && carrier === "ZR_EXPRESS"
+              ? [
+                  ORDER_STATUSES.find((s) => s.value === status) || { value: status, label: status },
+                  ...(status !== "CANCELLED" ? [ORDER_STATUSES.find((s) => s.value === "CANCELLED")].filter(Boolean) : [])
+                ]
+              : ORDER_STATUSES
+            ).map((s: any) => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
@@ -194,35 +196,18 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
 
         {/* Payment status */}
         <div>
-          <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2 font-medium">
+          <label className="block text-xs uppercase tracking-widest text-black mb-2 font-medium">
             Payment Status
           </label>
-          <div className="flex">
-            {(() => {
-              const displayStatus = 
-                status === "DELIVERED" ? "PAID" :
-                status === "REFUNDED" ? "REFUNDED" :
-                paymentStatus;
-
-              const displayLabel = 
-                displayStatus === "PAID" ? "Paid" :
-                displayStatus === "FAILED" ? "Failed" :
-                displayStatus === "REFUNDED" ? "Unpaid (Returned)" :
-                "Pending";
-
-              const badgeStyles =
-                displayStatus === "PAID" ? "bg-emerald-50 text-emerald-700 border-emerald-250 font-bold" :
-                displayStatus === "FAILED" ? "bg-rose-50 text-rose-700 border-rose-250 font-bold" :
-                displayStatus === "REFUNDED" ? "bg-rose-50 text-rose-700 border-rose-250 font-bold" :
-                "bg-amber-50/70 text-amber-700 border-amber-250 font-bold";
-
-              return (
-                <span className={`text-[10px] font-extrabold tracking-wider uppercase px-3 py-1.5 border rounded-lg text-center ${badgeStyles}`}>
-                  {displayLabel}
-                </span>
-              );
-            })()}
-          </div>
+          <select
+            value={paymentStatus}
+            onChange={(e) => setPaymentStatus(e.target.value)}
+            className="w-full border border-black/20 px-3 py-2 text-sm bg-white text-black focus:outline-none focus:border-black transition-colors"
+          >
+            {paymentStatuses.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
         </div>
 
         {/* Tracking info — shown when shipping-related */}
@@ -235,6 +220,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
                 value={carrier}
                 onChange={(e) => setCarrier(e.target.value)}
                 className="w-full border border-black/20 px-3 py-2 text-sm bg-white text-black focus:outline-none focus:border-black transition-colors"
+                disabled={carrier === "ZR_EXPRESS" && !!tracking}
               >
                 <option value="ZR_EXPRESS">ZR Express</option>
               </select>
@@ -244,7 +230,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
               value={tracking}
               onChange={(e) => setTracking(e.target.value)}
               placeholder={carrier === "ZR_EXPRESS" ? "e.g., ZR-2024-XXXXXX" : "Tracking number..."}
-              className="border-black/20 focus:border-black text-black bg-white disabled:bg-zinc-50 disabled:text-zinc-500 disabled:cursor-not-allowed"
+              className="border-black/20 focus:border-black text-black bg-white"
               disabled={carrier === "ZR_EXPRESS" && !!tracking}
             />
             {carrier === "ZR_EXPRESS" && tracking && (
@@ -269,6 +255,17 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
           />
         </div>
 
+        {carrier === "ZR_EXPRESS" && !tracking && (
+          <Button
+            type="button"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 py-2 px-4 shadow-sm border border-emerald-500 hover:border-emerald-600 transition-all font-medium text-sm"
+            onClick={handleTransmitZR}
+            loading={transmitting}
+          >
+            <Truck className="w-4 h-4 animate-bounce" />
+            Transmit to ZR Express
+          </Button>
+        )}
 
         <Button
           className="w-full bg-black hover:bg-gray-800 text-white transition-colors"

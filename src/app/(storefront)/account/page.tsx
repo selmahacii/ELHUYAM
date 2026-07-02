@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
@@ -71,14 +71,6 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get("tab");
-    if (tabParam && ["overview", "orders", "wishlist", "addresses", "security"].includes(tabParam)) {
-      setTab(tabParam);
-    }
-  }, []);
 
   useEffect(() => {
     async function loadAccountData() {

@@ -9,10 +9,7 @@ export async function GET(req: NextRequest) {
   try {
     const featured = req.nextUrl.searchParams.get("featured");
     const categories = await db.category.findMany({
-      where: {
-        slug: { not: "uncategorized" },
-        ...(featured === "true" ? { featured: true } : {}),
-      },
+      where: featured === "true" ? { featured: true } : undefined,
       include: { _count: { select: { products: { where: { archived: false } } } } },
       orderBy: { sortOrder: "asc" },
     });

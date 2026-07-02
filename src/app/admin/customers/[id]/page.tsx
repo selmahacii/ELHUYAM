@@ -33,7 +33,7 @@ export default async function AdminCustomerDetailPage({ params }: Props) {
 
   const totalSpent = await db.order.aggregate({
     where: { userId: id, paymentStatus: "PAID" },
-    _sum: { subtotal: true, discount: true },
+    _sum: { totalAmount: true },
   });
 
   const actionLogs = (customer.role === "CONFIRMATRICE" || customer.role === "ADMIN")
@@ -61,7 +61,7 @@ export default async function AdminCustomerDetailPage({ params }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Total Orders", value: customer._count.orders },
-          { label: "Total Spent", value: formatPrice(Math.max(0, (totalSpent._sum.subtotal ?? 0) - (totalSpent._sum.discount ?? 0))) },
+          { label: "Total Spent", value: formatPrice(totalSpent._sum.totalAmount ?? 0) },
           { label: "Reviews", value: customer._count.reviews },
           { label: "Wishlist", value: customer._count.wishlistItems },
         ].map(({ label, value }) => (
@@ -150,7 +150,7 @@ export default async function AdminCustomerDetailPage({ params }: Props) {
                         <Link href={`/admin/orders/${order.id}`} className="font-mono text-xs font-medium text-brand-700 hover:text-brand-900">{order.orderNumber}</Link>
                       </td>
                       <td className="px-4 py-2.5 text-brand-600">{order.items.reduce((s: number, i: (typeof order.items)[number]) => s + i.quantity, 0)}</td>
-                      <td className="px-4 py-2.5 font-medium text-brand-900">{formatPrice(order.subtotal - order.discount)}</td>
+                      <td className="px-4 py-2.5 font-medium text-brand-900">{formatPrice(order.totalAmount)}</td>
                       <td className="px-4 py-2.5">
                         <Badge variant={order.status === "DELIVERED" ? "success" : order.status === "CANCELLED" ? "destructive" : "info"}>
                           {order.status.replace(/_/g, " ")}

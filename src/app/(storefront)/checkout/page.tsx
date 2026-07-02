@@ -9,6 +9,7 @@ import { z } from "zod";
 import { useCartStore } from "@/stores/cart-store";
 import { formatPrice } from "@/lib/utils";
 import { WILAYAS, getShippingCost } from "@/lib/wilayas";
+import { COUNTRIES } from "@/lib/countries";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -19,12 +20,23 @@ const checkoutSchema = z.object({
   firstName: z.string().min(1, "First name required"),
   lastName: z.string().min(1, "Last name required"),
   phone: z.string().min(9, "Phone required"),
-  wilayaCode: z.string().min(1, "Wilaya required"),
-  deliveryType: z.enum(["DOMICILE", "STOPDESK"]),
+  isInternational: z.boolean().optional().default(false),
+  country: z.string().optional(),
+  wilayaCode: z.string().optional(),
+  deliveryType: z.enum(["DOMICILE", "STOPDESK"]).optional(),
   street: z.string().optional(),
   city: z.string().optional(),
   paymentMethod: z.enum(["cod", "stripe"]),
   notes: z.string().optional(),
+}).refine((data) => {
+  if (data.isInternational) {
+    return !!data.country && data.country.trim().length > 0;
+  } else {
+    return !!data.wilayaCode && !!data.deliveryType;
+  }
+}, {
+  message: "Please fill all required fields",
+  path: ["wilayaCode"],
 });
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
@@ -41,6 +53,7 @@ export default function CheckoutPage() {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponValidating, setCouponValidating] = useState(false);
   const [couponApplied, setCouponApplied] = useState(false);
+  const [showInternationalModal, setShowInternationalModal] = useState(false);
 
   const t = useTranslations("checkout");
   const tCart = useTranslations("cart");
@@ -50,18 +63,20 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
-    defaultValues: { paymentMethod: "cod", deliveryType: "DOMICILE" },
+    defaultValues: { paymentMethod: "cod", deliveryType: "DOMICILE", isInternational: false },
   });
 
   const sub = subtotal();
+  const isInternational = watch("isInternational");
   const selectedWilaya = watch("wilayaCode");
   const deliveryType = watch("deliveryType");
-  const shippingFee = selectedWilaya
-    ? getShippingCost(selectedWilaya, deliveryType, sub)
-    : null;
+  const shippingFee = !isInternational && selectedWilaya
+    ? getShippingCost(selectedWilaya, deliveryType!, sub)
+    : isInternational ? 0 : null;
   const total = Math.max(0, sub + (shippingFee ?? 0) - couponDiscount);
 
   async function validateCoupon() {
@@ -99,7 +114,8 @@ export default function CheckoutPage() {
 
   async function onSubmit(data: CheckoutForm) {
     if (items.length === 0) { toast.error(t("emptyCart")); return; }
-    if (!data.wilayaCode) { toast.error("Veuillez sélectionner votre wilaya"); return; }
+    if (!data.isInternational && !data.wilayaCode) { toast.error("Veuillez sélectionner votre wilaya"); return; }
+    if (data.isInternational && !data.country) { toast.error("Veuillez renseigner votre pays de destination"); return; }
     setPlacing(true);
     try {
       const res = await fetch("/api/orders", {
@@ -109,8 +125,10 @@ export default function CheckoutPage() {
           firstName: data.firstName,
           lastName: data.lastName,
           phone: data.phone,
-          wilayaCode: data.wilayaCode,
-          deliveryType: data.deliveryType,
+          isInternational: data.isInternational,
+          country: data.country,
+          wilayaCode: data.isInternational ? undefined : data.wilayaCode,
+          deliveryType: data.isInternational ? undefined : data.deliveryType,
           street: data.street,
           city: data.city,
           paymentMethod: data.paymentMethod,
@@ -153,6 +171,33 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {showInternationalModal && (
+        <div className="fixed inset-0 z-55 flex items-center justify-center bg-black/50 backdrop-blur-xs px-4">
+          <div className="bg-white p-6 max-w-md w-full border border-neutral-200 shadow-2xl space-y-4 rounded-2xl">
+            <div className="text-center space-y-2">
+              <span className="text-3xl">🌍</span>
+              <h3 className="font-display text-lg font-bold text-black">Livraison Internationale</h3>
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                Les frais d'expédition pour les commandes internationales varient selon le pays de destination et le poids du colis. Ils seront calculés et confirmés avec vous après validation.
+              </p>
+            </div>
+            <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl text-xs text-emerald-800 space-y-1.5 font-medium">
+              <p className="font-bold">⚠️ Action Requise :</p>
+              <p>
+                Veuillez indiquer un numéro de téléphone valide disposant de **WhatsApp** (avec l'indicatif de votre pays, ex: +33 pour la France). Nous vous contacterons sur WhatsApp pour confirmer les frais de livraison finaux avant l'expédition.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowInternationalModal(false)}
+              className="w-full bg-black hover:bg-neutral-900 text-white py-3 text-xs uppercase tracking-widest font-bold transition-all"
+            >
+              J'ai compris
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mb-10">
         <p className="text-xs uppercase tracking-[0.3em] text-neutral-500 mb-2">{t("title")}</p>
         <h1 className="font-display text-4xl text-black font-bold">{t("title")}</h1>
@@ -166,6 +211,37 @@ export default function CheckoutPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* LEFT: Form */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Destination Type Toggle */}
+          <div className="flex bg-neutral-100 p-1 border border-neutral-200 rounded-xl text-xs items-center font-bold">
+            <button
+              type="button"
+              onClick={() => {
+                setValue("isInternational", false);
+                setValue("country", undefined);
+              }}
+              className={`flex-1 py-2.5 rounded-lg text-center transition-all ${
+                !isInternational
+                  ? "bg-white text-black shadow-sm"
+                  : "text-neutral-500 hover:text-black"
+              }`}
+            >
+              🇩🇿 Livraison Nationale (Algérie)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setValue("isInternational", true);
+                setShowInternationalModal(true);
+              }}
+              className={`flex-1 py-2.5 rounded-lg text-center transition-all ${
+                isInternational
+                  ? "bg-white text-black shadow-sm"
+                  : "text-neutral-500 hover:text-black"
+              }`}
+            >
+              🌍 Livraison Internationale
+            </button>
+          </div>
 
           {/* Contact */}
           <section className="space-y-4">
@@ -183,81 +259,106 @@ export default function CheckoutPage() {
               </div>
               <div className="sm:col-span-2">
                 <label className={labelCls}>{t("phone")} *</label>
-                <input {...register("phone")} type="tel" className={inputCls} placeholder="05XXXXXXXX" autoComplete="tel" />
+                <input {...register("phone")} type="tel" className={inputCls} placeholder={isInternational ? "Ex: +33 6 XX XX XX XX" : "05XXXXXXXX"} autoComplete="tel" />
+                {isInternational && (
+                  <p className="text-[10px] text-emerald-600 mt-1 font-semibold">
+                    ✦ Numéro WhatsApp obligatoire pour la confirmation de livraison internationale.
+                  </p>
+                )}
                 {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
               </div>
             </div>
           </section>
 
-          {/* Wilaya + Delivery Type */}
+          {/* Wilaya + Delivery Type or Country */}
           <section className="space-y-4">
-            <h2 className="font-display text-xl text-black font-bold border-b border-neutral-200 pb-3">{t("deliveryType")}</h2>
+            <h2 className="font-display text-xl text-black font-bold border-b border-neutral-200 pb-3">
+              {isInternational ? "Destination" : t("deliveryType")}
+            </h2>
 
-            {/* Delivery type */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: "DOMICILE", label: t("domicile"), desc: t("domicileDesc"), icon: Home },
-                { value: "STOPDESK", label: t("stopdesk"), desc: t("stopDeskDesc"), icon: Store },
-              ].map(({ value, label, desc, icon: Icon }) => (
-                <label
-                  key={value}
-                  className={`flex items-start gap-3 p-4 border-2 cursor-pointer transition-all ${
-                    deliveryType === value ? "border-black bg-neutral-50" : "border-neutral-200 hover:border-neutral-400"
-                  }`}
+            {isInternational ? (
+              <div>
+                <label className={labelCls}>Pays de destination *</label>
+                <select
+                  {...register("country")}
+                  className={inputCls}
                 >
-                  <input type="radio" {...register("deliveryType")} value={value} className="mt-0.5 accent-black" />
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <Icon className="w-3.5 h-3.5 text-neutral-800" />
-                      <p className="text-sm font-semibold text-black">{label}</p>
-                    </div>
-                    <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-
-            {/* Wilaya selector */}
-            <div>
-              <label className={labelCls}>{t("wilaya")} *</label>
-              <select {...register("wilayaCode")} className={inputCls}>
-                <option value="">{t("selectWilaya")}</option>
-                {WILAYAS.map((w) => {
-                  const rate = deliveryType === "STOPDESK" ? w.stopdesk : w.domicile;
-                  return (
-                    <option key={w.code} value={w.code} disabled={rate === 0} className="text-black font-medium">
-                      ({w.code}) {w.name} —{" "}
-                      {rate === 0
-                        ? "Non disponible"
-                        : `${rate} DZD`}
-                    </option>
-                  );
-                })}
-              </select>
-              {errors.wilayaCode && <p className={errorCls}>{errors.wilayaCode.message}</p>}
-            </div>
-
-            {/* Shipping cost info box */}
-            {selectedWilaya && (
-              <div className={`flex items-center gap-3 px-4 py-3 border text-sm ${
-                (selectedWilaya && (deliveryType === "STOPDESK" ? WILAYAS.find(w => w.code === selectedWilaya)?.stopdesk === 0 : WILAYAS.find(w => w.code === selectedWilaya)?.domicile === 0))
-                  ? "border-red-200 bg-red-50 text-red-700 font-medium"
-                  : "border-neutral-200 bg-neutral-50 text-black font-semibold"
-              }`}>
-                <Truck className="w-4 h-4 shrink-0" />
-                {(deliveryType === "STOPDESK" ? WILAYAS.find(w => w.code === selectedWilaya)?.stopdesk === 0 : WILAYAS.find(w => w.code === selectedWilaya)?.domicile === 0) ? (
-                  <span>⚠️ Livraison <strong>non disponible</strong> pour cette option dans votre wilaya.</span>
-                ) : (
-                  <span>
-                    Frais de livraison : <strong>{formatPrice(shippingFee!)}</strong>
-                    {deliveryType === "DOMICILE" ? " (à domicile)" : " (stop desk)"}
-                  </span>
-                )}
+                  <option value="">Sélectionnez un pays</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                {errors.country && <p className={errorCls}>{errors.country.message}</p>}
               </div>
+            ) : (
+              <>
+                {/* Delivery type */}
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: "DOMICILE", label: t("domicile"), desc: t("domicileDesc"), icon: Home },
+                    { value: "STOPDESK", label: t("stopdesk"), desc: t("stopDeskDesc"), icon: Store },
+                  ].map(({ value, label, desc, icon: Icon }) => (
+                    <label
+                      key={value}
+                      className={`flex items-start gap-3 p-4 border-2 cursor-pointer transition-all ${
+                        deliveryType === value ? "border-black bg-neutral-50" : "border-neutral-200 hover:border-neutral-400"
+                      }`}
+                    >
+                      <input type="radio" {...register("deliveryType")} value={value} className="mt-0.5 accent-black" />
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <Icon className="w-3.5 h-3.5 text-neutral-800" />
+                          <p className="text-sm font-semibold text-black">{label}</p>
+                        </div>
+                        <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Wilaya selector */}
+                <div>
+                  <label className={labelCls}>{t("wilaya")} *</label>
+                  <select {...register("wilayaCode")} className={inputCls}>
+                    <option value="">{t("selectWilaya")}</option>
+                    {WILAYAS.map((w) => {
+                      const rate = deliveryType === "STOPDESK" ? w.stopdesk : w.domicile;
+                      return (
+                        <option key={w.code} value={w.code} disabled={rate === 0} className="text-black font-medium">
+                          ({w.code}) {w.name} —{" "}
+                          {rate === 0
+                            ? "Non disponible"
+                            : `${rate} DZD`}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {errors.wilayaCode && <p className={errorCls}>{errors.wilayaCode.message}</p>}
+                </div>
+
+                {/* Shipping cost info box */}
+                {selectedWilaya && (
+                  <div className={`flex items-center gap-3 px-4 py-3 border text-sm ${
+                    (selectedWilaya && (deliveryType === "STOPDESK" ? WILAYAS.find(w => w.code === selectedWilaya)?.stopdesk === 0 : WILAYAS.find(w => w.code === selectedWilaya)?.domicile === 0))
+                      ? "border-red-200 bg-red-50 text-red-700 font-medium"
+                      : "border-neutral-200 bg-neutral-50 text-black font-semibold"
+                  }`}>
+                    <Truck className="w-4 h-4 shrink-0" />
+                    {(deliveryType === "STOPDESK" ? WILAYAS.find(w => w.code === selectedWilaya)?.stopdesk === 0 : WILAYAS.find(w => w.code === selectedWilaya)?.domicile === 0) ? (
+                      <span>⚠️ Livraison <strong>non disponible</strong> pour cette option dans votre wilaya.</span>
+                    ) : (
+                      <span>
+                        Frais de livraison : <strong>{formatPrice(shippingFee!)}</strong>
+                        {deliveryType === "DOMICILE" ? " (à domicile)" : " (stop desk)"}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
-            {/* Address details (domicile only) */}
-            {deliveryType === "DOMICILE" && (
+            {/* Address details (always shown or domicile only) */}
+            {(!isInternational && deliveryType === "DOMICILE" || isInternational) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="sm:col-span-2">
                   <label className={labelCls}>{t("street")}</label>
@@ -342,9 +443,13 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-neutral-700 font-medium">
                 <span>{t("shipping")}</span>
                 <span>
-                  {shippingFee === null
-                    ? <span className="text-neutral-400 italic">{t("selectWilayaFirst")}</span>
-                    : formatPrice(shippingFee)}
+                  {isInternational ? (
+                    <span className="text-emerald-600 font-semibold">Calculé après confirmation</span>
+                  ) : shippingFee === null ? (
+                    <span className="text-neutral-400 italic">{t("selectWilayaFirst")}</span>
+                  ) : (
+                    formatPrice(shippingFee)
+                  )}
                 </span>
               </div>
               {couponDiscount > 0 && (
@@ -354,7 +459,7 @@ export default function CheckoutPage() {
               )}
               <div className="flex justify-between font-bold text-black border-t border-neutral-200 pt-3 text-base">
                 <span>{t("total")}</span>
-                <span>{shippingFee === null ? "—" : formatPrice(total)}</span>
+                <span>{(!isInternational && shippingFee === null) ? "—" : formatPrice(total)}</span>
               </div>
             </div>
 
@@ -362,11 +467,11 @@ export default function CheckoutPage() {
               type="submit"
               disabled={
                 !!(placing ||
-                shippingFee === null ||
+                (!isInternational && (shippingFee === null ||
                 (selectedWilaya &&
                   (deliveryType === "STOPDESK"
                     ? WILAYAS.find((w) => w.code === selectedWilaya)?.stopdesk === 0
-                    : WILAYAS.find((w) => w.code === selectedWilaya)?.domicile === 0)))
+                    : WILAYAS.find((w) => w.code === selectedWilaya)?.domicile === 0)))))
               }
               className="w-full bg-black text-white py-4 text-xs uppercase tracking-[0.25em] font-bold border border-black hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >

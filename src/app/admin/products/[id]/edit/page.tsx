@@ -10,7 +10,7 @@ export default async function EditProductPage({ params }: Props) {
   const { id } = await params;
   const [product, categories] = await Promise.all([
     db.product.findUnique({ where: { id }, include: { variants: true } }),
-    db.category.findMany({ where: { slug: { not: "uncategorized" } }, orderBy: { sortOrder: "asc" } }),
+    db.category.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
   if (!product) notFound();
   return (

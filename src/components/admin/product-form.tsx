@@ -641,136 +641,119 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
 
             <div className="border border-gray-100 divide-y divide-gray-100 bg-white">
               {variants.map((v, i) => (
-              <div key={i} className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3">
-                {/* Variant header info: image, color circle, name, and delete button on mobile */}
-                <div className="flex items-center gap-3 w-full lg:w-auto">
-                  {v.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={v.image} alt="" className="w-10 h-12 object-cover bg-gray-100 shrink-0 border border-gray-200" />
-                  ) : (
-                    <div className="w-10 h-12 bg-gray-100 shrink-0 flex items-center justify-center">
-                      <ImagePlus className="w-4 h-4 text-gray-300" />
-                    </div>
-                  )}
-
-                  {v.colorHex && (
-                    <span
-                      className="w-5 h-5 rounded-full border border-gray-300 shrink-0"
-                      style={{ backgroundColor: v.colorHex }}
-                      title={v.color ?? ""}
-                    />
-                  )}
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-800 font-medium">
-                      {[v.size, v.color].filter(Boolean).join(" / ") || "—"}
-                    </p>
+              <div key={i} className="flex items-center gap-3 px-4 py-3">
+                {v.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={v.image} alt="" className="w-10 h-12 object-cover bg-gray-100 shrink-0 border border-gray-200" />
+                ) : (
+                  <div className="w-10 h-12 bg-gray-100 shrink-0 flex items-center justify-center">
+                    <ImagePlus className="w-4 h-4 text-gray-300" />
                   </div>
+                )}
 
-                  <button
-                    type="button"
-                    onClick={() => setVariants(variants.filter((_, idx) => idx !== i))}
-                    className="text-gray-300 hover:text-red-500 transition-colors shrink-0 p-1 lg:hidden ml-auto"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                {v.colorHex && (
+                  <span
+                    className="w-5 h-5 rounded-full border border-gray-300 shrink-0"
+                    style={{ backgroundColor: v.colorHex }}
+                    title={v.color ?? ""}
+                  />
+                )}
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 font-medium">
+                    {[v.size, v.color].filter(Boolean).join(" / ") || "—"}
+                  </p>
                 </div>
 
-                {/* Input editors: grid of 3 on mobile, flex row on desktop */}
-                <div className="grid grid-cols-3 lg:flex lg:items-center gap-3 w-full lg:w-auto mt-2 lg:mt-0 pt-2 lg:pt-0 border-t border-dashed border-gray-105 lg:border-t-0">
-                  {/* Inline price editor */}
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-1.5 w-full lg:w-auto">
-                    <label className="text-[9px] lg:text-[10px] text-gray-400 uppercase tracking-widest text-left">Price</label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Price"
-                      value={v.price ?? ""}
-                      onChange={(e) => {
-                        const val = e.target.value ? Math.max(0, parseFloat(e.target.value)) : null;
-                        setVariants((prev) => prev.map((item, idx) => idx === i ? { ...item, price: val } : item));
-                      }}
-                      className="w-full lg:w-20 border text-center text-xs py-1.5 px-2 focus:outline-none transition-colors border-gray-200 bg-white text-gray-800 focus:border-gray-600"
-                    />
-                  </div>
-
-                  {/* Inline cost price editor */}
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-1.5 w-full lg:w-auto">
-                    <label className="text-[9px] lg:text-[10px] text-gray-400 uppercase tracking-widest text-left">Cost</label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Cost"
-                      value={v.costPrice ?? ""}
-                      onChange={(e) => {
-                        const val = e.target.value ? Math.max(0, parseFloat(e.target.value)) : null;
-                        setVariants((prev) => prev.map((item, idx) => idx === i ? { ...item, costPrice: val } : item));
-                      }}
-                      className="w-full lg:w-20 border text-center text-xs py-1.5 px-2 focus:outline-none transition-colors border-gray-200 bg-white text-gray-800 focus:border-gray-600"
-                    />
-                  </div>
-
-                  {/* Inline stock editor */}
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-1.5 w-full lg:w-auto">
-                    <label className="text-[9px] lg:text-[10px] text-gray-400 uppercase tracking-widest text-left">Stock</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={v.stock}
-                      onChange={(e) => updateVariantStock(i, Math.max(0, parseInt(e.target.value) || 0))}
-                      className={`w-full lg:w-16 border text-center text-sm py-1.5 px-2 focus:outline-none transition-colors ${
-                        v.stock === 0
-                          ? "border-red-300 bg-red-50 text-red-700 focus:border-red-500"
-                          : v.stock <= threshold
-                          ? "border-amber-300 bg-amber-50 text-amber-800 focus:border-amber-500"
-                          : "border-gray-200 bg-white text-gray-800 focus:border-gray-600"
-                      }`}
-                    />
-                  </div>
+                {/* Inline price editor */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <label className="text-[10px] text-gray-400 uppercase tracking-widest">Price</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Base Price"
+                    value={v.price ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value ? Math.max(0, parseFloat(e.target.value)) : null;
+                      setVariants((prev) => prev.map((item, idx) => idx === i ? { ...item, price: val } : item));
+                    }}
+                    className="w-20 border text-center text-xs py-1 px-2 focus:outline-none transition-colors border-gray-200 bg-white text-gray-800 focus:border-gray-600"
+                  />
                 </div>
 
-                {/* Badges & Actions */}
-                <div className="flex items-center justify-between lg:justify-start gap-2.5 w-full lg:w-auto mt-1 lg:mt-0 pt-1 lg:pt-0">
-                  {/* Variant Margin calculation */}
-                  {(() => {
-                    const variantSellingPrice = Number(v.price || discountPriceWatch || priceWatch || 0);
-                    const variantCostPrice = Number(v.costPrice || costPriceWatch || 0);
-                    if (variantSellingPrice > 0 && variantCostPrice > 0) {
-                      const variantProfit = variantSellingPrice - variantCostPrice;
-                      const variantMargin = (variantProfit / variantSellingPrice) * 100;
-                      return (
-                        <div className="text-left shrink-0">
-                          <span className={cn(
-                            "text-[10px] px-2 py-0.5 font-semibold rounded-full",
-                            variantProfit < 0 ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
-                          )}>
-                            {variantMargin.toFixed(0)}% margin
-                          </span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-
-                  {/* Status badge */}
-                  {v.stock === 0 ? (
-                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-sm font-medium shrink-0">Out of Stock</span>
-                  ) : v.stock <= threshold ? (
-                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm shrink-0">
-                      Low
-                    </span>
-                  ) : (
-                    <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-sm shrink-0">OK</span>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => setVariants(variants.filter((_, idx) => idx !== i))}
-                    className="text-gray-300 hover:text-red-500 transition-colors shrink-0 p-1 hidden lg:block ml-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                {/* Inline cost price editor */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <label className="text-[10px] text-gray-400 uppercase tracking-widest">Cost</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Base Cost"
+                    value={v.costPrice ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value ? Math.max(0, parseFloat(e.target.value)) : null;
+                      setVariants((prev) => prev.map((item, idx) => idx === i ? { ...item, costPrice: val } : item));
+                    }}
+                    className="w-20 border text-center text-xs py-1 px-2 focus:outline-none transition-colors border-gray-200 bg-white text-gray-800 focus:border-gray-600"
+                  />
                 </div>
+
+                {/* Variant Margin calculation */}
+                {(() => {
+                  const variantSellingPrice = Number(v.price || discountPriceWatch || priceWatch || 0);
+                  const variantCostPrice = Number(v.costPrice || costPriceWatch || 0);
+                  if (variantSellingPrice > 0 && variantCostPrice > 0) {
+                    const variantProfit = variantSellingPrice - variantCostPrice;
+                    const variantMargin = (variantProfit / variantSellingPrice) * 100;
+                    return (
+                      <div className="text-right shrink-0 min-w-[70px]">
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.5 font-medium rounded-full",
+                          variantProfit < 0 ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+                        )}>
+                          {variantMargin.toFixed(0)}% margin
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Inline stock editor */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <label className="text-[10px] text-gray-400 uppercase tracking-widest">Stock</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={v.stock}
+                    onChange={(e) => updateVariantStock(i, Math.max(0, parseInt(e.target.value) || 0))}
+                    className={`w-16 border text-center text-sm py-1 px-2 focus:outline-none transition-colors ${
+                      v.stock === 0
+                        ? "border-red-300 bg-red-50 text-red-700 focus:border-red-500"
+                        : v.stock <= threshold
+                        ? "border-amber-300 bg-amber-50 text-amber-800 focus:border-amber-500"
+                        : "border-gray-200 bg-white text-gray-800 focus:border-gray-600"
+                    }`}
+                  />
+                </div>
+
+                {/* Status badge */}
+                {v.stock === 0 ? (
+                  <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-sm shrink-0 font-medium">Out of Stock</span>
+                ) : v.stock <= threshold ? (
+                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-sm shrink-0">
+                    Low
+                  </span>
+                ) : (
+                  <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-sm shrink-0">OK</span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setVariants(variants.filter((_, idx) => idx !== i))}
+                  className="text-gray-300 hover:text-red-500 transition-colors shrink-0 p-1"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
 

@@ -52,11 +52,11 @@ export async function GET(req: NextRequest) {
 
       // Low stock products (dynamic threshold)
       db.$queryRaw<any[]>`
-        SELECT id, title, stock, images FROM "Product" P
+        SELECT id, title, stock, images FROM Product P
         WHERE P.archived = false
         AND (
-          (P.stock <= P."lowStockThreshold" AND NOT EXISTS (SELECT 1 FROM "ProductVariant" V WHERE V."productId" = P.id))
-          OR EXISTS (SELECT 1 FROM "ProductVariant" V WHERE V."productId" = P.id AND V.stock <= P."lowStockThreshold")
+          (P.stock <= P.lowStockThreshold AND NOT EXISTS (SELECT 1 FROM ProductVariant V WHERE V.productId = P.id))
+          OR EXISTS (SELECT 1 FROM ProductVariant V WHERE V.productId = P.id AND V.stock <= P.lowStockThreshold)
         )
         ORDER BY P.stock ASC
         LIMIT 10

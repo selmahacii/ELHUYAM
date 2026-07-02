@@ -57,22 +57,6 @@ export async function POST(req: NextRequest) {
       paymentMethod, paymentStatus, status, discount, notes,
     } = parsed.data;
 
-    // Check if client is banned (by account ID, phone, or name)
-    const bannedUser = await db.user.findFirst({
-      where: {
-        isBanned: true,
-        OR: [
-          ...(userId ? [{ id: userId }] : []),
-          { phone: customerPhone.trim() },
-          { name: { equals: customerName.trim(), mode: "insensitive" as const } }
-        ]
-      }
-    });
-
-    if (bannedUser) {
-      return errorResponse("Ce client est suspendu et ne peut pas passer de commande.", 403);
-    }
-
     // CONFIRMATRICE cannot set paymentStatus to PAID directly
     if (role === "CONFIRMATRICE" && paymentStatus === "PAID") {
       return errorResponse("Accès refusé: seul un admin peut marquer un paiement comme reçu.", 403);

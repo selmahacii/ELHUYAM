@@ -4,10 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -264,6 +263,7 @@ model Order {
   paymentStatus   PaymentStatus @default(PENDING)
   paymentMethod   String?
   stripePaymentId String?
+  isInternational Boolean       @default(false)
 
   subtotal        Float
   shippingFee     Float  @default(0)

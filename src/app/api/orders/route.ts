@@ -28,23 +28,8 @@ export async function POST(req: NextRequest) {
     const {
       firstName, lastName, phone, wilayaCode, deliveryType,
       street, city, couponCode, paymentMethod, notes,
+      isInternational, country,
     } = parsed.data;
-
-    // Check if client is banned (by session id, input phone, or input name)
-    const bannedUser = await db.user.findFirst({
-      where: {
-        isBanned: true,
-        OR: [
-          ...(session?.user?.id ? [{ id: session.user.id }] : []),
-          { phone: phone.trim() },
-          { name: { equals: `${firstName.trim()} ${lastName.trim()}`, mode: "insensitive" as const } }
-        ]
-      }
-    });
-
-    if (bannedUser) {
-      return errorResponse("Ce client est suspendu et ne peut pas passer de commande.", 403);
-    }
 
     // 2. Identify or Auto-Create Customer Account (satisfies DB foreign key constraint)
     let userId: string;
@@ -197,11 +182,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. Shipping fees and Wilaya calculations
-    const wilaya = getWilayaByCode(wilayaCode);
-    if (!wilaya) return errorResponse("Wilaya sélectionnée invalide.", 400);
-
     const subtotal = cartItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
-    const shippingFee = getShippingCost(wilayaCode, deliveryType, subtotal);
+    let shippingFee = 0;
+    let wilaya: any;
+
+    if (isInternational) {
+      if (!country) return errorResponse("Pays sélectionné invalide.", 400);
+      shippingFee = 0; // Standard initial fee, wait for manual confirmation via WhatsApp
+    } else {
+      wilaya = getWilayaByCode(wilayaCode ?? "");
+      if (!wilaya) return errorResponse("Wilaya sélectionnée invalide.", 400);
+      shippingFee = getShippingCost(wilayaCode ?? "", deliveryType as DeliveryType, subtotal);
+    }
     const taxAmount = 0;
     let discount = 0;
     let couponId: string | undefined;
@@ -248,18 +240,19 @@ export async function POST(req: NextRequest) {
           discount,
           totalAmount,
           paymentMethod,
-          deliveryType: deliveryType as DeliveryType,
-          wilayaCode,
+          isInternational,
+          deliveryType: (deliveryType as DeliveryType) ?? "DOMICILE",
+          wilayaCode: wilayaCode ?? null,
           notes: notes ?? null,
           couponId: couponId ?? null,
           couponCode: couponCode ?? null,
           shippingFirstName: firstName,
           shippingLastName: lastName,
           shippingStreet: street ?? null,
-          shippingCity: city ?? wilaya.name,
-          shippingState: wilaya.name,
-          shippingPostalCode: wilayaCode,
-          shippingCountry: "Algérie",
+          shippingCity: city ?? (wilaya?.name || country),
+          shippingState: wilaya?.name ?? null,
+          shippingPostalCode: wilayaCode ?? null,
+          shippingCountry: isInternational ? (country ?? "International") : "Algérie",
           shippingPhone: phone,
           items: {
             create: cartItems.map((item: any) => ({

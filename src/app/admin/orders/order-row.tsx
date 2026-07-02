@@ -24,10 +24,10 @@ interface OrderRowProps {
     orderNumber: string;
     createdAt: Date;
     totalAmount: number;
-    subtotal: number;
-    discount: number;
     paymentStatus: string;
     status: string;
+    isInternational?: boolean;
+    shippingCountry?: string | null;
     user?: {
       name: string | null;
       email: string | null;
@@ -38,19 +38,9 @@ interface OrderRowProps {
     shippingFirstName?: string | null;
     shippingLastName?: string | null;
     notes?: string | null;
-    trackingNumber?: string | null;
-    carrier?: string | null;
-    hasReturnedOrders?: boolean;
   };
   role?: string;
 }
-
-const ORDER_STATUSES = [
-  { value: "PENDING",          label: "Pending" },
-  { value: "CONFIRMED",        label: "Confirmed" },
-  { value: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
-  { value: "CANCELLED",        label: "Cancelled" },
-];
 
 export default function OrderRow({ order, role }: OrderRowProps) {
   const router = useRouter();
@@ -220,14 +210,6 @@ export default function OrderRow({ order, role }: OrderRowProps) {
           <p className="text-slate-900 font-bold text-xs">
             {resolvedName}
           </p>
-          {order.hasReturnedOrders && (
-            <span 
-              className="bg-rose-50 text-rose-700 border border-rose-200 text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full shrink-0 scale-90 cursor-help"
-              title="Ce client a déjà effectué un retour (commande remboursée/retournée)"
-            >
-              Retourneur
-            </span>
-          )}
           {isGuest && (
             <span className="bg-amber-50 text-amber-700 border border-amber-100 text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.2 rounded-full shrink-0 scale-90">
               Guest
@@ -244,19 +226,42 @@ export default function OrderRow({ order, role }: OrderRowProps) {
         </div>
         
         {/* Email or Phone number fallback */}
-        <div className="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400 font-medium">
-          {order.user?.email ? (
-            <span className="font-mono truncate">{order.user.email}</span>
-          ) : order.shippingPhone ? (
-            <span className="flex items-center gap-0.5 font-mono">
-              <Phone className="w-2.5 h-2.5 shrink-0" /> {order.shippingPhone}
-            </span>
-          ) : order.user?.phone ? (
-            <span className="flex items-center gap-0.5 font-mono">
-              <Phone className="w-2.5 h-2.5 shrink-0" /> {order.user.phone}
-            </span>
-          ) : (
-            <span className="italic text-slate-300">No contact</span>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+            {order.user?.email ? (
+              <span className="font-mono truncate">{order.user.email}</span>
+            ) : order.shippingPhone ? (
+              <span className="flex items-center gap-0.5 font-mono">
+                <Phone className="w-2.5 h-2.5 shrink-0" /> {order.shippingPhone}
+              </span>
+            ) : order.user?.phone ? (
+              <span className="flex items-center gap-0.5 font-mono">
+                <Phone className="w-2.5 h-2.5 shrink-0" /> {order.user.phone}
+              </span>
+            ) : (
+              <span className="italic text-slate-300">No contact</span>
+            )}
+          </div>
+          
+          {order.isInternational && (
+            <div className="flex items-center gap-1.5">
+              <span className="bg-sky-50 text-sky-700 border border-sky-100 text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded flex items-center gap-1">
+                🌐 Intl: {order.shippingCountry || "N/A"}
+              </span>
+              
+              {(order.shippingPhone || order.user?.phone) && (
+                <a 
+                  href={`https://wa.me/${(order.shippingPhone || order.user?.phone)?.replace(/\D/g, '')}?text=${encodeURIComponent(`Bonjour ${resolvedName}, concernant votre commande ${order.orderNumber}...`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded transition-colors flex items-center gap-1"
+                  title="Contacter par WhatsApp"
+                >
+                  <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                  WhatsApp
+                </a>
+              )}
+            </div>
           )}
         </div>
       </td>
@@ -276,64 +281,44 @@ export default function OrderRow({ order, role }: OrderRowProps) {
           </span>
         )}
       </td>
+
       {/* 5. Total Price Amount */}
       <td className="px-4 py-3 font-bold text-slate-900 text-xs sm:text-sm">
-        {formatPrice(order.subtotal - order.discount)}
+        {formatPrice(order.totalAmount)}
       </td>
-      {/* 6. Dynamic Payment Stats Badge (No select dropdown) */}
+
+      {/* 6. Dynamic Payment Status Select */}
       <td className="px-4 py-3">
-        {(() => {
-          const displayStatus = 
-            status === "DELIVERED" ? "PAID" :
-            status === "REFUNDED" ? "REFUNDED" :
-            paymentStatus;
-
-          const displayLabel = 
-            displayStatus === "PAID" ? "Paid" :
-            displayStatus === "FAILED" ? "Failed" :
-            displayStatus === "REFUNDED" ? "Unpaid (Returned)" :
-            "Pending";
-
-          const badgeStyles =
-            displayStatus === "PAID" ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold" :
-            displayStatus === "FAILED" ? "bg-rose-50 text-rose-700 border-rose-200 font-bold" :
-            displayStatus === "REFUNDED" ? "bg-rose-50 text-rose-700 border-rose-200 font-bold" :
-            "bg-amber-50/70 text-amber-700 border-amber-200 font-bold";
-
-          return (
-            <span className={`inline-block text-[9.5px] uppercase tracking-wider px-2.5 py-1 border rounded-lg text-center w-28 ${badgeStyles}`}>
-              {displayLabel}
-            </span>
-          );
-        })()}
+        <select
+          value={paymentStatus}
+          disabled={updating || (role === "CONFIRMATRICE" && paymentStatus !== "PAID")}
+          onChange={(e) => handlePaymentStatusChange(e.target.value)}
+          className={`text-[9.5px] font-extrabold tracking-wider uppercase px-2 py-1 border rounded-lg cursor-pointer focus:outline-none focus:ring-4 transition-all w-28 text-center bg-white ${paymentStyles}`}
+        >
+          <option value="PENDING">Pending</option>
+          <option value="PAID">Paid</option>
+          <option value="FAILED">Failed</option>
+          <option value="REFUNDED">Refunded</option>
+        </select>
       </td>
 
       {/* 7. Dynamic Order Status Select */}
       <td className="px-4 py-3">
-        {(() => {
-          const isTransmitted = !!order.trackingNumber && order.carrier === "ZR_EXPRESS";
-          const baseStatuses = [...ORDER_STATUSES];
-          if (!baseStatuses.some((s) => s.value === status)) {
-            let label = status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, " ");
-            if (status === "OUT_FOR_DELIVERY") label = "Out for Delivery";
-            baseStatuses.push({ value: status, label });
-          }
-          const allowedStatuses = isTransmitted
-            ? baseStatuses.filter((s) => s.value === status || s.value === "CANCELLED")
-            : baseStatuses;
-          return (
-            <select
-              value={status}
-              disabled={updating}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              className={`text-[9.5px] font-extrabold tracking-wider uppercase px-2 py-1 border rounded-lg cursor-pointer focus:outline-none focus:ring-4 transition-all w-36 text-center bg-white ${statusStyles}`}
-            >
-              {allowedStatuses.map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
-              ))}
-            </select>
-          );
-        })()}
+        <select
+          value={status}
+          disabled={updating}
+          onChange={(e) => handleStatusChange(e.target.value)}
+          className={`text-[9.5px] font-extrabold tracking-wider uppercase px-2 py-1 border rounded-lg cursor-pointer focus:outline-none focus:ring-4 transition-all w-36 text-center bg-white ${statusStyles}`}
+        >
+          <option value="PENDING">Pending</option>
+          <option value="CONFIRMED">Confirmed</option>
+          <option value="PROCESSING">Processing</option>
+          <option value="SHIPPED">Shipped</option>
+          <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+          <option value="DELIVERED">Delivered</option>
+          <option value="CANCELLED">Cancelled</option>
+          <option value="REFUNDED">Refunded</option>
+        </select>
       </td>
 
       {/* 8. Creation Order Date */}

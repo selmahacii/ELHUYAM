@@ -117,13 +117,24 @@ export const checkoutSchema = z.object({
   firstName: z.string().min(1, "Prénom requis").max(100),
   lastName: z.string().min(1, "Nom requis").max(100),
   phone: z.string().min(9, "Téléphone requis").max(20),
-  wilayaCode: z.string().min(1, "Wilaya requise").max(5),
-  deliveryType: z.enum(["DOMICILE", "STOPDESK"]),
+  isInternational: z.boolean().optional().default(false),
+  country: z.string().max(100).optional(),
+  wilayaCode: z.string().max(5).optional(),
+  deliveryType: z.enum(["DOMICILE", "STOPDESK"]).optional(),
   street: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
   couponCode: z.string().max(50).optional(),
   paymentMethod: z.enum(["stripe", "cod"]),
   notes: z.string().max(500).optional(),
+}).refine((data) => {
+  if (data.isInternational) {
+    return !!data.country && data.country.trim().length > 0;
+  } else {
+    return !!data.wilayaCode && !!data.deliveryType;
+  }
+}, {
+  message: "Veuillez remplir toutes les informations requises pour l'expédition.",
+  path: ["wilayaCode"],
 });
 
 // ─── Review ────────────────────────────────────────────────────────────────────
