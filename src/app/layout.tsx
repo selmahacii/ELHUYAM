@@ -56,9 +56,12 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
-  // Pre-fetch session server-side so SessionProvider has initial state
-  // and avoids the client-side fetch that causes ClientFetchError
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error("🔴 CRITICAL ERROR IN ROOT LAYOUT (NextAuth):", error);
+  }
 
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className="scroll-smooth">
