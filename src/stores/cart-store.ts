@@ -7,6 +7,7 @@ interface CartItem {
   productId: string;
   title: string;
   price: number;
+  priceEur: number;
   image?: string;
   quantity: number;
   size?: string | null;
@@ -24,6 +25,8 @@ interface AddItemPayload {
     title: string;
     price: number;
     discountPrice?: number | null;
+    priceEur: number;
+    discountPriceEur?: number | null;
     images: string[] | any;
     variants?: any[];
     stock: number;
@@ -39,7 +42,7 @@ interface CartStore {
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   clearCart: () => void;
   syncWithServer: () => Promise<void>;
-  subtotal: () => number;
+  subtotal: (isInternational?: boolean) => number;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -66,6 +69,7 @@ export const useCartStore = create<CartStore>()(
             }
 
             let price = product.discountPrice ?? product.price;
+            let priceEur = product.discountPriceEur ?? product.priceEur ?? 0;
             let maxStock = product.stock;
             let productImages = Array.isArray(product.images) 
               ? product.images 
@@ -76,6 +80,7 @@ export const useCartStore = create<CartStore>()(
               const variant = product.variants.find((v: { id: string }) => v.id === variantId);
               if (variant) {
                 price = variant.price ?? price;
+                priceEur = variant.priceEur ?? priceEur;
                 maxStock = variant.stock;
                 if (variant.image) image = variant.image;
               }
@@ -105,6 +110,7 @@ export const useCartStore = create<CartStore>()(
                 productId,
                 title: product.title,
                 price,
+                priceEur,
                 image,
                 quantity,
                 size: size ?? null,
@@ -142,6 +148,7 @@ export const useCartStore = create<CartStore>()(
               } else {
                 let product = productData;
                 let price = product?.discountPrice ?? product?.price ?? dbItem.product?.price ?? 0;
+                let priceEur = product?.discountPriceEur ?? product?.priceEur ?? dbItem.product?.priceEur ?? 0;
                 let productImages = product ? (Array.isArray(product.images) ? product.images : (typeof product.images === "string" ? JSON.parse(product.images) : [])) : (dbItem.product?.images ?? []);
                 let image = productImages?.[0] ?? "/placeholder-product.jpg";
 
@@ -149,6 +156,7 @@ export const useCartStore = create<CartStore>()(
                   const variant = product.variants.find((v: { id: string }) => v.id === variantId);
                   if (variant) {
                     price = variant.price ?? price;
+                priceEur = variant.priceEur ?? priceEur;
                     if (variant.image) image = variant.image;
                   }
                 }
@@ -157,6 +165,7 @@ export const useCartStore = create<CartStore>()(
                   productId,
                   title: product?.title ?? dbItem.product?.title ?? "",
                   price,
+                  priceEur,
                   image,
                   quantity: dbItem.quantity,
                   size: size ?? null,
@@ -191,6 +200,7 @@ export const useCartStore = create<CartStore>()(
             }
 
             let price = product.discountPrice ?? product.price;
+            let priceEur = product.discountPriceEur ?? product.priceEur ?? 0;
             let maxStock = product.stock;
             let productImages = Array.isArray(product.images) 
               ? product.images 
@@ -201,6 +211,7 @@ export const useCartStore = create<CartStore>()(
               const variant = product.variants.find((v: { id: string }) => v.id === variantId);
               if (variant) {
                 price = variant.price ?? price;
+                priceEur = variant.priceEur ?? priceEur;
                 maxStock = variant.stock;
                 if (variant.image) image = variant.image;
               }
@@ -230,6 +241,7 @@ export const useCartStore = create<CartStore>()(
                 productId,
                 title: product.title,
                 price,
+                priceEur,
                 image,
                 quantity,
                 size: size ?? null,
@@ -317,8 +329,8 @@ export const useCartStore = create<CartStore>()(
             const serverItems = (data.data ?? []).map((item: {
               id: string;
               productId: string;
-              product: { title: string; price: number; discountPrice?: number | null; images: string[] };
-              variant?: { id: string; price?: number | null } | null;
+              product: { title: string; price: number; discountPrice?: number | null; priceEur: number; discountPriceEur?: number | null; images: string[] };
+              variant?: { id: string; price?: number | null; priceEur?: number | null } | null;
               quantity: number;
               size?: string | null;
               color?: string | null;
@@ -328,6 +340,7 @@ export const useCartStore = create<CartStore>()(
               productId: item.productId,
               title: item.product.title,
               price: item.variant?.price ?? item.product.discountPrice ?? item.product.price,
+              priceEur: item.variant?.priceEur ?? item.product.discountPriceEur ?? item.product.priceEur ?? 0,
               image: item.product.images[0],
               quantity: item.quantity,
               size: item.size,
@@ -345,7 +358,7 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      subtotal: () => get().items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      subtotal: (isInternational?: boolean) => get().items.reduce((sum, item) => sum + (isInternational ? (item.priceEur || 0) : item.price) * item.quantity, 0),
     }),
     {
       name: "el-huyaam-cart",

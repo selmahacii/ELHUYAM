@@ -53,9 +53,18 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+import { cookies } from "next/headers";
+import { RegionProvider, Region } from "@/providers/region-provider";
+import { RegionModal } from "@/components/layout/region-modal";
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  
+  const cookieStore = await cookies();
+  const regionCookie = cookieStore.get("region")?.value;
+  const initialRegion = (regionCookie === "ALGERIA" || regionCookie === "INTERNATIONAL") ? (regionCookie as Region) : null;
+
   let session = null;
   try {
     session = await auth();
@@ -87,7 +96,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <Providers session={session}>{children}</Providers>
+          <RegionProvider initialRegion={initialRegion}>
+            <Providers session={session}>
+              {children}
+              <RegionModal />
+            </Providers>
+          </RegionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

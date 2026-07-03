@@ -22,10 +22,12 @@ interface Variant {
   stock: number;
   price?: number | null;
   costPrice?: number | null;
+  priceEur?: number | null;
 }
 interface ProductData {
   id: string; title: string; slug: string; description: string;
-  price: number; discountPrice?: number | null; costPrice?: number | null; stock: number; sku?: string | null; lowStockThreshold?: number;
+  price: number; discountPrice?: number | null; priceEur: number; discountPriceEur?: number | null; costPrice?: number | null;
+  priceEur?: number | null; stock: number; sku?: string | null; lowStockThreshold?: number;
   categoryId: string; images: string[]; videos: string[]; tags: string[];
   featured: boolean; bestseller: boolean; newArrival: boolean;
   metaTitle?: string | null; metaDescription?: string | null;
@@ -74,6 +76,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
   const [bulkSizesInput, setBulkSizesInput] = useState("");
   const [bulkStock, setBulkStock] = useState(0);
   const [bulkPrice, setBulkPrice] = useState<number | null>(null);
+  const [bulkPriceEur, setBulkPriceEur] = useState<number | null>(null);
   const [bulkCostPrice, setBulkCostPrice] = useState<number | null>(null);
   const [showPresetsDropdown, setShowPresetsDropdown] = useState(false);
   const [sameStockForAll, setSameStockForAll] = useState(false);
@@ -109,6 +112,8 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
       description: product?.description ?? "",
       price: product?.price ?? 0,
       discountPrice: product?.discountPrice ?? undefined,
+      priceEur: product?.priceEur ?? 0,
+      discountPriceEur: product?.discountPriceEur ?? undefined,
       costPrice: product?.costPrice ?? undefined,
       stock: product?.stock ?? 0,
       sku: product?.sku ?? "",
@@ -469,7 +474,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
       {/* Pricing & Stock */}
       <section className={sectionCls}>
         <h2 className={headingCls}>Price & Inventory</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
           <div>
             <label className={labelCls}>Price (DZD)</label>
             <input type="number" step="1" min="0" {...register("price")} className={inputCls} />

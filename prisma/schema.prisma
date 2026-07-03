@@ -168,9 +168,12 @@ model Product {
   title         String
   slug          String   @unique
   description   String   @db.Text
-  price         Float
-  discountPrice Float?
-  costPrice     Float?
+  price            Float
+  discountPrice    Float?
+  costPrice        Float?
+  priceEur         Float    @default(0)
+  discountPriceEur Float?
+  costPriceEur     Float?
   stock         Int      @default(0)
   sku           String?  @unique
   lowStockThreshold Int  @default(5)
@@ -215,8 +218,10 @@ model ProductVariant {
   colorHex  String?
   image     String?
   stock     Int     @default(0)
-  price     Float?
-  costPrice Float?
+  price        Float?
+  costPrice    Float?
+  priceEur     Float?
+  costPriceEur Float?
 
   @@index([productId])
 }

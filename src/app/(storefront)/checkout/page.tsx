@@ -10,6 +10,7 @@ import { useCartStore } from "@/stores/cart-store";
 import { formatPrice } from "@/lib/utils";
 import { WILAYAS, getShippingCost } from "@/lib/wilayas";
 import { COUNTRIES } from "@/lib/countries";
+import { useRegion } from "@/providers/region-provider";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -48,6 +49,7 @@ export default function CheckoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { items, subtotal, clearCart } = useCartStore();
+  const { region } = useRegion();
   const [placing, setPlacing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -59,6 +61,9 @@ export default function CheckoutPage() {
   const tCart = useTranslations("cart");
   const tCommon = useTranslations("common");
 
+  const regionIsInternational = region === "INTERNATIONAL";
+  const currency = regionIsInternational ? "EUR" : "DZD";
+
   const {
     register,
     handleSubmit,
@@ -67,10 +72,10 @@ export default function CheckoutPage() {
     formState: { errors },
   } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
-    defaultValues: { paymentMethod: "cod", deliveryType: "DOMICILE", isInternational: false },
+    defaultValues: { paymentMethod: "cod", deliveryType: "DOMICILE", isInternational: regionIsInternational },
   });
 
-  const sub = subtotal();
+  const sub = subtotal(regionIsInternational);
   const isInternational = watch("isInternational");
   const selectedWilaya = watch("wilayaCode");
   const deliveryType = watch("deliveryType");
@@ -101,7 +106,7 @@ export default function CheckoutPage() {
       if (data.success) {
         setCouponDiscount(data.data.discount);
         setCouponApplied(true);
-        toast.success(`Coupon appliqué ! Vous économisez ${formatPrice(data.data.discount)}`);
+        toast.success(`Coupon appliqué ! Vous économisez ${formatPrice(data.data.discount, currency)}`);
       } else {
         toast.error(data.error ?? "Coupon invalide");
       }
@@ -348,7 +353,7 @@ export default function CheckoutPage() {
                       <span>⚠️ Livraison <strong>non disponible</strong> pour cette option dans votre wilaya.</span>
                     ) : (
                       <span>
-                        Frais de livraison : <strong>{formatPrice(shippingFee!)}</strong>
+                        Frais de livraison : <strong>{formatPrice(shippingFee!, currency)}</strong>
                         {deliveryType === "DOMICILE" ? " (à domicile)" : " (stop desk)"}
                       </span>
                     )}
@@ -403,7 +408,7 @@ export default function CheckoutPage() {
                     )}
                     <p className="text-xs text-neutral-600 font-medium">Qté : {item.quantity}</p>
                   </div>
-                  <span className="text-sm font-bold text-black shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                  <span className="text-sm font-bold text-black shrink-0">{formatPrice((isInternational ? item.priceEur : item.price) * item.quantity, currency)}</span>
                 </div>
               ))}
             </div>
@@ -438,7 +443,7 @@ export default function CheckoutPage() {
             {/* Totals */}
             <div className="space-y-2 text-sm border-t border-neutral-200 pt-4">
               <div className="flex justify-between text-neutral-700 font-medium">
-                <span>{t("subtotal")}</span><span>{formatPrice(sub)}</span>
+                <span>{t("subtotal")}</span><span>{formatPrice(sub, currency)}</span>
               </div>
               <div className="flex justify-between text-neutral-700 font-medium">
                 <span>{t("shipping")}</span>
@@ -448,18 +453,18 @@ export default function CheckoutPage() {
                   ) : shippingFee === null ? (
                     <span className="text-neutral-400 italic">{t("selectWilayaFirst")}</span>
                   ) : (
-                    formatPrice(shippingFee)
+                    formatPrice(shippingFee, currency)
                   )}
                 </span>
               </div>
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-green-600 font-medium">
-                  <span>{t("discount")}</span><span>-{formatPrice(couponDiscount)}</span>
+                  <span>{t("discount")}</span><span>-{formatPrice(couponDiscount, currency)}</span>
                 </div>
               )}
               <div className="flex justify-between font-bold text-black border-t border-neutral-200 pt-3 text-base">
                 <span>{t("total")}</span>
-                <span>{(!isInternational && shippingFee === null) ? "—" : formatPrice(total)}</span>
+                <span>{(!isInternational && shippingFee === null) ? "—" : formatPrice(total, currency)}</span>
               </div>
             </div>
 

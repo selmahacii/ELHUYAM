@@ -10,11 +10,16 @@ import { formatPrice } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
+import { useRegion } from "@/providers/region-provider";
 
 export default function CartPage() {
   const t = useTranslations();
   const { status } = useSession();
   const { items, removeItem, updateQuantity, syncWithServer, subtotal } = useCartStore();
+  const { region } = useRegion();
+
+  const isInternational = region === "INTERNATIONAL";
+  const currency = isInternational ? "EUR" : "DZD";
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -22,8 +27,7 @@ export default function CartPage() {
     }
   }, [status, syncWithServer]);
 
-  const sub = subtotal();
-  const shippingFee = null;
+  const sub = subtotal(isInternational);
   const total = sub;
   const itemCount = items.reduce((s, i) => s + i.quantity, 0);
 
@@ -89,7 +93,7 @@ export default function CartPage() {
                       {item.size  && <p>Size: {item.size}</p>}
                       {item.color && <p>Color: {item.color}</p>}
                     </div>
-                    <p className="text-xs text-brand-500 mt-1">{formatPrice(item.price)} / unit</p>
+                    <p className="text-xs text-brand-500 mt-1">{formatPrice(isInternational ? item.priceEur : item.price, currency)} / unit</p>
                   </div>
                   <button
                     onClick={() => handleRemove(item.id)}
@@ -118,7 +122,7 @@ export default function CartPage() {
                       <Plus className="w-3 h-3" />
                     </button>
                   </div>
-                  <span className="font-semibold text-brand-900">{formatPrice(item.price * item.quantity)}</span>
+                  <span className="font-semibold text-brand-900">{formatPrice((isInternational ? item.priceEur : item.price) * item.quantity, currency)}</span>
                 </div>
               </div>
             </div>
@@ -133,7 +137,7 @@ export default function CartPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-brand-600">
                 <span>{t("cart.subtotal")} ({itemCount} {itemCount <= 1 ? "item" : "items"})</span>
-                <span>{formatPrice(sub)}</span>
+                <span>{formatPrice(sub, currency)}</span>
               </div>
 
             </div>
@@ -141,7 +145,7 @@ export default function CartPage() {
             <div className="border-t border-brand-200 pt-4">
               <div className="flex justify-between font-semibold text-brand-900 text-base">
                 <span>{t("cart.total")}</span>
-                <span>{formatPrice(total)}</span>
+                <span>{formatPrice(total, currency)}</span>
               </div>
               <p className="text-[10px] text-brand-400 mt-1 tracking-wider">Taxes included</p>
             </div>

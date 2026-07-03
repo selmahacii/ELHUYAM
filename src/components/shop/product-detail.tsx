@@ -50,6 +50,7 @@ interface Variant {
   image?: string | null;
   stock: number;
   price?: number | null;
+  priceEur?: number | null;
 }
 
 interface Product {
@@ -59,6 +60,8 @@ interface Product {
   description: string;
   price: number;
   discountPrice?: number | null;
+  priceEur: number;
+  discountPriceEur?: number | null;
   images: string[];
   stock: number;
   featured: boolean;
@@ -72,6 +75,8 @@ interface Product {
   reviews: Review[];
   lowStockThreshold?: number | null;
 }
+
+import { useRegion } from "@/providers/region-provider";
 
 export default function ProductDetail({ product }: { product: Product }) {
   const { data: session } = useSession();
@@ -146,6 +151,10 @@ export default function ProductDetail({ product }: { product: Product }) {
   const tCommon = useTranslations("common");
   const tNav = useTranslations("nav");
   const locale = useLocale();
+  const { region } = useRegion();
+
+  const isInternational = region === "INTERNATIONAL";
+  const currency = isInternational ? "EUR" : "DZD";
 
   const translateCategoryName = (name: string) => {
     if (locale !== "ar") return name;
@@ -157,9 +166,13 @@ export default function ProductDetail({ product }: { product: Product }) {
   const sizes = [...new Set(product.variants.filter((v) => v.size).map((v) => v.size!))];
   const colors = [...new Set(product.variants.filter((v) => v.color).map((v) => v.color!))];
 
-  const effectivePrice = selectedVariant?.price ?? product.discountPrice ?? product.price;
-  const discountPercent = product.discountPrice
-    ? calculateDiscountPercent(product.price, product.discountPrice)
+  const basePrice = isInternational ? (product.priceEur || 0) : product.price;
+  const baseDiscountPrice = isInternational ? product.discountPriceEur : product.discountPrice;
+  const variantPrice = selectedVariant ? (isInternational ? selectedVariant.priceEur : selectedVariant.price) : null;
+  const effectivePrice = variantPrice ?? baseDiscountPrice ?? basePrice;
+  
+  const discountPercent = baseDiscountPrice
+    ? calculateDiscountPercent(basePrice, baseDiscountPrice)
     : 0;
 
   const hasVariants = product.variants.length > 0;
@@ -393,9 +406,9 @@ export default function ProductDetail({ product }: { product: Product }) {
           )}
 
           <div className="flex items-baseline gap-3">
-            <span className="font-display text-2xl text-black font-bold">{formatPrice(effectivePrice)}</span>
-            {product.discountPrice && !selectedVariant?.price && (
-              <span className="text-base text-neutral-400 line-through font-normal">{formatPrice(product.price)}</span>
+            <span className="font-display text-2xl text-black font-bold">{formatPrice(effectivePrice, currency)}</span>
+            {baseDiscountPrice && !variantPrice && (
+              <span className="text-base text-neutral-400 line-through font-normal">{formatPrice(basePrice, currency)}</span>
             )}
           </div>
 

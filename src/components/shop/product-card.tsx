@@ -9,6 +9,7 @@ import { useWishlistStore } from "@/stores/wishlist-store";
 import { toast } from "react-hot-toast";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useRegion } from "@/providers/region-provider";
 
 interface Product {
   id: string;
@@ -16,6 +17,8 @@ interface Product {
   slug: string;
   price: number;
   discountPrice?: number | null;
+  priceEur: number;
+  discountPriceEur?: number | null;
   images: string[];
   stock: number;
   featured?: boolean;
@@ -40,11 +43,17 @@ export default function ProductCard({ product, className, priority = false }: Pr
   const inWishlist = isInWishlist(product.id);
   const t = useTranslations("product");
   const tShop = useTranslations("shop");
+  const { region } = useRegion();
+
+  const isInternational = region === "INTERNATIONAL";
+  const displayPrice = isInternational ? (product.priceEur || 0) : product.price;
+  const displayDiscountPrice = isInternational ? product.discountPriceEur : product.discountPrice;
+  const currency = isInternational ? "EUR" : "DZD";
 
   const isOutOfStock = product.stock === 0;
   const isLowStock = product.stock > 0 && product.stock <= (product.lowStockThreshold ?? 5);
-  const discountPercent = product.discountPrice
-    ? calculateDiscountPercent(product.price, product.discountPrice)
+  const discountPercent = displayDiscountPrice
+    ? calculateDiscountPercent(displayPrice, displayDiscountPrice)
     : 0;
 
   async function handleAddToCart(e: React.MouseEvent) {
@@ -200,18 +209,18 @@ export default function ProductCard({ product, className, priority = false }: Pr
         })()}
 
         <div className="flex items-center justify-center gap-2 mt-1">
-          {product.discountPrice ? (
+          {displayDiscountPrice ? (
             <>
               <span className={cn("text-xs md:text-sm font-semibold", isOutOfStock ? "text-brand-300" : "text-brand-900")}>
-                {formatPrice(product.discountPrice)}
+                {formatPrice(displayDiscountPrice, currency)}
               </span>
               <span className="text-[10px] md:text-xs text-brand-400 line-through font-normal">
-                {formatPrice(product.price)}
+                {formatPrice(displayPrice, currency)}
               </span>
             </>
           ) : (
             <span className={cn("text-xs md:text-sm font-semibold", isOutOfStock ? "text-brand-300" : "text-brand-900")}>
-              {formatPrice(product.price)}
+              {formatPrice(displayPrice, currency)}
             </span>
           )}
         </div>

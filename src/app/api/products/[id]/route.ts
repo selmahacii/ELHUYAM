@@ -14,6 +14,11 @@ const patchSchema = z.object({
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
     z.number().positive().nullable().optional()
   ),
+  priceEur: z.coerce.number().positive().optional(),
+  discountPriceEur: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+    z.number().positive().nullable().optional()
+  ),
   costPrice: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
     z.number().min(0, "Cost price must be non-negative").nullable().optional()

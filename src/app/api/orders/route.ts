@@ -104,7 +104,9 @@ export async function POST(req: NextRequest) {
 
           cartItems = dbItems.map((item: any) => {
             const variant = item.variantId ? variants.find((v: any) => v.id === item.variantId) : null;
-            const price = variant?.price ?? item.product.discountPrice ?? item.product.price;
+            const price = isInternational
+              ? (variant?.priceEur ?? item.product.discountPriceEur ?? item.product.priceEur ?? 0)
+              : (variant?.price ?? item.product.discountPrice ?? item.product.price);
             return {
               productId: item.productId,
               quantity: item.quantity,
@@ -137,14 +139,16 @@ export async function POST(req: NextRequest) {
         const product = products.find((p: any) => p.id === item.productId);
         if (!product) return errorResponse(`Produit non trouvé : ${item.productId}`, 404);
 
-        let price = product.discountPrice ?? product.price;
+        let price = isInternational 
+          ? (product.discountPriceEur ?? product.priceEur ?? 0)
+          : (product.discountPrice ?? product.price);
         let stock = product.stock;
         let variantImage: string | null = null;
 
         if (item.variantId) {
           const variant = product.variants.find((v: any) => v.id === item.variantId);
           if (variant) {
-            price = variant.price ?? price;
+            price = isInternational ? (variant.priceEur ?? price) : (variant.price ?? price);
             stock = variant.stock;
             variantImage = variant.image ?? null;
           }

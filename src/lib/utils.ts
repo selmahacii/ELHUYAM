@@ -6,9 +6,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(amount: number, currency = "DZD"): string {
+  if (currency === "EUR") {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+    }).format(amount);
+  }
   return new Intl.NumberFormat("fr-DZ", {
     style: "currency",
-    currency,
+    currency: "DZD",
     minimumFractionDigits: 2,
   }).format(amount);
 }
