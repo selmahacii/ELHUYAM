@@ -21,6 +21,8 @@ interface WishlistProduct {
     slug: string;
     price: number;
     discountPrice?: number | null;
+    priceEur: number;
+    discountPriceEur?: number | null;
     images: string[];
     stock: number;
   };

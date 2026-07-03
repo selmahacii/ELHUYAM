@@ -27,7 +27,7 @@ interface Variant {
 interface ProductData {
   id: string; title: string; slug: string; description: string;
   price: number; discountPrice?: number | null; priceEur: number; discountPriceEur?: number | null; costPrice?: number | null;
-  priceEur?: number | null; stock: number; sku?: string | null; lowStockThreshold?: number;
+  stock: number; sku?: string | null; lowStockThreshold?: number;
   categoryId: string; images: string[]; videos: string[]; tags: string[];
   featured: boolean; bestseller: boolean; newArrival: boolean;
   metaTitle?: string | null; metaDescription?: string | null;

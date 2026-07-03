@@ -9,7 +9,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 type ProductItem = {
   id: string; title: string; slug: string; price: number;
-  discountPrice: number | null; images: string[]; stock: number;
+  discountPrice: number | null; priceEur: number; discountPriceEur: number | null; images: string[]; stock: number;
   featured: boolean; bestseller: boolean; newArrival: boolean;
 };
 type CategoryItem = { name: string; slug: string; image: string | null };
