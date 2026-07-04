@@ -214,6 +214,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
             size: size,
             stock: bulkStock,
             price: bulkPrice,
+            priceEur: bulkPriceEur,
             costPrice: bulkCostPrice,
           });
         }
@@ -229,6 +230,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
           size: null,
           stock: bulkStock,
           price: bulkPrice,
+          priceEur: bulkPriceEur,
           costPrice: bulkCostPrice,
         });
       }
@@ -247,6 +249,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
       setBulkSizesInput("");
       setBulkStock(0);
       setBulkPrice(null);
+      setBulkPriceEur(null);
       setBulkCostPrice(null);
       setBulkColor("");
       setBulkColorHex("#000000");
@@ -485,6 +488,16 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
             <input type="number" step="1" min="0" {...register("discountPrice")} className={inputCls} placeholder="Empty = no promotion" />
           </div>
           <div>
+            <label className={labelCls}>Price (EUR)</label>
+            <input type="number" step="0.01" min="0" {...register("priceEur")} className={inputCls} />
+            {errors.priceEur && <p className="mt-1 text-xs text-red-500">{errors.priceEur.message}</p>}
+          </div>
+          <div>
+            <label className={labelCls}>Discounted price (EUR)</label>
+            <input type="number" step="0.01" min="0" {...register("discountPriceEur")} className={inputCls} placeholder="Empty = no promotion" />
+            {errors.discountPriceEur && <p className="mt-1 text-xs text-red-500">{errors.discountPriceEur.message}</p>}
+          </div>
+          <div>
             <label className={labelCls}>Cost price (DZD)</label>
             <input type="number" step="1" min="0" {...register("costPrice")} className={inputCls} placeholder="e.g. Purchase price" />
             {errors.costPrice && <p className="mt-1 text-xs text-red-500">{errors.costPrice.message}</p>}
@@ -672,7 +685,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
 
                 {/* Inline price editor */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <label className="text-[10px] text-gray-400 uppercase tracking-widest">Price</label>
+                  <label className="text-[10px] text-gray-400 uppercase tracking-widest">Price (DZD)</label>
                   <input
                     type="number"
                     min="0"
@@ -681,6 +694,23 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
                     onChange={(e) => {
                       const val = e.target.value ? Math.max(0, parseFloat(e.target.value)) : null;
                       setVariants((prev) => prev.map((item, idx) => idx === i ? { ...item, price: val } : item));
+                    }}
+                    className="w-20 border text-center text-xs py-1 px-2 focus:outline-none transition-colors border-gray-200 bg-white text-gray-800 focus:border-gray-600"
+                  />
+                </div>
+
+                {/* Inline price EUR editor */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <label className="text-[10px] text-gray-400 uppercase tracking-widest">Price (EUR)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Price EUR"
+                    value={v.priceEur ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value ? Math.max(0, parseFloat(e.target.value)) : null;
+                      setVariants((prev) => prev.map((item, idx) => idx === i ? { ...item, priceEur: val } : item));
                     }}
                     className="w-20 border text-center text-xs py-1 px-2 focus:outline-none transition-colors border-gray-200 bg-white text-gray-800 focus:border-gray-600"
                   />
@@ -955,6 +985,19 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
                   value={bulkPrice ?? ""}
                   onChange={(e) => setBulkPrice(e.target.value ? Number(e.target.value) : null)}
                   placeholder="Optional (uses base product price if empty)"
+                  className={inputCls}
+                />
+              </div>
+
+              <div>
+                <label className={labelCls}>Variant price (EUR)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={bulkPriceEur ?? ""}
+                  onChange={(e) => setBulkPriceEur(e.target.value ? Number(e.target.value) : null)}
+                  placeholder="Optional (uses base EUR price if empty)"
                   className={inputCls}
                 />
               </div>

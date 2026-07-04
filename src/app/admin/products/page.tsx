@@ -336,6 +336,8 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
                         title={product.title}
                         price={product.price}
                         discountPrice={product.discountPrice ?? null}
+                        priceEur={product.priceEur}
+                        discountPriceEur={product.discountPriceEur ?? null}
                       />
                     </div>
                   </td>

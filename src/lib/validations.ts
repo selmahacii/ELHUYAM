@@ -37,7 +37,7 @@ export const productSchema = z.object({
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
     z.number().positive().max(1_000_000).nullable().optional()
   ),
-  priceEur: z.coerce.number().positive("Price (EUR) must be positive").max(10_000).optional().default(0),
+  priceEur: z.coerce.number().min(0, "Price (EUR) must be non-negative").max(10_000).optional().default(0),
   discountPriceEur: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
     z.number().positive().max(10_000).nullable().optional()
@@ -72,7 +72,7 @@ export const productVariantSchema = z.object({
   ),
   priceEur: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
-    z.number().positive().max(10_000).nullable().optional()
+    z.number().min(0).max(10_000).nullable().optional()
   ),
   costPrice: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
