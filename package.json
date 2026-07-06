@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
-    "build": "npm run clean && prisma generate && prisma db push && next build --webpack",
+    "build": "npm run clean && prisma generate && prisma db push && node prisma/delete-khimar.js && next build --webpack",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint",
     "db:generate": "prisma generate",
