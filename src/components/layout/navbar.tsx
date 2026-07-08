@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import SearchModal from "@/components/shop/search-modal";
 import LanguageSwitcher from "@/components/language-switcher";
 import { useTranslations, useLocale } from "next-intl";
+import { useRegion } from "@/providers/region-provider";
 
 type Category = { id: string; name: string; slug: string; parentId: string | null };
 
@@ -88,6 +89,7 @@ export default function Navbar() {
   const t = useTranslations("nav");
   const tCommon = useTranslations("common");
   const locale = useLocale();
+  const { region, setRegion } = useRegion();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -311,6 +313,21 @@ export default function Navbar() {
 
               {/* Right: icons */}
               <div className="flex-1 flex items-center justify-end gap-1 lg:gap-2">
+                {mounted && (
+                  <button
+                    onClick={() => setRegion(region === "ALGERIA" ? "INTERNATIONAL" : "ALGERIA")}
+                    className={cn(
+                      "hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-[9px] uppercase tracking-widest font-semibold transition-all duration-200 border rounded-full",
+                      region === "ALGERIA"
+                        ? "bg-brand-50 text-brand-900 border-brand-100 hover:bg-brand-100"
+                        : "bg-black text-white border-black hover:bg-black/90"
+                    )}
+                    title={region === "ALGERIA" ? "Switch to International (EUR)" : "Switch to Algeria (DZD)"}
+                  >
+                    {region === "ALGERIA" ? "🇩🇿 DZD" : "🌍 EUR"}
+                  </button>
+                )}
+
                 <LanguageSwitcher className={cn("hidden lg:flex px-1 py-2 transition-colors", textClass)} />
 
                 <button
@@ -501,6 +518,32 @@ export default function Navbar() {
             {/* Bottom actions */}
             <div className="px-5 pb-8 pt-3 space-y-3 border-t border-brand-100/60 mt-2">
               <LanguageSwitcher className="justify-center text-brand-700 py-3 w-full bg-brand-50 rounded-2xl" />
+              {mounted && (
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={() => setRegion("ALGERIA")}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 py-3 text-[9px] uppercase tracking-wider font-semibold rounded-2xl border transition-all duration-200",
+                      region === "ALGERIA"
+                        ? "bg-black text-white border-black"
+                        : "bg-brand-50 text-brand-700 border-transparent hover:bg-brand-100"
+                    )}
+                  >
+                    <span>🇩🇿 Algeria (DZD)</span>
+                  </button>
+                  <button
+                    onClick={() => setRegion("INTERNATIONAL")}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 py-3 text-[9px] uppercase tracking-wider font-semibold rounded-2xl border transition-all duration-200",
+                      region === "INTERNATIONAL"
+                        ? "bg-black text-white border-black"
+                        : "bg-brand-50 text-brand-700 border-transparent hover:bg-brand-100"
+                    )}
+                  >
+                    <span>🌍 International (EUR)</span>
+                  </button>
+                </div>
+              )}
               {session ? (
                 <Link href={(session?.user as any)?.role === "ADMIN" ? "/admin" : "/account"} className="block">
                   <Button variant="luxury" size="sm" className="w-full rounded-2xl py-3.5">
