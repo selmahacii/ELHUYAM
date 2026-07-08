@@ -51,6 +51,9 @@ export const metadata: Metadata = {
     description: "Elegance in Modesty. Luxury Modest Fashion Reimagined.",
   },
   robots: { index: true, follow: true },
+  verification: {
+    google: "iMHtd7kTM8jeCZIBTSIdvgAc0UxkREu9lfcIVSJy9hw",
+  },
 };
 
 import { cookies } from "next/headers";
