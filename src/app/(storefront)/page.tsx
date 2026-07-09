@@ -325,8 +325,20 @@ async function BestsellersSection() {
 
 // ── Main export ─────────────────────────────────────────────────────────────
 export default function HomePage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "EL HUYAM",
+    "alternateName": ["Huyam", "Elhuyam", "El Huyam Website", "Huyam Website"],
+    "url": "https://www.elhuyam.com/"
+  };
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <HeroSection />
       <CategoriesSection />
       <Suspense fallback={
