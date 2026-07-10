@@ -54,6 +54,15 @@ export const metadata: Metadata = {
   verification: {
     google: "iMHtd7kTM8jeCZIBTSIdvgAc0UxkREu9lfcIVSJy9hw",
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 import { cookies } from "next/headers";
