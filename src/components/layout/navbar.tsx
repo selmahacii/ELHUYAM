@@ -435,6 +435,31 @@ export default function Navbar() {
                 {tCommon("home")}
               </Link>
 
+              {/* Mobile Drawer Cart Link */}
+              <Link
+                href="/cart"
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center justify-between px-4 py-3.5 rounded-2xl text-[11px] uppercase tracking-[0.15em] font-medium transition-all duration-150",
+                  pathname === "/cart"
+                    ? "bg-black text-white"
+                    : "text-black hover:bg-black/[0.04] active:bg-black/[0.08]"
+                )}
+              >
+                <span className="flex items-center gap-3">
+                  <ShoppingBag className="w-4 h-4 shrink-0" />
+                  {t("cart")}
+                </span>
+                {mounted && cartCount > 0 && (
+                  <span className={cn(
+                    "text-[9px] min-w-[20px] h-[20px] flex items-center justify-center rounded-full font-semibold px-1.5",
+                    pathname === "/cart" ? "bg-white text-black" : "bg-soft-gold text-white"
+                  )}>
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
               {navLinks.map((link) => (
                 <div key={link.href}>
                   {link.hasDropdown ? (
