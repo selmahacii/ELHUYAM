@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -82,6 +82,12 @@ import { useRegion } from "@/providers/region-provider";
 export default function ProductDetail({ product }: { product: Product }) {
   const router = useRouter();
   const { data: session } = useSession();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, [product.id]);
   const [selectedImage, setSelectedImage] = useState(0);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
