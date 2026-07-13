@@ -610,29 +610,25 @@ export default function ProductDetail({ product }: { product: Product }) {
       </div>
 
       {/* Reviews */}
-      <div className="mt-20 border-t border-brand-200 pt-12">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
-          <h2 className="font-display text-2xl text-brand-900 tracking-tight flex items-center gap-3">
-            <span>{t("reviews")}</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
-              {product.reviewCount}
-            </span>
-          </h2>
-          <button
-            onClick={() => setReviewModalOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 border border-black bg-black text-white hover:bg-neutral-900 transition-all text-xs font-semibold uppercase tracking-widest active:scale-98"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            {t("shareYourReview")}
-          </button>
-        </div>
+      {product.reviews.length > 0 && (
+        <div className="mt-20 border-t border-brand-200 pt-12">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+            <h2 className="font-display text-2xl text-brand-900 tracking-tight flex items-center gap-3">
+              <span>{t("reviews")}</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
+                {product.reviewCount}
+              </span>
+            </h2>
+            <button
+              onClick={() => setReviewModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 border border-black bg-black text-white hover:bg-neutral-900 transition-all text-xs font-semibold uppercase tracking-widest active:scale-98"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {t("shareYourReview")}
+            </button>
+          </div>
 
-        <div className="space-y-6">
-          {product.reviews.length === 0 ? (
-            <div className="py-12 text-center text-brand-400 text-sm italic bg-brand-50/30 border border-brand-100">
-              {t("noReviews")}
-            </div>
-          ) : (
+          <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {product.reviews.map((review) => (
                 <div key={review.id} className="bg-brand-50/30 border border-brand-100 p-6 flex flex-col justify-between">
@@ -676,9 +672,9 @@ export default function ProductDetail({ product }: { product: Product }) {
                 </div>
               ))}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Share Review Modal Overlay */}
       {isReviewModalOpen && (
