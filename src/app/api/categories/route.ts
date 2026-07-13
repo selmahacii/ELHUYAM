@@ -1,9 +1,11 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { categorySchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { slugify } from "@/lib/utils";
 import { auth } from "@/auth";
+
+export const revalidate = 300;
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,7 +15,10 @@ export async function GET(req: NextRequest) {
       include: { _count: { select: { products: { where: { archived: false } } } } },
       orderBy: { sortOrder: "asc" },
     });
-    return successResponse(categories);
+    return NextResponse.json(
+      { success: true, data: categories },
+      { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } }
+    );
   } catch {
     return errorResponse("Failed to fetch categories.", 500);
   }

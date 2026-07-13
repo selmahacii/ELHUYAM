@@ -24,7 +24,7 @@ const nextConfig = {
       { protocol: "https", hostname: "i.pinimg.com" },
       { protocol: "https", hostname: "**.pinimg.com" },
     ],
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
   },
   experimental: {
     serverActions: { allowedOrigins: ["localhost:3001", "elhuyam.com"] },

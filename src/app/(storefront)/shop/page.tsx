@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/shop/product-card";
 import ShopFilters from "@/components/shop/shop-filters";
@@ -11,8 +12,19 @@ import CatalogReviews from "@/components/shop/catalog-reviews";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "EL HUYAM" };
+
+// Categories change rarely — cache the slug -> {id, subCategories} lookup so
+// browsing a category doesn't cost an extra DB round-trip on every request.
+const getCategoryBySlug = unstable_cache(
+  async (slug: string) =>
+    db.category.findUnique({
+      where: { slug },
+      include: { subCategories: { orderBy: { sortOrder: "asc" } } },
+    }),
+  ["shop-category-by-slug"],
+  { revalidate: 300, tags: ["categories"] }
+);
 
 interface ShopPageProps {
   searchParams: Promise<{
@@ -47,11 +59,8 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPagePro
   let categoryName = "";
   
   if (category) {
-    const activeCat = await db.category.findUnique({
-      where: { slug: category },
-      include: { subCategories: { orderBy: { sortOrder: "asc" } } }
-    });
-    
+    const activeCat = await getCategoryBySlug(category);
+
     if (activeCat) {
       categoryIds = [activeCat.id, ...activeCat.subCategories.map((c: any) => c.id)];
       subCategories = activeCat.subCategories;

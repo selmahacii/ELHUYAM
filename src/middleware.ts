@@ -38,6 +38,16 @@ export default auth((req: any) => {
   return NextResponse.next();
 });
 
+// Only run session resolution on routes that actually gate on auth — every
+// other navigation (/, /shop, /shop/[slug], /categories, ...) used to pay for
+// a NextAuth session decode on every request for no reason.
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.svg$).*)"],
+  matcher: [
+    "/admin/:path*",
+    "/account/:path*",
+    "/wishlist/:path*",
+    "/auth/login",
+    "/auth/register",
+    "/auth/forgot-password",
+  ],
 };
