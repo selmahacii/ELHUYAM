@@ -69,6 +69,7 @@ export default function CheckoutPage() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -79,10 +80,32 @@ export default function CheckoutPage() {
   const isInternational = watch("isInternational");
   const selectedWilaya = watch("wilayaCode");
   const deliveryType = watch("deliveryType");
+  const selectedCountry = watch("country");
   const shippingFee = !isInternational && selectedWilaya
     ? getShippingCost(selectedWilaya, deliveryType!, sub)
     : isInternational ? 0 : null;
   const total = Math.max(0, sub + (shippingFee ?? 0) - couponDiscount);
+
+  useEffect(() => {
+    if (selectedCountry) {
+      const countryObj = COUNTRIES.find((c) => c.name === selectedCountry);
+      if (countryObj) {
+        const code = countryObj.code;
+        const currentPhone = getValues("phone") || "";
+        if (!currentPhone.startsWith("+")) {
+          const cleanPhone = currentPhone.replace(/^0+/, "");
+          setValue("phone", `${code} ${cleanPhone}`);
+        } else {
+          const oldCountry = COUNTRIES.find((c) => currentPhone.startsWith(c.code));
+          if (oldCountry && oldCountry.code !== code) {
+            setValue("phone", currentPhone.replace(oldCountry.code, code));
+          } else if (!oldCountry) {
+            setValue("phone", `${code} ${currentPhone}`);
+          }
+        }
+      }
+    }
+  }, [selectedCountry, setValue, getValues]);
 
   async function validateCoupon() {
     if (!couponCode.trim()) return;
@@ -119,8 +142,8 @@ export default function CheckoutPage() {
 
   async function onSubmit(data: CheckoutForm) {
     if (items.length === 0) { toast.error(t("emptyCart")); return; }
-    if (!data.isInternational && !data.wilayaCode) { toast.error("Veuillez sélectionner votre wilaya"); return; }
-    if (data.isInternational && !data.country) { toast.error("Veuillez renseigner votre pays de destination"); return; }
+    if (!data.isInternational && !data.wilayaCode) { toast.error("Please select your wilaya"); return; }
+    if (data.isInternational && !data.country) { toast.error("Please select your destination country"); return; }
     setPlacing(true);
     try {
       const res = await fetch("/api/orders", {
@@ -181,15 +204,15 @@ export default function CheckoutPage() {
           <div className="bg-white p-6 max-w-md w-full border border-neutral-200 shadow-2xl space-y-4 rounded-2xl">
             <div className="text-center space-y-2">
               <span className="text-3xl">🌍</span>
-              <h3 className="font-display text-lg font-bold text-black">Livraison Internationale</h3>
+              <h3 className="font-display text-lg font-bold text-black">International Delivery</h3>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Les frais d'expédition pour les commandes internationales varient selon le pays de destination et le poids du colis. Ils seront calculés et confirmés avec vous après validation.
+                Shipping fees for international orders vary depending on the destination country and package weight. They will be calculated and confirmed with you after validation.
               </p>
             </div>
             <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl text-xs text-emerald-800 space-y-1.5 font-medium">
-              <p className="font-bold">⚠️ Action Requise :</p>
+              <p className="font-bold">⚠️ Action Required:</p>
               <p>
-                Veuillez indiquer un numéro de téléphone valide disposant de **WhatsApp** (avec l'indicatif de votre pays, ex: +33 pour la France). Nous vous contacterons sur WhatsApp pour confirmer les frais de livraison finaux avant l'expédition.
+                Please provide a valid phone number with **WhatsApp** (including your country code, e.g. +33 for France). We will contact you on WhatsApp to confirm the final shipping fees before dispatch.
               </p>
             </div>
             <button
@@ -197,7 +220,7 @@ export default function CheckoutPage() {
               onClick={() => setShowInternationalModal(false)}
               className="w-full bg-black hover:bg-neutral-900 text-white py-3 text-xs uppercase tracking-widest font-bold transition-all"
             >
-              J'ai compris
+              Got it
             </button>
           </div>
         </div>
@@ -217,7 +240,7 @@ export default function CheckoutPage() {
         {/* LEFT: Form */}
         <div className="lg:col-span-2 space-y-8">
           {/* Destination Type Toggle */}
-          <div className="flex bg-neutral-100 p-1 border border-neutral-200 rounded-xl text-xs items-center font-bold">
+          <div className="flex bg-neutral-100 p-1 border border-neutral-200 rounded-xl text-xs">
             <button
               type="button"
               onClick={() => {
@@ -230,7 +253,7 @@ export default function CheckoutPage() {
                   : "text-neutral-500 hover:text-black"
               }`}
             >
-              🇩🇿 Livraison Nationale (Algérie)
+              🇩🇿 National Delivery (Algeria)
             </button>
             <button
               type="button"
@@ -244,7 +267,7 @@ export default function CheckoutPage() {
                   : "text-neutral-500 hover:text-black"
               }`}
             >
-              🌍 Livraison Internationale
+              🌍 International Delivery
             </button>
           </div>
 
@@ -264,10 +287,10 @@ export default function CheckoutPage() {
               </div>
               <div className="sm:col-span-2">
                 <label className={labelCls}>{t("phone")} *</label>
-                <input {...register("phone")} type="tel" className={inputCls} placeholder={isInternational ? "Ex: +33 6 XX XX XX XX" : "05XXXXXXXX"} autoComplete="tel" />
+                <input {...register("phone")} type="tel" className={inputCls} placeholder={isInternational ? "E.g., +33 6 XX XX XX XX" : "05XXXXXXXX"} autoComplete="tel" />
                 {isInternational && (
                   <p className="text-[10px] text-emerald-600 mt-1 font-semibold">
-                    ✦ Numéro WhatsApp obligatoire pour la confirmation de livraison internationale.
+                    ✦ WhatsApp number with country code (e.g. +33) is required for international delivery confirmation.
                   </p>
                 )}
                 {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
@@ -283,14 +306,14 @@ export default function CheckoutPage() {
 
             {isInternational ? (
               <div>
-                <label className={labelCls}>Pays de destination *</label>
+                <label className={labelCls}>Destination Country *</label>
                 <select
                   {...register("country")}
                   className={inputCls}
                 >
-                  <option value="">Sélectionnez un pays</option>
+                  <option value="">Select a country</option>
                   {COUNTRIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c.name} value={c.name}>{c.name}</option>
                   ))}
                 </select>
                 {errors.country && <p className={errorCls}>{errors.country.message}</p>}
@@ -350,11 +373,11 @@ export default function CheckoutPage() {
                   }`}>
                     <Truck className="w-4 h-4 shrink-0" />
                     {(deliveryType === "STOPDESK" ? WILAYAS.find(w => w.code === selectedWilaya)?.stopdesk === 0 : WILAYAS.find(w => w.code === selectedWilaya)?.domicile === 0) ? (
-                      <span>⚠️ Livraison <strong>non disponible</strong> pour cette option dans votre wilaya.</span>
+                      <span>⚠️ Delivery <strong>not available</strong> for this option in your wilaya.</span>
                     ) : (
                       <span>
-                        Frais de livraison : <strong>{formatPrice(shippingFee!, currency)}</strong>
-                        {deliveryType === "DOMICILE" ? " (à domicile)" : " (stop desk)"}
+                        Shipping fee: <strong>{formatPrice(shippingFee!, currency)}</strong>
+                        {deliveryType === "DOMICILE" ? " (home delivery)" : " (stop desk)"}
                       </span>
                     )}
                   </div>
@@ -449,7 +472,7 @@ export default function CheckoutPage() {
                 <span>{t("shipping")}</span>
                 <span>
                   {isInternational ? (
-                    <span className="text-emerald-600 font-semibold">Calculé après confirmation</span>
+                    <span className="text-emerald-600 font-semibold">Calculated after confirmation</span>
                   ) : shippingFee === null ? (
                     <span className="text-neutral-400 italic">{t("selectWilayaFirst")}</span>
                   ) : (
