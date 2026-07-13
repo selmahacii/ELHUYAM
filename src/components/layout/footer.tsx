@@ -42,12 +42,12 @@ export default async function Footer() {
 
   return (
     <footer className="bg-black text-white">
-      <div className="flex items-center justify-center py-6 gap-4 px-8">
+      <div className="flex items-center justify-center py-4 md:py-6 gap-4 px-8">
         <div className="flex-1 h-px bg-gradient-to-r from-transparent to-soft-gold/30" />
         <div className="flex-1 h-px bg-gradient-to-l from-transparent to-soft-gold/30" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
         {/* Brand */}
         <div className="lg:col-span-1">
           <Link href="/" className="flex flex-col items-start gap-1 mb-6 group">
@@ -92,10 +92,10 @@ export default async function Footer() {
 
         {/* Shop — dynamic from DB */}
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-6 flex items-center gap-2">
+          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-4 md:mb-6 flex items-center gap-2">
             <span className="text-[8px]">◆</span> {t("shop")}
           </h4>
-          <ul className="space-y-3">
+          <ul className="space-y-2 md:space-y-3">
             {categories.map((cat: { name: string; slug: string }) => (
               <li key={cat.slug}>
                 <Link
@@ -111,10 +111,10 @@ export default async function Footer() {
 
         {/* Help */}
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-6 flex items-center gap-2">
+          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-4 md:mb-6 flex items-center gap-2">
             <span className="text-[8px]">◆</span> {t("help")}
           </h4>
-          <ul className="space-y-3">
+          <ul className="space-y-2 md:space-y-3">
             {helpLinks.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-sm text-white/60 hover:text-white hover:ps-2 transition-all duration-200 block">
@@ -127,10 +127,10 @@ export default async function Footer() {
 
         {/* Contact */}
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-6 flex items-center gap-2">
+          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-4 md:mb-6 flex items-center gap-2">
             <span className="text-[8px]">◆</span> {footerContactTitle}
           </h4>
-          <address className="not-italic space-y-3 text-sm text-white/70">
+          <address className="not-italic space-y-2 md:space-y-3 text-sm text-white/70">
             <p>{footerAddress}</p>
             {footerEmail && (
               <a href={`mailto:${footerEmail}`} className="block hover:text-white transition-colors">
@@ -148,7 +148,7 @@ export default async function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-white/50 text-xs">
             &copy; {new Date().getFullYear()} EL HUYAM. {t("allRights")}
           </p>

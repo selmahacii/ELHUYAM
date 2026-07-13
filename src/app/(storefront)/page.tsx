@@ -260,9 +260,9 @@ async function FeaturedProductsSection() {
         <div className="text-center mt-16">
           <Link
             href="/shop"
-            className="group inline-flex items-center gap-3 px-8 py-4 border-[3px] border-brand-900 text-brand-900 hover:bg-brand-900 hover:text-warm-white transition-all duration-300 transform active:scale-95 shadow-md hover:shadow-lg"
+            className="group inline-flex items-center gap-3 px-8 py-3.5 border-2 border-brand-900 text-brand-900 hover:bg-brand-900 hover:text-warm-white transition-all duration-300 transform active:scale-95 shadow-sm hover:shadow-md"
           >
-            <span className="text-xs uppercase tracking-[0.25em] font-bold underline underline-offset-4 decoration-2">
+            <span className="text-xs uppercase tracking-[0.25em] font-bold underline underline-offset-4 decoration-1">
               {t("viewAll")}
             </span>
             <ArrowRight className="w-4 h-4 shrink-0 transition-transform duration-300 group-hover:translate-x-1.5 stroke-[1.5]" />
