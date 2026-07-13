@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { updateOrderAdmin } from "@/lib/orders";
 
 // ZR Express state → our OrderStatus mapping
 const ZR_STATE_MAP: Record<string, string> = {
@@ -54,19 +55,10 @@ export async function POST(req: NextRequest) {
     const newStatus = stateName ? mapZRState(stateName) : null;
 
     if (newStatus && newStatus !== order.status) {
-      await db.$transaction([
-        db.order.update({
-          where: { id: order.id },
-          data: { status: newStatus as never },
-        }),
-        db.orderStatusHistory.create({
-          data: {
-            orderId: order.id,
-            status: newStatus as never,
-            note: `ZR Express: ${stateName}`,
-          },
-        }),
-      ]);
+      await updateOrderAdmin(order.id, {
+        status: newStatus,
+        note: `ZR Express: ${stateName}`
+      });
     }
 
     return successResponse({ received: true });

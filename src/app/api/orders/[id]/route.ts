@@ -6,6 +6,7 @@ import { z } from "zod";
 import { revalidateTag } from "next/cache";
 import { getZRSettings, zrCreateParcel } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
+import { updateOrderAdmin } from "@/lib/orders";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -65,70 +66,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
     if (!existingOrder) return errorResponse("Order not found", 404);
  
-    // If order status is changing
-    if (status && status !== existingOrder.status) {
-      // 1. Automatic Stock Restocking / Decrementing
-      const isCurrentlyDestructive = existingOrder.status === "CANCELLED" || existingOrder.status === "REFUNDED";
-      const isNewDestructive = status === "CANCELLED" || status === "REFUNDED";
-
-      if (isNewDestructive && !isCurrentlyDestructive) {
-        // Restock items within transaction
-        await db.$transaction(async (tx: any) => {
-          for (const item of existingOrder.items) {
-            if (item.size || item.color) {
-              const variant = await tx.productVariant.findFirst({
-                where: {
-                  productId: item.productId,
-                  size: item.size || null,
-                  color: item.color || null,
-                },
-              });
-              if (variant) {
-                await tx.productVariant.update({
-                  where: { id: variant.id },
-                  data: { stock: { increment: item.quantity } },
-                });
-                continue;
-              }
-            }
-            await tx.product.update({
-              where: { id: item.productId },
-              data: { stock: { increment: item.quantity } },
-            });
-          }
-        });
-      } else if (!isNewDestructive && isCurrentlyDestructive) {
-        // Decrement items again within transaction
-        await db.$transaction(async (tx: any) => {
-          for (const item of existingOrder.items) {
-            if (item.size || item.color) {
-              const variant = await tx.productVariant.findFirst({
-                where: {
-                  productId: item.productId,
-                  size: item.size || null,
-                  color: item.color || null,
-                },
-              });
-              if (variant) {
-                const updated = await tx.productVariant.updateMany({
-                  where: { id: variant.id, stock: { gte: item.quantity } },
-                  data: { stock: { decrement: item.quantity } },
-                });
-                if (updated.count > 0) continue;
-              }
-            }
-            const updated = await tx.product.updateMany({
-              where: { id: item.productId, stock: { gte: item.quantity } },
-              data: { stock: { decrement: item.quantity } },
-            });
-            if (updated.count === 0) {
-              throw new Error(`STOCK_DEPLETED:${item.productTitle}`);
-            }
-          }
-        });
-      }
-    }
- 
     // Determine final payment status (Auto-settle payment to PAID when order is DELIVERED)
     let finalPaymentStatus = paymentStatus;
     if (status === "DELIVERED") {
@@ -184,21 +121,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       autoParcelId = zrRes.data.id;
       autoNoteAddition = ` [Transmis automatiquement à ZR Express. N° Suivi: ${autoTrackingNumber}]`;
     }
- 
-    const order = await db.order.update({
-      where: { id },
-      data: {
-        ...(status ? { status } : {}),
-        ...(finalPaymentStatus ? { paymentStatus: finalPaymentStatus } : {}),
-        ...(autoTrackingNumber !== undefined ? { trackingNumber: autoTrackingNumber } : {}),
-        ...(finalCarrier !== undefined ? { carrier: finalCarrier } : {}),
-        ...(autoParcelId ? { zrParcelId: autoParcelId } : {}),
-        ...(status
-          ? { statusHistory: { create: { status, note: (note ?? "") + autoNoteAddition || undefined, changedById: session?.user?.id } } }
-          : {}),
+
+    const order = await updateOrderAdmin(
+      id,
+      {
+        status,
+        paymentStatus,
+        trackingNumber: autoTrackingNumber,
+        carrier: finalCarrier,
+        note: (note ?? "") + autoNoteAddition || undefined,
+        zrParcelId: autoParcelId,
       },
-      include: { items: true, statusHistory: { orderBy: { createdAt: "asc" } } },
-    });
+      session?.user?.id
+    );
  
     revalidateTag("orders", "default");
     return successResponse(order);
