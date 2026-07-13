@@ -45,11 +45,25 @@ export default async function ProductDetailPage({ params }: Props) {
 
   if (!product) notFound();
 
-  const relatedProducts = await db.product.findMany({
+  let relatedProducts = await db.product.findMany({
     where: { categoryId: product.categoryId, archived: false, id: { not: product.id } },
     include: { category: true },
     take: 4,
   });
+
+  if (relatedProducts.length < 4) {
+    const excludedIds = [product.id, ...relatedProducts.map((p: { id: string }) => p.id)];
+    const fallbackProducts = await db.product.findMany({
+      where: {
+        archived: false,
+        id: { notIn: excludedIds },
+      },
+      include: { category: true },
+      take: 4 - relatedProducts.length,
+      orderBy: { createdAt: "desc" },
+    });
+    relatedProducts = [...relatedProducts, ...fallbackProducts];
+  }
 
   return (
     <div>

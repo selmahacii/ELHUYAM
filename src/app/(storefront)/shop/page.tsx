@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/shop/product-card";
 import ShopFilters from "@/components/shop/shop-filters";
@@ -260,6 +261,17 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           {/* Ornament divider */}
           <div className="ornament-divider max-w-xs mx-auto mb-6">
             <span className="text-soft-gold text-xs">✦</span>
+          </div>
+
+          {/* Back to Home Button */}
+          <div className="mb-4 flex justify-center">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.2em] font-semibold text-brand-700 hover:text-black hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <ArrowLeft className="w-3 h-3 rtl:rotate-180" />
+              <span>{isAr ? "الرئيسية" : "Retour"}</span>
+            </Link>
           </div>
 
           {/* Breadcrumb */}

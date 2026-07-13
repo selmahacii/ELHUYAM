@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ShoppingBag, Heart, Star,
-  Check, ChevronRight, Minus, Plus, AlertTriangle, Send, Loader2
+  Check, ChevronRight, Minus, Plus, AlertTriangle, Send, Loader2, ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, calculateDiscountPercent, formatDate, getInitials } from "@/lib/utils";
@@ -79,6 +80,7 @@ interface Product {
 import { useRegion } from "@/providers/region-provider";
 
 export default function ProductDetail({ product }: { product: Product }) {
+  const router = useRouter();
   const { data: session } = useSession();
   const [selectedImage, setSelectedImage] = useState(0);
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -317,6 +319,23 @@ export default function ProductDetail({ product }: { product: Product }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Back button */}
+      <div className="mb-6 flex justify-start">
+        <button
+          onClick={() => {
+            if (typeof window !== "undefined" && window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/shop");
+            }
+          }}
+          className="inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-semibold text-brand-700 hover:text-black hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-180" />
+          <span>{locale === "ar" ? "رجوع" : "Retour"}</span>
+        </button>
+      </div>
+
       {/* Breadcrumb */}
       <nav className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-widest rtl:tracking-normal rtl:normal-case text-brand-600 font-medium mb-8">
         <Link href="/" className="hover:text-black transition-colors">{tCommon("home")}</Link>
