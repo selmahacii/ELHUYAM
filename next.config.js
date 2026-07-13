@@ -24,7 +24,13 @@ const nextConfig = {
       { protocol: "https", hostname: "i.pinimg.com" },
       { protocol: "https", hostname: "**.pinimg.com" },
     ],
-    formats: ["image/avif", "image/webp"],
+    // Images are already resized/compressed at the CDN level via
+    // getOptimizedImageUrl() (Cloudinary w_/q_auto/f_auto params, Unsplash
+    // query params, Pinterest size variants) before reaching next/image, so
+    // Next's own Image Optimization pipeline would just reprocess an already
+    // correctly-sized image — wasted latency and counts against Vercel's
+    // Image Optimization request quota. Keep unoptimized.
+    unoptimized: true,
   },
   experimental: {
     serverActions: { allowedOrigins: ["localhost:3001", "elhuyam.com"] },
