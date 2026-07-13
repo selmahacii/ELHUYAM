@@ -2,8 +2,11 @@ import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/utils";
 import { subDays, startOfDay, format } from "date-fns";
 import Link from "next/link";
-import AnalyticsCharts from "./analytics-charts";
-import { 
+import nextDynamic from "next/dynamic";
+// recharts (+ its d3-* deps) is a sizeable client bundle — code-split it into
+// its own chunk instead of bundling it eagerly into the analytics route.
+const AnalyticsCharts = nextDynamic(() => import("./analytics-charts"));
+import {
   TrendingUp, TrendingDown, Minus, Coins, ShoppingBag, Users, 
   Package, AlertTriangle, ArrowRight, Star
 } from "lucide-react";

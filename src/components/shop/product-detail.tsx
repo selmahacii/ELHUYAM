@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -83,11 +83,10 @@ export default function ProductDetail({ product }: { product: Product }) {
   const router = useRouter();
   const { data: session } = useSession();
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo(0, 0);
-    }
-  }, [product.id]);
+  // Scroll-to-top on navigation is handled globally by <ScrollToTop> in the
+  // storefront layout — a second scroll-to-top effect here raced it (two
+  // competing window.scrollTo(0,0) calls against a still-settling layout),
+  // which is what caused the visible scroll-down-then-jump-up on product nav.
   const [selectedImage, setSelectedImage] = useState(0);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);

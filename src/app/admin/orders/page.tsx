@@ -51,7 +51,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
     } : {}),
   };
 
-  const [orders, total, statusCounts, allProducts, allCategories, totalRevenueResult] = await Promise.all([
+  const [orders, total, statusCounts, totalRevenueResult] = await Promise.all([
     db.order.findMany({
       where,
       include: {
@@ -76,34 +76,6 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
         db.order.count({ where: { ...where, status: s as never } })
       )
     ),
-    db.product.findMany({
-      where: { archived: false, stock: { gt: 0 } },
-      select: {
-        id: true,
-        title: true,
-        price: true,
-        discountPrice: true,
-        stock: true,
-        images: true,
-        categoryId: true,
-        variants: {
-          select: {
-            id: true,
-            size: true,
-            color: true,
-            colorHex: true,
-            image: true,
-            stock: true,
-            price: true,
-          },
-        },
-      },
-      orderBy: { title: "asc" },
-    }),
-    db.category.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
     db.order.aggregate({
       where: { ...where, status: "DELIVERED" },
       _sum: { totalAmount: true },
@@ -165,7 +137,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
               <span>{pendingCount} pending order{pendingCount > 1 ? "s" : ""}</span>
             </Link>
           )}
-          <ManualOrderModal categories={allCategories} products={allProducts} />
+          <ManualOrderModal />
         </div>
       </div>
 

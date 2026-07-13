@@ -8,7 +8,11 @@ function ScrollToTopTrigger() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // `<html>` has the Tailwind `scroll-smooth` class, and an un-opinionated
+    // window.scrollTo(0, 0) call inherits that CSS scroll-behavior, animating
+    // instead of jumping. Explicit "instant" bypasses it so navigation always
+    // resets to top immediately, with no visible scroll animation.
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname, searchParams]);
 
   return null;

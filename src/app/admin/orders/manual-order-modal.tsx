@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { X, Plus, Trash2, Search, Loader2, PackagePlus } from "lucide-react";
 import { WILAYAS } from "@/lib/wilayas";
@@ -32,11 +32,6 @@ interface ProductProp {
   variants?: ProductVariantProp[];
 }
 
-interface ManualOrderModalProps {
-  categories?: CategoryProp[];
-  products?: ProductProp[];
-}
-
 interface OrderItem {
   id: string; // unique item key: productId-size-color
   productId: string;
@@ -50,10 +45,33 @@ interface OrderItem {
   color?: string | null;
 }
 
-export default function ManualOrderModal({ categories = [], products = [] }: ManualOrderModalProps) {
+export default function ManualOrderModal() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Product/category picker data used to always be fetched server-side on
+  // every /admin/orders page load (even just paginating). It's only needed
+  // once this modal is actually opened, so fetch it lazily then instead.
+  const [categories, setCategories] = useState<CategoryProp[]>([]);
+  const [products, setProducts] = useState<ProductProp[]>([]);
+  const [loadingPickerData, setLoadingPickerData] = useState(false);
+  const pickerDataLoaded = useRef(false);
+
+  useEffect(() => {
+    if (!open || pickerDataLoaded.current) return;
+    pickerDataLoaded.current = true;
+    setLoadingPickerData(true);
+    fetch("/api/admin/orders/manual-order-data")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.success) {
+          setProducts(json.data.products ?? []);
+          setCategories(json.data.categories ?? []);
+        }
+      })
+      .finally(() => setLoadingPickerData(false));
+  }, [open]);
 
   // Customer
   const [customerName, setCustomerName] = useState("");
@@ -354,7 +372,11 @@ export default function ManualOrderModal({ categories = [], products = [] }: Man
 
                 {/* Products Dropdown List */}
                 <div className="border border-black/20 max-h-64 overflow-y-auto divide-y divide-black/10 bg-white mb-4 shadow-sm">
-                  {filteredProducts.length === 0 ? (
+                  {loadingPickerData ? (
+                    <p className="p-4 text-xs text-black/50 text-center font-medium flex items-center justify-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading products…
+                    </p>
+                  ) : filteredProducts.length === 0 ? (
                     <p className="p-4 text-xs text-black/50 text-center font-medium">No product found</p>
                   ) : (
                     filteredProducts.map((p) => {
