@@ -335,7 +335,9 @@ export async function POST(req: NextRequest) {
       ).catch(() => null);
     }
 
-    return successResponse(order, 201);
+    const response = successResponse(order, 201);
+    response.cookies.set("last_placed_order", order.orderNumber, { maxAge: 60 * 60 * 24, path: "/" });
+    return response;
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
     if (msg.startsWith("STOCK_DEPLETED:")) {

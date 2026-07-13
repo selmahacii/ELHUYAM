@@ -59,7 +59,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
         {/* Actions Button container */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {order && (
-            <Link href={`/account/orders/${order}`} className="w-full sm:w-auto">
+            <Link href={`/orders/track?order=${order}`} className="w-full sm:w-auto">
               <Button variant="luxury" size="lg" className="w-full justify-center gap-2 tracking-[0.15em] text-[10px] uppercase font-semibold py-4 px-8 rounded-none">
                 <Package className="w-3.5 h-3.5 text-soft-gold" />
                 {t("success.track")}

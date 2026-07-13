@@ -20,17 +20,38 @@ export async function POST(req: NextRequest) {
       return errorResponse(parsed.error.errors[0].message);
     }
 
-    const { name, email, password } = parsed.data;
+    const { name, email, password, lastOrderNumber } = parsed.data;
 
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) return errorResponse("An account with this email already exists", 409);
 
     const hashed = await bcrypt.hash(password, 12);
 
-    const user = await db.user.create({
-      data: { name, email, password: hashed },
-      select: { id: true, name: true, email: true, createdAt: true },
-    });
+    let user;
+    if (lastOrderNumber) {
+      const order = await db.order.findFirst({
+        where: { orderNumber: lastOrderNumber },
+        select: { userId: true },
+      });
+      if (order && order.userId) {
+        user = await db.user.update({
+          where: { id: order.userId },
+          data: {
+            name,
+            email,
+            password: hashed,
+          },
+          select: { id: true, name: true, email: true, createdAt: true },
+        });
+      }
+    }
+
+    if (!user) {
+      user = await db.user.create({
+        data: { name, email, password: hashed },
+        select: { id: true, name: true, email: true, createdAt: true },
+      });
+    }
 
     await sendWelcomeEmail(name, email).catch(() => null); // Non-blocking
 

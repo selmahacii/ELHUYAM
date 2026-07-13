@@ -30,6 +30,7 @@ export default async function Footer() {
   const footerContactTitle = contactTitleSetting?.value || t("contact");
 
   const helpLinks = [
+    { label: t("trackOrder"), href: "/orders/track" },
     { label: t("faq"), href: "/faq" },
     { label: t("shipping"), href: "/shipping" },
     { label: t("contact"), href: "/contact" },

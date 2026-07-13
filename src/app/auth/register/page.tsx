@@ -22,10 +22,17 @@ export default function RegisterPage() {
   async function onSubmit(data: RegisterInput) {
     setLoading(true);
     try {
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(";").shift();
+      };
+      const lastOrderNumber = getCookie("last_placed_order");
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, lastOrderNumber }),
       });
 
       const result = await res.json();
