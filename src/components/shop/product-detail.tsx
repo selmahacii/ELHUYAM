@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ShoppingBag, Heart, Star,
-  Check, ChevronRight, Minus, Plus, AlertTriangle, Send, Loader2, ArrowLeft
+  Check, ChevronRight, Minus, Plus, AlertTriangle, Send, Loader2, ArrowLeft, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, calculateDiscountPercent, formatDate, getInitials } from "@/lib/utils";
@@ -91,6 +91,7 @@ export default function ProductDetail({ product }: { product: Product }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
     name: "",
@@ -610,26 +611,33 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       {/* Reviews */}
       <div className="mt-20 border-t border-brand-200 pt-12">
-        <div className="grid md:grid-cols-12 gap-10 lg:gap-16">
-          
-          {/* Left: Reviews List */}
-          <div className="md:col-span-7 space-y-8">
-            <h2 className="font-display text-2xl text-brand-900 tracking-tight flex items-center gap-3">
-              <span>{t("reviews")}</span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
-                {product.reviewCount}
-              </span>
-            </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+          <h2 className="font-display text-2xl text-brand-900 tracking-tight flex items-center gap-3">
+            <span>{t("reviews")}</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
+              {product.reviewCount}
+            </span>
+          </h2>
+          <button
+            onClick={() => setReviewModalOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-black bg-black text-white hover:bg-neutral-900 transition-all text-xs font-semibold uppercase tracking-widest active:scale-98"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {t("shareYourReview")}
+          </button>
+        </div>
 
-            <div className="space-y-6">
-              {product.reviews.length === 0 ? (
-                <div className="py-8 text-brand-400 text-sm italic">
-                  {t("noReviews")}
-                </div>
-              ) : (
-                product.reviews.map((review) => (
-                  <div key={review.id} className="border-b border-brand-100 pb-6 last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between mb-3">
+        <div className="space-y-6">
+          {product.reviews.length === 0 ? (
+            <div className="py-12 text-center text-brand-400 text-sm italic bg-brand-50/30 border border-brand-100">
+              {t("noReviews")}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {product.reviews.map((review) => (
+                <div key={review.id} className="bg-brand-50/30 border border-brand-100 p-6 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 bg-brand-100 rounded-full flex items-center justify-center text-xs font-semibold text-brand-700 uppercase">
                           {getInitials(review.user?.name || review.name || t("anonymous"))}
@@ -654,143 +662,155 @@ export default function ProductDetail({ product }: { product: Product }) {
                       </div>
                     </div>
                     {review.title && (
-                      <p className="text-sm font-semibold text-brand-900 mb-1">{review.title}</p>
+                      <p className="text-sm font-semibold text-brand-900 mb-1.5">{review.title}</p>
                     )}
                     {review.comment && (
                       <p className="text-sm text-brand-600 leading-relaxed font-medium">{review.comment}</p>
                     )}
-                    {review.verified && (
-                      <div className="flex items-center gap-1.5 mt-2 text-xs text-green-600 font-semibold">
-                        <Check className="w-3.5 h-3.5" /> {t("verifiedPurchase")}
-                      </div>
-                    )}
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Right: Write a Review Form */}
-          <div className="md:col-span-5">
-            <div className="bg-brand-50/60 border border-brand-100 p-6 sm:p-8 backdrop-blur-xs">
-              {reviewSubmitted ? (
-                <div className="text-center py-8 space-y-4">
-                  <span className="text-soft-gold text-3xl block animate-bounce">✦</span>
-                  <h3 className="font-display text-xl text-brand-900 font-semibold">
-                    {t("successHeader")}
-                  </h3>
-                  <p className="text-xs text-brand-600 leading-relaxed max-w-xs mx-auto">
-                    {t("successSub")}
-                  </p>
-                  <button
-                    onClick={() => setReviewSubmitted(false)}
-                    className="mt-4 text-xs font-semibold uppercase tracking-widest text-brand-700 hover:text-soft-gold transition-colors border-b border-brand-300 hover:border-soft-gold pb-0.5"
-                  >
-                    {t("writeAnother")}
-                  </button>
+                  {review.verified && (
+                    <div className="flex items-center gap-1.5 mt-4 text-xs text-green-600 font-semibold border-t border-brand-100/50 pt-3">
+                      <Check className="w-3.5 h-3.5" /> {t("verifiedPurchase")}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="font-display text-lg text-brand-900 font-semibold">
-                      {t("shareYourReview")}
-                    </h3>
-                    <p className="text-xs text-brand-400 mt-1">
-                      {session 
-                        ? t("loggedInAs", { name: session.user.name || t("anonymous") }) 
-                        : t("publicReviewGuest")}
-                    </p>
-                  </div>
-
-                  <form onSubmit={handleReviewSubmit} className="space-y-5">
-                     {/* Star Rating Input */}
-                    <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-500">
-                        {t("overallRating")} <span className="text-red-500">*</span>
-                      </label>
-                      <StarRatingInput
-                        value={reviewForm.rating}
-                        onChange={(v) => setReviewForm((prev) => ({ ...prev, rating: v }))}
-                      />
-                    </div>
-
-                    {/* Guest Name input */}
-                    <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-500">
-                        {t("yourName")} <span className="text-brand-300 normal-case font-normal">{t("optional")}</span>
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={100}
-                        placeholder={t("guestPlaceholder")}
-                        value={reviewForm.name}
-                        onChange={(e) => setReviewForm((prev) => ({ ...prev, name: e.target.value }))}
-                        className="w-full bg-white border border-brand-200 px-3 py-2 text-sm text-brand-900 placeholder:text-brand-300 focus:outline-none focus:border-soft-gold transition-colors rounded-none"
-                      />
-                    </div>
-
-                    {/* Title input */}
-                    <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-500">
-                        {t("reviewTitle")} <span className="text-brand-300 normal-case font-normal">{t("optional")}</span>
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={150}
-                        placeholder={t("titlePlaceholder")}
-                        value={reviewForm.title}
-                        onChange={(e) => setReviewForm((prev) => ({ ...prev, title: e.target.value }))}
-                        className="w-full bg-white border border-brand-200 px-3 py-2 text-sm text-brand-900 placeholder:text-brand-300 focus:outline-none focus:border-soft-gold transition-colors rounded-none"
-                      />
-                    </div>
-
-                    {/* Detailed Comment textarea */}
-                    <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-500">
-                        {t("detailedComment")} <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        required
-                        minLength={5}
-                        maxLength={2000}
-                        rows={4}
-                        placeholder={t("commentPlaceholder")}
-                        value={reviewForm.comment}
-                        onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
-                        className="w-full bg-white border border-brand-200 px-3 py-2 text-sm text-brand-900 placeholder:text-brand-300 focus:outline-none focus:border-soft-gold transition-colors resize-none rounded-none"
-                      />
-                      <div className="flex justify-between items-center text-[10px] text-brand-300 mt-1 font-semibold">
-                        <span>{t("minChars")}</span>
-                        <span>{reviewForm.comment.length} / 2000</span>
-                      </div>
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={submittingReview || reviewForm.comment.trim().length < 5}
-                      className="w-full h-11 flex items-center justify-center gap-2 bg-black text-white hover:bg-neutral-900 transition-colors duration-300 text-xs font-semibold uppercase tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {submittingReview ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          {t("submitting")}
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5" />
-                          {t("submitReview")}
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </div>
-              )}
+              ))}
             </div>
-          </div>
-          
+          )}
         </div>
       </div>
+
+      {/* Share Review Modal Overlay */}
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-lg p-6 sm:p-8 bg-white border border-brand-100 relative shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setReviewModalOpen(false);
+                setReviewSubmitted(false);
+              }}
+              className="absolute top-4 right-4 p-1.5 text-brand-400 hover:text-black transition-colors rounded-full hover:bg-slate-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {reviewSubmitted ? (
+              <div className="text-center py-10 space-y-4 my-auto">
+                <span className="text-soft-gold text-4xl block animate-bounce">✦</span>
+                <h3 className="font-display text-2xl text-brand-900 font-semibold">
+                  {t("successHeader")}
+                </h3>
+                <p className="text-sm text-brand-600 leading-relaxed max-w-xs mx-auto">
+                  {t("successSub")}
+                </p>
+                <button
+                  onClick={() => setReviewSubmitted(false)}
+                  className="mt-6 inline-block text-xs font-semibold uppercase tracking-widest text-brand-700 hover:text-soft-gold transition-colors border-b border-brand-300 hover:border-soft-gold pb-0.5"
+                >
+                  {t("writeAnother")}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-display text-xl text-brand-900 font-semibold">
+                    {t("shareYourReview")}
+                  </h3>
+                  <p className="text-xs text-brand-400 mt-1">
+                    {session 
+                      ? t("loggedInAs", { name: session.user.name || t("anonymous") }) 
+                      : t("publicReviewGuest")}
+                  </p>
+                </div>
+
+                <form onSubmit={handleReviewSubmit} className="space-y-5">
+                   {/* Star Rating Input */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-500">
+                      {t("overallRating")} <span className="text-red-500">*</span>
+                    </label>
+                    <StarRatingInput
+                      value={reviewForm.rating}
+                      onChange={(v) => setReviewForm((prev) => ({ ...prev, rating: v }))}
+                    />
+                  </div>
+
+                  {/* Guest Name input */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-500">
+                      {t("yourName")} <span className="text-brand-300 normal-case font-normal">{t("optional")}</span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={100}
+                      placeholder={t("guestPlaceholder")}
+                      value={reviewForm.name}
+                      onChange={(e) => setReviewForm((prev) => ({ ...prev, name: e.target.value }))}
+                      className="w-full bg-white border border-brand-200 px-3 py-2 text-sm text-brand-900 placeholder:text-brand-300 focus:outline-none focus:border-soft-gold transition-colors rounded-none"
+                    />
+                  </div>
+
+                  {/* Title input */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-500">
+                      {t("reviewTitle")} <span className="text-brand-300 normal-case font-normal">{t("optional")}</span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={150}
+                      placeholder={t("titlePlaceholder")}
+                      value={reviewForm.title}
+                      onChange={(e) => setReviewForm((prev) => ({ ...prev, title: e.target.value }))}
+                      className="w-full bg-white border border-brand-200 px-3 py-2 text-sm text-brand-900 placeholder:text-brand-300 focus:outline-none focus:border-soft-gold transition-colors rounded-none"
+                    />
+                  </div>
+
+                  {/* Detailed Comment textarea */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-500">
+                      {t("detailedComment")} <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      required
+                      minLength={5}
+                      maxLength={2000}
+                      rows={4}
+                      placeholder={t("commentPlaceholder")}
+                      value={reviewForm.comment}
+                      onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
+                      className="w-full bg-white border border-brand-200 px-3 py-2 text-sm text-brand-900 placeholder:text-brand-300 focus:outline-none focus:border-soft-gold transition-colors resize-none rounded-none"
+                    />
+                    <div className="flex justify-between items-center text-[10px] text-brand-300 mt-1 font-semibold">
+                      <span>{t("minChars")}</span>
+                      <span>{reviewForm.comment.length} / 2000</span>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={submittingReview || reviewForm.comment.trim().length < 5}
+                    className="w-full h-11 flex items-center justify-center gap-2 bg-black text-white hover:bg-neutral-900 transition-colors duration-300 text-xs font-semibold uppercase tracking-[0.2em] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submittingReview ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        {t("submitting")}
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        {t("submitReview")}
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
