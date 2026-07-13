@@ -1,4 +1,5 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "FAQ — EL HUYAM" };
 
@@ -46,9 +47,9 @@ export default function FAQPage() {
       <div className="mt-16 bg-brand-900 p-8 text-center">
         <h3 className="font-display text-xl text-white mb-3">Vous avez encore des questions ?</h3>
         <p className="text-white/60 text-sm mb-6">Notre équipe est disponible pour vous aider par e-mail ou WhatsApp.</p>
-        <a href="/contact" className="inline-flex items-center gap-2 border border-soft-gold text-soft-gold px-6 py-3 text-xs uppercase tracking-widest hover:bg-soft-gold hover:text-brand-900 transition-colors font-medium">
+        <Link href="/contact" className="inline-flex items-center gap-2 border border-soft-gold text-soft-gold px-6 py-3 text-xs uppercase tracking-widest hover:bg-soft-gold hover:text-brand-900 transition-colors font-medium">
           Contactez-nous
-        </a>
+        </Link>
       </div>
     </div>
   );

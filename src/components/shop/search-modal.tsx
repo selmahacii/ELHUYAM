@@ -4,8 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { formatPrice } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatPrice, cn, getOptimizedImageUrl } from "@/lib/utils";
 
 interface SearchResult {
   id: string;
@@ -108,7 +107,13 @@ export default function SearchModal({ open, onClose }: { open: boolean; onClose:
                   >
                     <div className="w-14 h-14 bg-brand-100 shrink-0 relative overflow-hidden">
                       {product.images[0] && (
-                        <Image src={product.images[0]} alt={product.title} fill className="object-cover" />
+                        <Image
+                          src={getOptimizedImageUrl(product.images[0], 100)}
+                          alt={product.title}
+                          fill
+                          className="object-cover"
+                          sizes="56px"
+                        />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">

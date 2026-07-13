@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingBag, Star } from "lucide-react";
-import { cn, formatPrice, calculateDiscountPercent } from "@/lib/utils";
+import { cn, formatPrice, calculateDiscountPercent, getOptimizedImageUrl } from "@/lib/utils";
 import { useCartStore } from "@/stores/cart-store";
 import { useWishlistStore } from "@/stores/wishlist-store";
 import { toast } from "react-hot-toast";
@@ -90,7 +90,7 @@ export default function ProductCard({ product, className, priority = false }: Pr
         {/* Image */}
         <div className="aspect-[3/4] relative overflow-hidden">
           <Image
-            src={product.images[0] ?? "/placeholder-product.jpg"}
+            src={getOptimizedImageUrl(product.images[0], 400)}
             alt={product.title}
             fill
             priority={priority}
@@ -103,7 +103,7 @@ export default function ProductCard({ product, className, priority = false }: Pr
           />
           {product.images[1] && !isOutOfStock && (
             <Image
-              src={product.images[1]}
+              src={getOptimizedImageUrl(product.images[1], 400)}
               alt={product.title}
               fill
               className={cn(

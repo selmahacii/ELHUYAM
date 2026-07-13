@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import ProductCard from "@/components/shop/product-card";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { getLocale, getTranslations } from "next-intl/server";
+import { getOptimizedImageUrl } from "@/lib/utils";
 
 type ProductItem = {
   id: string; title: string; slug: string; price: number;
@@ -181,7 +182,7 @@ async function CategoriesSection() {
             >
               {cat.image ? (
                 <Image
-                  src={cat.image}
+                  src={getOptimizedImageUrl(cat.image, 500)}
                   alt={cat.name}
                   fill
                   className="object-cover transition-transform duration-1000 group-hover:scale-105"

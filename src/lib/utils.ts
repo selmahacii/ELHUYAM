@@ -81,3 +81,35 @@ export function buildQueryString(params: Record<string, string | number | boolea
   }
   return qs.toString();
 }
+
+export function getOptimizedImageUrl(url?: string | null, width = 400): string {
+  if (!url) return "/placeholder-product.jpg";
+
+  // Cloudinary
+  if (url.includes("res.cloudinary.com")) {
+    const parts = url.split("/upload/");
+    if (parts.length === 2) {
+      return `${parts[0]}/upload/w_${width},q_auto,f_auto/${parts[1]}`;
+    }
+  }
+
+  // Unsplash
+  if (url.includes("images.unsplash.com")) {
+    try {
+      const urlObj = new URL(url);
+      urlObj.searchParams.set("w", width.toString());
+      urlObj.searchParams.set("q", "80");
+      urlObj.searchParams.set("auto", "format");
+      return urlObj.toString();
+    } catch {
+      return url;
+    }
+  }
+
+  // Pinterest
+  if (url.includes("i.pinimg.com")) {
+    return url.replace("/originals/", "/564x/");
+  }
+
+  return url;
+}
