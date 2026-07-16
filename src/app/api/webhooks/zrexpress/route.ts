@@ -37,7 +37,11 @@ export async function POST(req: NextRequest) {
     const stateName: string | undefined = body.stateName ?? body.state_name ?? body.status;
     const parcelId: string | undefined = body.id ?? body.parcelId;
 
-    if (!trackingNumber) return errorResponse("Missing trackingNumber", 400);
+    // Return 200 OK for test pings or empty payloads from Svix/ZR Express
+    if (!trackingNumber) {
+      console.log("[ZR Express Webhook] Received test ping or payload without tracking number.");
+      return successResponse({ message: "Ping received successfully" });
+    }
 
     // Find the matching order
     const order = await db.order.findFirst({
