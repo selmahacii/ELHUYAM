@@ -32,10 +32,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // ZR Express webhook payload shape (adapt if their actual format differs)
-    const trackingNumber: string | undefined = body.trackingNumber ?? body.tracking_number;
-    const stateName: string | undefined = body.stateName ?? body.state_name ?? body.status;
-    const parcelId: string | undefined = body.id ?? body.parcelId;
+    // Svix dispatches events wrapped in a 'data' object. Fallback to raw body if not present.
+    const payload = body.data ?? body;
+
+    const trackingNumber: string | undefined = payload.trackingNumber ?? payload.tracking_number;
+    const stateName: string | undefined = payload.stateName ?? payload.state_name ?? payload.status;
+    const parcelId: string | undefined = payload.id ?? payload.parcelId;
 
     // Return 200 OK for test pings or empty payloads from Svix/ZR Express
     if (!trackingNumber) {
