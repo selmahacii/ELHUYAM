@@ -93,8 +93,8 @@ export default async function Footer() {
 
         {/* Shop — dynamic from DB */}
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-4 md:mb-6 flex items-center gap-2">
-            <span className="text-[8px]">◆</span> {t("shop")}
+          <h4 className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+            <span className="text-soft-gold text-[10px]">◆</span> {t("shop")}
           </h4>
           <ul className="space-y-2 md:space-y-3">
             {categories.map((cat: { name: string; slug: string }) => (
@@ -112,8 +112,8 @@ export default async function Footer() {
 
         {/* Help */}
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-4 md:mb-6 flex items-center gap-2">
-            <span className="text-[8px]">◆</span> {t("help")}
+          <h4 className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+            <span className="text-soft-gold text-[10px]">◆</span> {t("help")}
           </h4>
           <ul className="space-y-2 md:space-y-3">
             {helpLinks.map((link) => (
@@ -128,8 +128,8 @@ export default async function Footer() {
 
         {/* Contact */}
         <div>
-          <h4 className="text-[10px] uppercase tracking-[0.25em] text-white font-medium mb-4 md:mb-6 flex items-center gap-2">
-            <span className="text-[8px]">◆</span> {footerContactTitle}
+          <h4 className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+            <span className="text-soft-gold text-[10px]">◆</span> {footerContactTitle}
           </h4>
           <address className="not-italic space-y-2 md:space-y-3 text-sm text-white/70">
             <p>{footerAddress}</p>
