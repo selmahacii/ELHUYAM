@@ -144,7 +144,7 @@ export function AdminSidebar({
       <div className="px-5 py-5 border-b border-zinc-900/70 flex flex-col shrink-0">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3.5">
-            <div className="p-1 bg-[#FAF9F6] rounded-xl border border-[#FAF9F6]/20 shadow-sm shrink-0">
+            <div className="p-1 bg-black rounded-xl border border-zinc-800 shadow-sm shrink-0">
               <img src="/logo.png" alt="Logo" className="w-7 h-7 object-contain" />
             </div>
             <div>
@@ -153,7 +153,7 @@ export function AdminSidebar({
                 onClick={() => setIsOpen(false)} 
                 className="font-display text-sm font-extrabold tracking-[0.18em] text-[#FAF9F6] hover:text-[#FAF9F6]/90 transition-colors"
               >
-                EL HUYAAM
+                EL HUYAM
               </Link>
               <p className="text-[#C9A96E]/70 text-[8.5px] mt-0.5 uppercase tracking-[0.14em] font-extrabold">
                 {role === "CONFIRMATRICE" ? "Confirmatrice" : "Administration"}
@@ -241,7 +241,7 @@ export function AdminSidebar({
     <>
       {/* Mobile top bar */}
       <div className="lg:hidden bg-[#0F0E0C] px-4 py-3.5 flex items-center justify-between shrink-0 border-b border-zinc-900/70 shadow-sm">
-        <Link href="/admin" className="font-display text-sm font-extrabold tracking-[0.18em] text-[#FAF9F6]">EL HUYAAM</Link>
+        <Link href="/admin" className="font-display text-sm font-extrabold tracking-[0.18em] text-[#FAF9F6]">EL HUYAM</Link>
         <button
           onClick={() => setIsOpen(true)}
           className="text-zinc-400 p-2 -mr-2 hover:text-[#FAF9F6] active:bg-zinc-900 rounded-xl transition-all"
