@@ -62,7 +62,7 @@ async function zrFetch<T>(
   settings: ZRSettings,
   path: string,
   options: RequestInit = {}
-): Promise<{ ok: boolean; data?: T; error?: string }> {
+): Promise<{ ok: boolean; data?: T; error?: string; status?: number; rawBody?: string }> {
   const url = `${ZR_BASE}/api/v${ZR_VERSION}${path}`;
   
   // Mask secret key for safe console logs
@@ -100,12 +100,12 @@ async function zrFetch<T>(
     if (!res.ok) {
       const err = (json as Record<string, unknown>)?.message as string | undefined;
       console.error(`[ZR Express API Error] Failed with message:`, err ?? `HTTP ${res.status}`);
-      return { ok: false, error: err ?? `HTTP ${res.status}` };
+      return { ok: false, error: err ?? `HTTP ${res.status}`, status: res.status, rawBody: text };
     }
     return { ok: true, data: json as T };
   } catch (e) {
     console.error(`[ZR Express API Exception] Network or runtime error:`, e);
-    return { ok: false, error: e instanceof Error ? e.message : "Network error" };
+    return { ok: false, error: e instanceof Error ? e.message : "Network error", status: 500 };
   }
 }
 
@@ -135,12 +135,17 @@ export async function zrCreateParcel(
   });
 }
 
-export async function zrTestConnection(settings: ZRSettings): Promise<boolean> {
+export async function zrTestConnection(settings: ZRSettings): Promise<{ ok: boolean; status?: number; error?: string; rawBody?: string }> {
   console.log(`[ZR Express Connection Test] Initiating connection test...`);
   const res = await zrFetch(settings, "/users/profile");
   console.log(`[ZR Express Connection Test] Completed. Status: ${res.ok ? "SUCCESS ✓" : "FAILED ✗"}`);
   if (!res.ok) {
     console.error(`[ZR Express Connection Test] Error description: ${res.error}`);
   }
-  return res.ok;
+  return {
+    ok: res.ok,
+    status: res.status,
+    error: res.error,
+    rawBody: res.rawBody
+  };
 }

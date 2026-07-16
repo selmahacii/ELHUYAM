@@ -69,10 +69,18 @@ export async function PUT(req: NextRequest) {
 
     // Test the connection with the new credentials
     console.log("[ZR Settings API] Testing connection with new/saved credentials...");
-    const connected = await zrTestConnection({ secretKey, tenantId });
-    console.log(`[ZR Settings API] Connection test result: ${connected ? "CONNECTED ✓" : "FAILED ✗"}`);
+    const testResult = await zrTestConnection({ secretKey, tenantId });
+    console.log(`[ZR Settings API] Connection test result:`, testResult);
 
-    return successResponse({ configured: true, connected });
+    return successResponse({ 
+      configured: true, 
+      connected: testResult.ok,
+      errorDetails: testResult.ok ? null : {
+        status: testResult.status,
+        error: testResult.error,
+        rawBody: testResult.rawBody
+      }
+    });
   } catch (error) {
     console.error("[ZR Settings API] Unexpected error in PUT delivery-settings:", error);
     return errorResponse("Failed to save settings", 500);
