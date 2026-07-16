@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
-    "build": "npm run clean && prisma generate && npx tsx prisma/test-zr.ts && next build --webpack",
+    "build": "npm run clean && prisma generate && next build --webpack",
     "start": "NODE_ENV=production node server.js",
     "lint": "next lint",
     "db:generate": "prisma generate",
