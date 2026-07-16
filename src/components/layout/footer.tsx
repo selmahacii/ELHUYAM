@@ -101,7 +101,7 @@ export default async function Footer() {
               <li key={cat.slug}>
                 <Link
                   href={`/shop?category=${cat.slug}`}
-                  className="text-base text-white/60 hover:text-white hover:ps-2 transition-all duration-200 block"
+                  className="text-xs sm:text-sm text-white/60 hover:text-soft-gold hover:ps-2 transition-all duration-300 tracking-wider font-light block"
                 >
                   {cat.name}
                 </Link>
@@ -118,7 +118,7 @@ export default async function Footer() {
           <ul className="space-y-2 md:space-y-3">
             {helpLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="text-sm text-white/60 hover:text-white hover:ps-2 transition-all duration-200 block">
+                <Link href={link.href} className="text-xs sm:text-sm text-white/60 hover:text-soft-gold hover:ps-2 transition-all duration-300 tracking-wider font-light block">
                   {link.label}
                 </Link>
               </li>
@@ -131,15 +131,15 @@ export default async function Footer() {
           <h4 className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
             <span className="text-soft-gold text-[10px]">◆</span> {footerContactTitle}
           </h4>
-          <address className="not-italic space-y-2 md:space-y-3 text-sm text-white/70">
+          <address className="not-italic space-y-2 md:space-y-3 text-xs sm:text-sm text-white/70 tracking-wider font-light">
             <p>{footerAddress}</p>
             {footerEmail && (
-              <a href={`mailto:${footerEmail}`} className="block hover:text-white transition-colors">
+              <a href={`mailto:${footerEmail}`} className="block hover:text-soft-gold transition-colors">
                 {footerEmail}
               </a>
             )}
             {footerPhone && (
-              <a href={`tel:${footerPhone.replace(/\s+/g, "")}`} className="block hover:text-white transition-colors">
+              <a href={`tel:${footerPhone.replace(/\s+/g, "")}`} className="block hover:text-soft-gold transition-colors">
                 {footerPhone}
               </a>
             )}
@@ -150,17 +150,17 @@ export default async function Footer() {
 
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-white/50 text-xs">
+          <p className="text-white/40 text-[11px] tracking-wider font-light">
             &copy; {new Date().getFullYear()} EL HUYAM. {t("allRights")}
           </p>
           <div className="flex items-center gap-4">
-            <span className="text-soft-gold/50 text-xs font-arabic">✦</span>
+            <span className="text-soft-gold/40 text-xs font-arabic">✦</span>
             {legalLinks.map((link, i) => (
               <span key={link.href} className="flex items-center gap-4">
-                <Link href={link.href} className="text-xs text-brand-500 hover:text-brand-300 transition-colors">
+                <Link href={link.href} className="text-[11px] text-white/40 hover:text-soft-gold transition-colors tracking-wide font-light">
                   {link.label}
                 </Link>
-                {i < legalLinks.length - 1 && <span className="text-brand-700 text-xs">·</span>}
+                {i < legalLinks.length - 1 && <span className="text-white/10 text-xs">·</span>}
               </span>
             ))}
           </div>
