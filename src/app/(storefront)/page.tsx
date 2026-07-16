@@ -7,6 +7,7 @@ import ProductCard from "@/components/shop/product-card";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getOptimizedImageUrl } from "@/lib/utils";
+import CategoryCarousel from "@/components/shop/category-carousel";
 
 type ProductItem = {
   id: string; title: string; slug: string; price: number;
@@ -163,40 +164,7 @@ async function CategoriesSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 md:flex md:overflow-x-auto md:gap-6 md:pb-4 gap-2 sm:gap-4 md:scroll-smooth scrollbar-thin scrollbar-thumb-brand-900/20 scrollbar-track-transparent">
-          {categories.map((cat: CategoryItem, i: number) => (
-            <Link
-              key={cat.slug}
-              href={`/shop?category=${cat.slug}`}
-              className="group relative aspect-[3/4] overflow-hidden bg-brand-50 w-full md:w-[280px] lg:w-[320px] md:shrink-0"
-            >
-              {cat.image ? (
-                <Image
-                  src={getOptimizedImageUrl(cat.image, 500)}
-                  alt={cat.name}
-                  fill
-                  className="object-cover transition-transform duration-1000 group-hover:scale-105"
-                  sizes="(max-width: 640px) 33vw, (max-width: 1024px) 250px, 320px"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-brand-100" />
-              )}
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-500" />
-
-              <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none group-hover:opacity-[0.08] transition-opacity">
-                <span className="text-5xl sm:text-7xl md:text-9xl font-display" dir="rtl">{arabicWords[i % arabicWords.length]}</span>
-              </div>
-
-              <div className="absolute inset-0 flex flex-col items-center justify-end p-2 sm:p-4 md:p-8 text-center translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                <h3 className="font-display text-xs sm:text-base md:text-2xl text-white mb-2 md:mb-4">{cat.name}</h3>
-                <div className="w-0 group-hover:w-12 h-px bg-white transition-all duration-500 mb-3 md:mb-6" />
-                <span className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] text-white opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                  {t("discover")}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <CategoryCarousel categories={categories} discoverText={t("discover")} />
       </div>
     </section>
   );
