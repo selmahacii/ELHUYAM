@@ -128,7 +128,7 @@ export async function zrGetStateHistory(
 export async function zrCreateParcel(
   settings: ZRSettings,
   payload: Record<string, unknown>
-): Promise<{ ok: boolean; data?: ZRParcel; error?: string }> {
+): Promise<{ ok: boolean; data?: ZRParcel; error?: string; status?: number; rawBody?: string }> {
   return zrFetch<ZRParcel>(settings, "/parcels", {
     method: "POST",
     body: JSON.stringify(payload),

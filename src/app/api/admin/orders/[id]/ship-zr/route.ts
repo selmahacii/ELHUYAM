@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
@@ -61,7 +61,14 @@ export async function POST(req: NextRequest, { params }: Props) {
     const res = await zrCreateParcel(settings, payload);
 
     if (!res.ok || !res.data) {
-      return errorResponse(res.error ?? "Erreur lors de la création du colis chez ZR Express", 400);
+      return NextResponse.json({
+        success: false,
+        error: res.error ?? "Erreur lors de la création du colis chez ZR Express",
+        errorDetails: {
+          status: res.status,
+          rawBody: res.rawBody
+        }
+      }, { status: 400 });
     }
 
     const parcel = res.data;
