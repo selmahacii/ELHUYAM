@@ -77,7 +77,6 @@ export default function CheckoutPage() {
   const tCommon = useTranslations("common");
 
   const regionIsInternational = region === "INTERNATIONAL";
-  const currency = regionIsInternational ? "EUR" : "DZD";
 
   const {
     register,
@@ -91,8 +90,9 @@ export default function CheckoutPage() {
     defaultValues: { paymentMethod: "cod", deliveryType: "DOMICILE", isInternational: regionIsInternational },
   });
 
-  const sub = subtotal(regionIsInternational);
   const isInternational = watch("isInternational");
+  const currency = isInternational ? "EUR" : "DZD";
+  const sub = subtotal(isInternational);
   const selectedWilaya = watch("wilayaCode");
   const deliveryType = watch("deliveryType");
   const selectedCountry = watch("country");
@@ -616,7 +616,15 @@ export default function CheckoutPage() {
               )}
               <div className="flex justify-between font-bold text-black border-t border-neutral-200 pt-3 text-base">
                 <span>{t("total")}</span>
-                <span>{(!isInternational && shippingFee === null) ? "—" : formatPrice(total, currency)}</span>
+                <span>
+                  {isInternational ? (
+                    <span className="text-emerald-700 font-extrabold uppercase">Sous Devis</span>
+                  ) : shippingFee === null ? (
+                    "—"
+                  ) : (
+                    formatPrice(total, currency)
+                  )}
+                </span>
               </div>
             </div>
 
