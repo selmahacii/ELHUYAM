@@ -56,13 +56,10 @@ export default async function Footer() {
         {/* Brand */}
         <div className="col-span-2 sm:col-span-1 lg:col-span-1">
           <Link href="/" className="flex flex-col items-start gap-1 mb-6 group">
-            <span className="text-white text-[10px] font-arabic tracking-wider opacity-70 group-hover:opacity-100 transition-opacity">
-              ✦ الحشمة والأناقة ✦
-            </span>
             <span className="font-display text-3xl tracking-[0.25em] text-white">EL HUYAM</span>
           </Link>
-          <p className="text-white/80 text-sm md:text-base font-display italic font-light leading-relaxed">{t("description")}</p>
-          <div className="flex gap-4 mt-6">
+          <p className="text-white text-base md:text-lg font-display italic font-normal leading-relaxed tracking-wide">{t("description")}</p>
+          <div className="flex gap-4 mt-12">
             <a
               href="https://www.instagram.com/elhuyam_collection/"
               target="_blank"
@@ -131,11 +128,11 @@ export default async function Footer() {
         </div>
 
         {/* Contact */}
-        <div className="col-span-2 sm:col-span-1 lg:col-span-1">
-          <h4 className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
+        <div className="col-span-2 sm:col-span-1 lg:col-span-1 flex flex-col items-center sm:items-start text-center sm:text-left">
+          <h4 className="w-full text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center justify-center sm:justify-start gap-2 border-b border-white/10 pb-2">
             <span className="text-soft-gold text-[10px]">◆</span> {footerContactTitle}
           </h4>
-          <address className="not-italic space-y-2 md:space-y-3 text-xs sm:text-sm text-white/70 tracking-wider font-light">
+          <address className="not-italic space-y-2 md:space-y-3 text-xs sm:text-sm text-white/70 tracking-wider font-light flex flex-col items-center sm:items-start">
             <p>{footerAddress}</p>
             {footerEmail && (
               <a href={`mailto:${footerEmail}`} className="block hover:text-soft-gold transition-colors">
@@ -148,7 +145,6 @@ export default async function Footer() {
               </a>
             )}
           </address>
-
         </div>
       </div>
 
