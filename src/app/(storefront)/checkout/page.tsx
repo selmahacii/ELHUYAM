@@ -509,12 +509,12 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="sm:col-span-2">
                   <label className={labelCls}>{t("street")} *</label>
-                  <input {...register("street")} className={inputCls} placeholder="Rue, cité, résidence..." autoComplete="street-address" />
+                  <input {...register("street")} className={inputCls} placeholder="Street address, building, apartment..." autoComplete="street-address" />
                   {errors.street && <p className={errorCls}>{errors.street.message}</p>}
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>{t("city")} *</label>
-                  <input {...register("city")} className={inputCls} placeholder="Ville / commune" autoComplete="address-level2" />
+                  <input {...register("city")} className={inputCls} placeholder="City, town, region..." autoComplete="address-level2" />
                   {errors.city && <p className={errorCls}>{errors.city.message}</p>}
                 </div>
               </div>

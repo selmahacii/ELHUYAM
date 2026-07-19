@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Instagram } from "lucide-react";
 
 export default async function Footer() {
@@ -24,7 +24,11 @@ export default async function Footer() {
     db.setting.findUnique({ where: { key: "footer_contact_title" } }),
   ]);
 
-  const footerAddress = addressSetting?.value || "Algérie";
+  const locale = await getLocale();
+  let footerAddress = addressSetting?.value || "Algeria";
+  if (footerAddress === "Algérie") {
+    footerAddress = locale === "ar" ? "الجزائر" : "Algeria";
+  }
   const footerEmail = emailSetting?.value || "hello@elhuyaam.com";
   const footerPhone = phoneSetting?.value || "+213 772 51 54 48";
   const footerContactTitle = contactTitleSetting?.value || t("contact");
