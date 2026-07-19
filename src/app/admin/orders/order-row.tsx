@@ -309,12 +309,9 @@ export default function OrderRow({ order, role }: OrderRowProps) {
               </span>
             )}
 
-            {order.paymentMethod && (
-              <span className="bg-slate-100 text-slate-700 border border-slate-200 text-[8.5px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-xs">
-                <CreditCard className="w-2 h-2 text-slate-400 shrink-0" />
-                {order.paymentMethod === "cod" ? "Cash (COD)" : order.paymentMethod.toUpperCase()}
-              </span>
-            )}
+            <span className="bg-slate-50 text-slate-750 border border-slate-200 text-[8.5px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-xs">
+              💵 Paiement à la livraison (COD)
+            </span>
           </div>
         </div>
       </td>
