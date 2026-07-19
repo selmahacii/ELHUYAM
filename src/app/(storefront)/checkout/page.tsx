@@ -10,6 +10,8 @@ import { useCartStore } from "@/stores/cart-store";
 import { formatPrice } from "@/lib/utils";
 import { WILAYAS, getShippingCost } from "@/lib/wilayas";
 import { COUNTRIES } from "@/lib/countries";
+import { COMMUNES } from "@/lib/communes";
+import { BUREAUX } from "@/lib/bureaux";
 import { useRegion } from "@/providers/region-provider";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,20 +22,33 @@ import { useTranslations } from "next-intl";
 const checkoutSchema = z.object({
   firstName: z.string().min(1, "First name required"),
   lastName: z.string().min(1, "Last name required"),
-  phone: z.string().min(9, "Phone required"),
+  phone: z.string().min(1, "Phone required"),
   isInternational: z.boolean().optional().default(false),
   country: z.string().optional(),
   wilayaCode: z.string().optional(),
   deliveryType: z.enum(["DOMICILE", "STOPDESK"]).optional(),
   street: z.string().optional(),
   city: z.string().optional(),
+  commune: z.string().optional(),
+  customCommune: z.string().optional(),
+  bureau: z.string().optional(),
   paymentMethod: z.enum(["cod", "stripe"]),
   notes: z.string().optional(),
 }).refine((data) => {
   if (data.isInternational) {
-    return !!data.country && data.country.trim().length > 0;
+    return !!data.country && data.country.trim().length > 0 &&
+      !!data.street && data.street.trim().length > 0 &&
+      !!data.city && data.city.trim().length > 0;
   } else {
-    return !!data.wilayaCode && !!data.deliveryType;
+    if (!data.wilayaCode || !data.deliveryType) return false;
+    if (data.deliveryType === "DOMICILE") {
+      if (!data.commune) return false;
+      if (data.commune === "AUTRE" && !data.customCommune) return false;
+      if (!data.street || data.street.trim().length === 0) return false;
+    } else if (data.deliveryType === "STOPDESK") {
+      if (!data.bureau) return false;
+    }
+    return true;
   }
 }, {
   message: "Please fill all required fields",
@@ -81,10 +96,48 @@ export default function CheckoutPage() {
   const selectedWilaya = watch("wilayaCode");
   const deliveryType = watch("deliveryType");
   const selectedCountry = watch("country");
+  const selectedCommune = watch("commune");
   const shippingFee = !isInternational && selectedWilaya
     ? getShippingCost(selectedWilaya, deliveryType!, sub)
     : isInternational ? 0 : null;
   const total = Math.max(0, sub + (shippingFee ?? 0) - couponDiscount);
+
+  const phoneValue = watch("phone");
+
+  useEffect(() => {
+    if (phoneValue) {
+      const p = phoneValue.trim();
+      if (p.length >= 2) {
+        let detectedIntl = false;
+        if (p.startsWith("+")) {
+          if (!p.startsWith("+213")) {
+            detectedIntl = true;
+          }
+        } else if (p.startsWith("00")) {
+          if (!p.startsWith("00213")) {
+            detectedIntl = true;
+          }
+        } else {
+          const firstChar = p[0];
+          if (firstChar >= "1" && firstChar <= "9") {
+            if (!p.startsWith("213")) {
+              detectedIntl = true;
+            }
+          }
+        }
+
+        if (detectedIntl && !isInternational) {
+          setValue("isInternational", true);
+          const matchedCountry = COUNTRIES.find(
+            (c) => p.startsWith(c.code) || p.startsWith(c.code.replace("+", "00")) || p.startsWith(c.code.replace("+", ""))
+          );
+          if (matchedCountry) {
+            setValue("country", matchedCountry.name);
+          }
+        }
+      }
+    }
+  }, [phoneValue, isInternational, setValue]);
 
   useEffect(() => {
     if (selectedCountry) {
@@ -146,6 +199,19 @@ export default function CheckoutPage() {
     if (data.isInternational && !data.country) { toast.error("Please select your destination country"); return; }
     setPlacing(true);
     try {
+      let resolvedStreet = data.street;
+      let resolvedCity = data.city;
+
+      if (!data.isInternational) {
+        if (data.deliveryType === "DOMICILE") {
+          resolvedCity = data.commune === "AUTRE" ? data.customCommune : data.commune;
+        } else if (data.deliveryType === "STOPDESK") {
+          resolvedStreet = `Bureau Stop Desk: ${data.bureau}`;
+          const matchedBureau = BUREAUX.find((b) => b.name === data.bureau);
+          resolvedCity = matchedBureau ? matchedBureau.city : "Stop Desk Bureau";
+        }
+      }
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -157,8 +223,8 @@ export default function CheckoutPage() {
           country: data.country,
           wilayaCode: data.isInternational ? undefined : data.wilayaCode,
           deliveryType: data.isInternational ? undefined : data.deliveryType,
-          street: data.street,
-          city: data.city,
+          street: resolvedStreet,
+          city: resolvedCity,
           paymentMethod: data.paymentMethod,
           notes: data.notes,
           couponCode: couponApplied ? couponCode : undefined,
@@ -347,7 +413,16 @@ export default function CheckoutPage() {
                 {/* Wilaya selector */}
                 <div>
                   <label className={labelCls}>{t("wilaya")} *</label>
-                  <select {...register("wilayaCode")} className={inputCls}>
+                  <select
+                    {...register("wilayaCode", {
+                      onChange: () => {
+                        setValue("commune", "");
+                        setValue("customCommune", "");
+                        setValue("bureau", "");
+                      }
+                    })}
+                    className={inputCls}
+                  >
                     <option value="">{t("selectWilaya")}</option>
                     {WILAYAS.map((w) => {
                       const rate = deliveryType === "STOPDESK" ? w.stopdesk : w.domicile;
@@ -363,6 +438,50 @@ export default function CheckoutPage() {
                   </select>
                   {errors.wilayaCode && <p className={errorCls}>{errors.wilayaCode.message}</p>}
                 </div>
+
+                {/* Commune selector (Domicile only) */}
+                {!isInternational && deliveryType === "DOMICILE" && selectedWilaya && (
+                  <div>
+                    <label className={labelCls}>Commune *</label>
+                    <select {...register("commune")} className={inputCls}>
+                      <option value="">Sélectionnez votre commune...</option>
+                      {COMMUNES[selectedWilaya]?.map((comm) => (
+                        <option key={comm} value={comm}>{comm}</option>
+                      ))}
+                      <option value="AUTRE">✦ Autre commune...</option>
+                    </select>
+                    {errors.commune && <p className={errorCls}>{errors.commune.message}</p>}
+                  </div>
+                )}
+
+                {/* Custom Commune input (if AUTRE selected) */}
+                {!isInternational && deliveryType === "DOMICILE" && selectedWilaya && selectedCommune === "AUTRE" && (
+                  <div>
+                    <label className={labelCls}>Nom de la commune *</label>
+                    <input
+                      {...register("customCommune")}
+                      className={inputCls}
+                      placeholder="Saisissez le nom de votre commune"
+                    />
+                    {errors.customCommune && <p className={errorCls}>{errors.customCommune.message}</p>}
+                  </div>
+                )}
+
+                {/* Bureau Stop Desk selector (Stopdesk only) */}
+                {!isInternational && deliveryType === "STOPDESK" && selectedWilaya && (
+                  <div>
+                    <label className={labelCls}>Bureau de retrait Stop Desk *</label>
+                    <select {...register("bureau")} className={inputCls}>
+                      <option value="">Sélectionnez le bureau de retrait...</option>
+                      {BUREAUX.filter((b) => b.wilayaCode === selectedWilaya).map((b) => (
+                        <option key={b.name} value={b.name}>
+                          {b.nameAr} ({b.name.replace(/Hub\s+/i, "").replace(/\s+\d+\s+مكتب\s+\S+/i, "")}) — {b.address}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.bureau && <p className={errorCls}>{errors.bureau.message}</p>}
+                  </div>
+                )}
 
                 {/* Shipping cost info box */}
                 {selectedWilaya && (
@@ -385,17 +504,27 @@ export default function CheckoutPage() {
               </>
             )}
 
-            {/* Address details (always shown or domicile only) */}
-            {(!isInternational && deliveryType === "DOMICILE" || isInternational) && (
+            {/* Address input (International and Domicile only) */}
+            {isInternational && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="sm:col-span-2">
-                  <label className={labelCls}>{t("street")}</label>
+                  <label className={labelCls}>{t("street")} *</label>
                   <input {...register("street")} className={inputCls} placeholder="Rue, cité, résidence..." autoComplete="street-address" />
+                  {errors.street && <p className={errorCls}>{errors.street.message}</p>}
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelCls}>{t("city")}</label>
+                  <label className={labelCls}>{t("city")} *</label>
                   <input {...register("city")} className={inputCls} placeholder="Ville / commune" autoComplete="address-level2" />
+                  {errors.city && <p className={errorCls}>{errors.city.message}</p>}
                 </div>
+              </div>
+            )}
+
+            {!isInternational && deliveryType === "DOMICILE" && selectedWilaya && (
+              <div className="pt-1">
+                <label className={labelCls}>{t("street")} *</label>
+                <input {...register("street")} className={inputCls} placeholder="Quartier, rue, numéro de maison..." autoComplete="street-address" />
+                {errors.street && <p className={errorCls}>{errors.street.message}</p>}
               </div>
             )}
           </section>

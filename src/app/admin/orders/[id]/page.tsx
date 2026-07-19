@@ -66,6 +66,11 @@ export default async function AdminOrderDetailPage({ params }: Props) {
           </Link>
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 className="font-display text-xl font-bold tracking-tight text-zinc-900">{order.orderNumber}</h1>
+            {order.isInternational && (
+              <Badge variant="luxury" className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5">
+                📋 Devis International
+              </Badge>
+            )}
             <div className="flex items-center gap-1.5">
               <Badge variant={STATUS_BADGE[order.status] ?? "secondary"} className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5">
                 {order.status.replace(/_/g, " ")}

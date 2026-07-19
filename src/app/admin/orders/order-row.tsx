@@ -122,6 +122,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
         setPaymentStatus("PAID");
       }
       toast.success("Order status updated");
+      setIsModalOpen(false);
       router.refresh();
     } catch {
       toast.error("Connection error");
@@ -151,6 +152,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
 
       setPaymentStatus(newPaymentStatus);
       toast.success("Payment status updated");
+      setIsModalOpen(false);
       router.refresh();
     } catch {
       toast.error("Connection error");
@@ -231,6 +233,11 @@ export default function OrderRow({ order, role }: OrderRowProps) {
           >
             {order.orderNumber}
           </Link>
+          {order.isInternational && (
+            <span className="bg-sky-50 text-sky-700 border border-sky-200 text-[8.5px] font-bold px-1.5 py-0.5 rounded-md w-fit">
+              📋 Devis International
+            </span>
+          )}
           {order.trackingNumber && (
             <div className="flex items-center gap-1 font-mono text-[9.5px] text-slate-500 font-bold bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded shadow-xs w-fit" title={`Transporteur: ${order.carrier ?? 'ZR_EXPRESS'}`}>
               <Truck className="w-2.5 h-2.5 text-slate-400 shrink-0" /> {order.trackingNumber}
@@ -410,8 +417,13 @@ export default function OrderRow({ order, role }: OrderRowProps) {
               {/* Modal Header */}
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                 <div>
-                  <h3 className="font-display text-base font-bold text-slate-900">
+                  <h3 className="font-display text-base font-bold text-slate-900 flex items-center gap-2">
                     Détails Commande {order.orderNumber}
+                    {order.isInternational && (
+                      <span className="bg-sky-50 text-sky-700 border border-sky-200 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">
+                        📋 Devis International
+                      </span>
+                    )}
                   </h3>
                   <p className="text-[10px] text-slate-400 font-mono mt-0.5">
                     Créée le {formatDate(order.createdAt)}
