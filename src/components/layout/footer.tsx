@@ -52,9 +52,9 @@ export default async function Footer() {
         <div className="flex-1 h-px bg-gradient-to-l from-transparent to-soft-gold/30" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
         {/* Brand */}
-        <div className="lg:col-span-1">
+        <div className="col-span-2 sm:col-span-1 lg:col-span-1">
           <Link href="/" className="flex flex-col items-start gap-1 mb-6 group">
             <span className="text-white text-[10px] font-arabic tracking-wider opacity-70 group-hover:opacity-100 transition-opacity">
               ✦ الحشمة والأناقة ✦
@@ -96,7 +96,7 @@ export default async function Footer() {
         </div>
 
         {/* Shop — dynamic from DB */}
-        <div>
+        <div className="col-span-1">
           <h4 className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
             <span className="text-soft-gold text-[10px]">◆</span> {t("shop")}
           </h4>
@@ -115,7 +115,7 @@ export default async function Footer() {
         </div>
 
         {/* Help */}
-        <div>
+        <div className="col-span-1">
           <h4 className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
             <span className="text-soft-gold text-[10px]">◆</span> {t("help")}
           </h4>
@@ -131,7 +131,7 @@ export default async function Footer() {
         </div>
 
         {/* Contact */}
-        <div>
+        <div className="col-span-2 sm:col-span-1 lg:col-span-1">
           <h4 className="text-xs sm:text-sm uppercase tracking-[0.3em] text-white font-bold mb-4 md:mb-6 flex items-center gap-2 border-b border-white/10 pb-2">
             <span className="text-soft-gold text-[10px]">◆</span> {footerContactTitle}
           </h4>
