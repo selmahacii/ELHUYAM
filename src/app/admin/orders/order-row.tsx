@@ -58,6 +58,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
   const [status, setStatus] = useState(order.status);
   const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus);
   const [updating, setUpdating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const items = order.items;
   const isMultiProduct = items.length > 1;
@@ -168,13 +169,17 @@ export default function OrderRow({ order, role }: OrderRowProps) {
       : "Guest Customer");
 
   return (
-    <tr className="hover:bg-slate-50/50 transition-colors duration-150 group">
+    <tr 
+      onClick={() => setIsModalOpen(true)} 
+      className="hover:bg-slate-50/50 transition-colors duration-150 group cursor-pointer"
+    >
       
       {/* 1. Visuel Preview Thumbnail */}
       <td className="px-4 py-3 shrink-0">
         {isMultiProduct ? (
           <Link
             href={`/admin/orders/${order.id}`}
+            onClick={(e) => e.stopPropagation()}
             title={`Multi-products:\n${itemsTooltip}\nClick to view details.`}
             className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center shrink-0 shadow-sm hover:bg-black hover:scale-105 transition-all duration-200 cursor-pointer select-none relative"
           >
@@ -191,6 +196,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
               <Link
                 href={single.product?.slug ? `/shop/${single.product.slug}` : "/shop"}
                 target="_blank"
+                onClick={(e) => e.stopPropagation()}
                 title={`View product page: ${single.productTitle}`}
                 className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 relative overflow-hidden shrink-0 shadow-sm flex items-center justify-center hover:scale-105 hover:border-slate-400 hover:shadow transition-all duration-200 cursor-pointer block"
               >
@@ -220,6 +226,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
         <div className="flex flex-col gap-1.5">
           <Link 
             href={`/admin/orders/${order.id}`}
+            onClick={(e) => e.stopPropagation()}
             className="font-mono text-xs font-bold text-slate-800 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg shadow-xs hover:bg-slate-200 hover:text-black transition-colors w-fit"
           >
             {order.orderNumber}
@@ -258,11 +265,11 @@ export default function OrderRow({ order, role }: OrderRowProps) {
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <div className="flex items-center gap-1 text-[10px] text-slate-500 font-medium">
               {order.shippingPhone ? (
-                <a href={`tel:${order.shippingPhone}`} className="flex items-center gap-0.5 font-mono hover:text-slate-900 transition-colors">
+                <a href={`tel:${order.shippingPhone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-0.5 font-mono hover:text-slate-900 transition-colors">
                   <Phone className="w-2.5 h-2.5 shrink-0 text-slate-400" /> {order.shippingPhone}
                 </a>
               ) : order.user?.phone ? (
-                <a href={`tel:${order.user.phone}`} className="flex items-center gap-0.5 font-mono hover:text-slate-900 transition-colors">
+                <a href={`tel:${order.user.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-0.5 font-mono hover:text-slate-900 transition-colors">
                   <Phone className="w-2.5 h-2.5 shrink-0 text-slate-400" /> {order.user.phone}
                 </a>
               ) : (
@@ -275,6 +282,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
                 href={`https://wa.me/${(order.shippingPhone || order.user?.phone)?.replace(/\D/g, '')}?text=${encodeURIComponent(`Bonjour ${resolvedName}, concernant votre commande ${order.orderNumber}...`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[8.5px] uppercase tracking-wider font-bold px-1 py-0.2 rounded transition-colors flex items-center gap-0.5 shadow-xs"
                 title="Contacter par WhatsApp"
               >
@@ -297,7 +305,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
             </span>
           </div>
 
-          {/* Delivery & Payment Method Badges */}
+          {/* Delivery Badge (no payment method badge as requested) */}
           <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
             {order.deliveryType === "DOMICILE" ? (
               <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[8.5px] font-extrabold px-1.5 py-0.5 rounded shadow-xs">
@@ -308,10 +316,6 @@ export default function OrderRow({ order, role }: OrderRowProps) {
                 📦 Bureau Stop Desk
               </span>
             )}
-
-            <span className="bg-slate-50 text-slate-750 border border-slate-200 text-[8.5px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5 shadow-xs">
-              💵 Paiement à la livraison (COD)
-            </span>
           </div>
         </div>
       </td>
@@ -347,6 +351,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
         <select
           value={paymentStatus}
           disabled={updating || (role === "CONFIRMATRICE" && paymentStatus !== "PAID")}
+          onClick={(e) => e.stopPropagation()}
           onChange={(e) => handlePaymentStatusChange(e.target.value)}
           className={`text-[9.5px] font-extrabold tracking-wider uppercase px-2 py-1 border rounded-lg cursor-pointer focus:outline-none focus:ring-4 transition-all w-28 text-center bg-white ${paymentStyles}`}
         >
@@ -362,6 +367,7 @@ export default function OrderRow({ order, role }: OrderRowProps) {
         <select
           value={status}
           disabled={updating}
+          onClick={(e) => e.stopPropagation()}
           onChange={(e) => handleStatusChange(e.target.value)}
           className={`text-[9.5px] font-extrabold tracking-wider uppercase px-2 py-1 border rounded-lg cursor-pointer focus:outline-none focus:ring-4 transition-all w-36 text-center bg-white ${statusStyles}`}
         >
@@ -385,12 +391,236 @@ export default function OrderRow({ order, role }: OrderRowProps) {
       <td className="px-4 py-3 text-right">
         <Link
           href={`/admin/orders/${order.id}`}
+          onClick={(e) => e.stopPropagation()}
           className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all inline-flex border border-transparent hover:border-slate-200 shadow-xs"
           title="View order details"
         >
           <Eye className="w-4 h-4" />
         </Link>
       </td>
+
+      {/* 10. Direct Render Modal Container Cell (Hidden from table but draws fixed) */}
+      {isModalOpen && (
+        <td className="p-0 border-none w-0 h-0 absolute overflow-hidden">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 cursor-default"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsModalOpen(false);
+            }}
+          >
+            <div 
+              className="bg-white rounded-3xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col text-left font-sans"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                <div>
+                  <h3 className="font-display text-base font-bold text-slate-900">
+                    Détails Commande {order.orderNumber}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    Créée le {formatDate(order.createdAt)}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-700 transition-colors font-bold text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 space-y-6 flex-1">
+                
+                {/* Statuses */}
+                <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 border border-slate-150 rounded-2xl">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Statut de la commande
+                    </label>
+                    <select
+                      value={status}
+                      disabled={updating}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => handleStatusChange(e.target.value)}
+                      className={`text-[10.5px] font-extrabold tracking-wider uppercase px-2 py-1.5 border rounded-lg w-full text-center bg-white ${statusStyles}`}
+                    >
+                      <option value="PENDING">⏳ En attente</option>
+                      <option value="CONFIRMED">✓ Confirmé</option>
+                      <option value="PROCESSING">📦 En préparation</option>
+                      <option value="SHIPPED">🚚 Expédié</option>
+                      <option value="OUT_FOR_DELIVERY">🛵 En livraison</option>
+                      <option value="DELIVERED">🎉 Livré</option>
+                      <option value="CANCELLED">✕ Annulé</option>
+                      <option value="REFUNDED">↩ Retourné</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Statut du paiement
+                    </label>
+                    <select
+                      value={paymentStatus}
+                      disabled={updating || (role === "CONFIRMATRICE" && paymentStatus !== "PAID")}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => handlePaymentStatusChange(e.target.value)}
+                      className={`text-[10.5px] font-extrabold tracking-wider uppercase px-2 py-1.5 border rounded-lg w-full text-center bg-white ${paymentStyles}`}
+                    >
+                      <option value="PENDING">⏳ En attente</option>
+                      <option value="PAID">💵 Payé</option>
+                      <option value="FAILED">✕ Échoué</option>
+                      <option value="REFUNDED">↩ Remboursé</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Client Info */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Informations Client & Livraison
+                  </h4>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-bold text-slate-900 text-sm">{resolvedName}</span>
+                      {isGuest && (
+                        <span className="bg-amber-50 text-amber-700 border border-amber-100 text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.2 rounded-full">
+                          Guest
+                        </span>
+                      )}
+                    </div>
+
+                    {(order.shippingPhone || order.user?.phone) && (
+                      <div className="flex items-center gap-2 flex-wrap pt-1.5 border-t border-slate-100">
+                        <a 
+                          href={`tel:${order.shippingPhone || order.user?.phone}`} 
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 font-mono text-xs text-slate-700 hover:text-slate-950 font-semibold bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl shadow-xs transition-colors"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-slate-400" /> {order.shippingPhone || order.user?.phone}
+                        </a>
+                        <a 
+                          href={`https://wa.me/${(order.shippingPhone || order.user?.phone)?.replace(/\D/g, '')}?text=${encodeURIComponent(`Bonjour ${resolvedName}, concernant votre commande ${order.orderNumber}...`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors flex items-center gap-1 shadow-xs"
+                        >
+                          WhatsApp
+                        </a>
+                      </div>
+                    )}
+
+                    <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-xs text-slate-650">
+                      <p className="flex items-start gap-1.5">
+                        <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                        <span>
+                          {order.shippingStreet ? `${order.shippingStreet}, ` : ""}{wilayaName}
+                          {order.isInternational && order.shippingCountry && (
+                            <span className="bg-sky-50 text-sky-700 border border-sky-200 text-[8px] font-bold px-1 py-0.2 rounded ml-1 uppercase">
+                              🌐 {order.shippingCountry}
+                            </span>
+                          )}
+                        </span>
+                      </p>
+                      <div className="flex items-center gap-2 pt-1">
+                        {order.deliveryType === "DOMICILE" ? (
+                          <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-extrabold px-2 py-0.5 rounded shadow-xs">
+                            🏠 À Domicile
+                          </span>
+                        ) : (
+                          <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-extrabold px-2 py-0.5 rounded shadow-xs">
+                            📦 Bureau Stop Desk
+                          </span>
+                        )}
+                        <span className="bg-slate-50 text-slate-700 border border-slate-200 text-[9px] font-extrabold px-2 py-0.5 rounded shadow-xs">
+                          💵 Paiement à la livraison (COD)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Articles Commandés
+                  </h4>
+                  <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
+                    {items.map((item, idx) => (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-4 text-xs font-semibold text-slate-800 hover:bg-slate-50/40 transition-colors">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <span className="bg-slate-100 border border-slate-200 text-slate-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded shrink-0">
+                            x{item.quantity}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-slate-900">{item.productTitle}</p>
+                            {(item.size || item.color) && (
+                              <p className="text-[10px] text-slate-400 font-normal mt-0.5">
+                                Taille: {item.size || "Standard"} | Couleur: {item.color || "Standard"}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="p-3 bg-slate-50/50 flex justify-between items-center text-xs font-bold text-slate-900">
+                      <span>Total de la commande</span>
+                      <span className="text-sm font-extrabold text-brand-900">{formatPrice(order.totalAmount)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Note Client */}
+                {order.notes && order.notes.trim() !== "" && (
+                  <div className="space-y-1.5">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Note Client
+                    </h4>
+                    <div className="bg-violet-50/55 border border-violet-100 text-violet-850 p-3 rounded-2xl text-xs italic font-medium leading-relaxed">
+                      "{order.notes}"
+                    </div>
+                  </div>
+                )}
+
+                {/* Tracking info */}
+                {order.trackingNumber && (
+                  <div className="space-y-1.5">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Suivi de Livraison (ZR Express)
+                    </h4>
+                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl text-xs flex items-center justify-between">
+                      <span className="font-semibold text-slate-700">Numéro de suivi</span>
+                      <span className="font-mono font-bold text-slate-900 bg-white border border-slate-200 px-2 py-0.5 rounded-lg shadow-xs flex items-center gap-1">
+                        🚚 {order.trackingNumber}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-2 sticky bottom-0 bg-white z-10">
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all shadow-xs"
+                >
+                  Fermer
+                </button>
+                <Link
+                  href={`/admin/orders/${order.id}`}
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1"
+                >
+                  <Eye className="w-3.5 h-3.5" /> Détails complets
+                </Link>
+              </div>
+            </div>
+          </div>
+        </td>
+      )}
     </tr>
   );
 }
