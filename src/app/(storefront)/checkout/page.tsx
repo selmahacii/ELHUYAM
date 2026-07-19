@@ -278,7 +278,7 @@ export default function CheckoutPage() {
             <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl text-xs text-emerald-800 space-y-1.5 font-medium">
               <p className="font-bold">⚠️ Action Required:</p>
               <p>
-                Please provide a valid phone number with **WhatsApp** (including your country code, e.g. +33 for France). We will contact you on WhatsApp to confirm the final shipping fees before dispatch.
+                Please provide a valid phone number with <strong className="font-extrabold text-emerald-950">WhatsApp</strong> (including your country code, e.g. +33 for France). We will contact you on WhatsApp to confirm the final shipping fees before dispatch.
               </p>
             </div>
             <button
