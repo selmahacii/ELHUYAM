@@ -618,7 +618,7 @@ export default function CheckoutPage() {
                 <span>{t("total")}</span>
                 <span>
                   {isInternational ? (
-                    <span className="text-emerald-700 font-extrabold uppercase">Sous Devis</span>
+                    <span className="text-emerald-700 font-extrabold uppercase">Under Quote</span>
                   ) : shippingFee === null ? (
                     "—"
                   ) : (
