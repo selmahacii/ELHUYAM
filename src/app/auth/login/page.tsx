@@ -64,7 +64,7 @@ export default function LoginPage() {
           </div>
           <div className="w-8 h-px bg-white/30 mx-auto mb-6" />
           <p className="font-display text-xl text-white italic leading-relaxed max-w-xs">
-            &ldquo;Elegance in Modesty, Grace in Every Stitch&rdquo;
+            &ldquo;Stay classy and modest with us.&rdquo;
           </p>
         </div>
       </div>
