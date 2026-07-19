@@ -61,6 +61,8 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
             quantity: true,
             productTitle: true,
             productImage: true,
+            size: true,
+            color: true,
             product: { select: { images: true, slug: true } },
           },
         },
@@ -72,7 +74,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
     db.order.count({ where }),
     // Count per status for tab badges
     Promise.all(
-      ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map((s) =>
+      ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REFUNDED"].map((s) =>
         db.order.count({ where: { ...where, status: s as never } })
       )
     ),
@@ -82,17 +84,29 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
     }),
   ]);
 
-  const [pendingCount, processingCount, shippedCount, deliveredCount, cancelledCount] = statusCounts;
+  const [
+    pendingCount,
+    confirmedCount,
+    processingCount,
+    shippedCount,
+    outForDeliveryCount,
+    deliveredCount,
+    cancelledCount,
+    refundedCount
+  ] = statusCounts;
   const totalPages = Math.ceil(total / limit);
   const totalRevenue = totalRevenueResult._sum.totalAmount ?? 0;
 
   const tabs = [
-    { label: "All", status: null, count: null },
-    { label: "Pending", status: "PENDING", count: pendingCount },
-    { label: "Processing", status: "PROCESSING", count: processingCount },
-    { label: "Shipped", status: "SHIPPED", count: shippedCount },
-    { label: "Delivered", status: "DELIVERED", count: deliveredCount },
-    { label: "Cancelled", status: "CANCELLED", count: cancelledCount },
+    { label: "Tous", status: null, count: total, color: "slate" },
+    { label: "⏳ En attente", status: "PENDING", count: pendingCount, color: "amber" },
+    { label: "✓ Confirmés", status: "CONFIRMED", count: confirmedCount, color: "blue" },
+    { label: "📦 En préparation", status: "PROCESSING", count: processingCount, color: "indigo" },
+    { label: "🚚 Expédiés", status: "SHIPPED", count: shippedCount, color: "purple" },
+    { label: "🛵 En livraison", status: "OUT_FOR_DELIVERY", count: outForDeliveryCount, color: "yellow" },
+    { label: "🎉 Livrés", status: "DELIVERED", count: deliveredCount, color: "emerald" },
+    { label: "✕ Annulés", status: "CANCELLED", count: cancelledCount, color: "red" },
+    { label: "↩ Retournés", status: "REFUNDED", count: refundedCount, color: "rose" },
   ];
 
   const buildLink = (status: string | null, p?: number) => {
@@ -267,25 +281,35 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
           })}
         </div>
 
-        <div className="flex gap-1 flex-wrap border-b border-gray-200 pb-0">
-          {tabs.map(({ label, status, count }) => {
+        <div className="flex gap-2 flex-wrap pb-2 border-b border-gray-200">
+          {tabs.map(({ label, status, count, color }) => {
             const isActive = (status === null && !sp.status) || sp.status === status;
+            
+            // Map color classes
+            const colorClasses = 
+              !isActive ? "bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-800 border-gray-200" :
+              color === "amber" ? "bg-amber-50 text-amber-800 border-amber-300 shadow-sm" :
+              color === "blue" ? "bg-blue-50 text-blue-800 border-blue-300 shadow-sm" :
+              color === "indigo" ? "bg-indigo-50 text-indigo-800 border-indigo-300 shadow-sm" :
+              color === "purple" ? "bg-purple-50 text-purple-800 border-purple-300 shadow-sm" :
+              color === "yellow" ? "bg-yellow-50 text-yellow-800 border-yellow-300 shadow-sm" :
+              color === "emerald" ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-sm" :
+              color === "red" ? "bg-red-50 text-red-800 border-red-300 shadow-sm" :
+              color === "rose" ? "bg-rose-50 text-rose-800 border-rose-300 shadow-sm" :
+              "bg-slate-900 text-white border-slate-950 shadow-sm";
+
             return (
               <Link
                 key={label}
                 href={buildLink(status)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-xs uppercase tracking-wider border-b-2 font-bold transition-all -mb-px ${
-                  isActive
-                    ? "border-slate-900 text-slate-950"
-                    : "border-transparent text-slate-400 hover:text-slate-900"
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${colorClasses}`}
               >
                 <span>{label}</span>
-                {count !== null && count > 0 && (
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                {count !== null && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
                     isActive 
-                      ? "bg-slate-950 text-white shadow-sm" 
-                      : "bg-slate-50 text-slate-650 border border-slate-200"
+                      ? "bg-white/90 text-slate-900" 
+                      : "bg-slate-200/60 text-slate-655"
                   }`}>
                     {count}
                   </span>
