@@ -109,35 +109,54 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
       const isPaid = (finalPaymentStatus ?? existingOrder.paymentStatus) === "PAID";
       const customerName = `${existingOrder.shippingFirstName ?? ""} ${existingOrder.shippingLastName ?? ""}`.trim() || "Client";
-      const address = (existingOrder.shippingStreet ?? existingOrder.shippingCity ?? wilayaName).trim() || wilayaName;
+      const deliveryAddress = (existingOrder.shippingStreet || existingOrder.shippingCity || wilayaName || "Alger").trim();
 
       const zrDeliveryType = (existingOrder.deliveryType === "STOPDESK" || existingOrder.deliveryType === "pickup-point")
         ? "pickup-point"
         : "home";
 
       const orderedProducts = existingOrder.items.map((item: any) => ({
+        productName: item.productTitle,
+        ProductName: item.productTitle,
         name: item.productTitle,
         title: item.productTitle,
-        productTitle: item.productTitle,
         quantity: item.quantity,
         price: item.price ?? 0,
+        stockType: "none",
+        StockType: "none",
       }));
 
       const payload = {
         customerName,
+        CustomerName: customerName,
         customerPhone: phoneClean || "0550000000",
+        CustomerPhone: phoneClean || "0550000000",
         phone: phoneClean || "0550000000",
-        address,
+
+        deliveryAddress,
+        DeliveryAddress: deliveryAddress,
+        address: deliveryAddress,
+
         wilaya: wilayaCode,
+        Wilaya: wilayaCode,
         wilayaName,
-        commune: existingOrder.shippingCity ?? wilayaName,
+        commune: existingOrder.shippingCity || wilayaName,
+        Commune: existingOrder.shippingCity || wilayaName,
+
         deliveryType: zrDeliveryType,
         DeliveryType: zrDeliveryType,
         delivery_type: zrDeliveryType,
+
         orderedProducts,
         OrderedProducts: orderedProducts,
+        products: orderedProducts,
+        Products: orderedProducts,
+
         amount: isPaid ? 0 : Math.round(existingOrder.totalAmount),
+        Amount: isPaid ? 0 : Math.round(existingOrder.totalAmount),
+
         description: description || "Habillements Modest Fashion",
+        Description: description || "Habillements Modest Fashion",
       };
 
       const zrRes = await zrCreateParcel(settings, payload);

@@ -54,38 +54,57 @@ export async function POST(req: NextRequest, { params }: Props) {
       .join(", ");
 
     const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || "Client";
-    const address = (order.shippingStreet ?? order.shippingCity ?? wilayaName).trim() || wilayaName;
+    const deliveryAddress = (order.shippingStreet || order.shippingCity || wilayaName || "Alger").trim();
 
     // Map ZR Express delivery type ('home' or 'pickup-point')
     const zrDeliveryType = (order.deliveryType === "STOPDESK" || order.deliveryType === "pickup-point")
       ? "pickup-point"
       : "home";
 
-    // Format products array
+    // Format products array with productName and stockType=none
     const orderedProducts = order.items.map((item: any) => ({
+      productName: item.productTitle,
+      ProductName: item.productTitle,
       name: item.productTitle,
       title: item.productTitle,
-      productTitle: item.productTitle,
       quantity: item.quantity,
       price: item.price ?? 0,
+      stockType: "none",
+      StockType: "none",
     }));
 
     // Prepare ZR Express parcel payload per official API validation rules
     const payload = {
       customerName,
+      CustomerName: customerName,
       customerPhone: phoneClean || "0550000000",
+      CustomerPhone: phoneClean || "0550000000",
       phone: phoneClean || "0550000000",
-      address,
+
+      deliveryAddress,
+      DeliveryAddress: deliveryAddress,
+      address: deliveryAddress,
+
       wilaya: wilayaCode,
+      Wilaya: wilayaCode,
       wilayaName,
-      commune: order.shippingCity ?? wilayaName,
+      commune: order.shippingCity || wilayaName,
+      Commune: order.shippingCity || wilayaName,
+
       deliveryType: zrDeliveryType,
       DeliveryType: zrDeliveryType,
       delivery_type: zrDeliveryType,
+
       orderedProducts,
       OrderedProducts: orderedProducts,
+      products: orderedProducts,
+      Products: orderedProducts,
+
       amount: order.paymentStatus === "PAID" ? 0 : Math.round(order.totalAmount),
+      Amount: order.paymentStatus === "PAID" ? 0 : Math.round(order.totalAmount),
+
       description: description || "Habillements Modest Fashion",
+      Description: description || "Habillements Modest Fashion",
     };
 
     // Call the API
