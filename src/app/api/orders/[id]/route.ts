@@ -115,23 +115,38 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ? "pickup-point"
         : "home";
 
-      const products = existingOrder.items.map((item: any) => ({
+      let phoneIntl = phoneClean;
+      if (phoneIntl.startsWith("0")) {
+        phoneIntl = "+213" + phoneIntl.slice(1);
+      } else if (!phoneIntl.startsWith("+")) {
+        phoneIntl = "+213" + phoneIntl;
+      }
+
+      const customerId = crypto.randomUUID();
+
+      const orderedProducts = existingOrder.items.map((item: any) => ({
         productName: item.productTitle,
+        unitPrice: item.price ?? 0,
         quantity: item.quantity,
-        price: item.price ?? 0,
         stockType: "none",
       }));
 
+      const rawDesc = description || "Habillements Modest Fashion";
+      const cleanDesc = rawDesc.length > 240 ? rawDesc.slice(0, 240) : rawDesc;
+
       const payload = {
-        customerName,
-        customerPhone: phoneClean || "0550000000",
-        deliveryAddress,
-        wilaya: wilayaCode,
-        commune: existingOrder.shippingCity || wilayaName,
+        customer: {
+          customerId,
+          name: customerName,
+          phone: {
+            number1: phoneIntl,
+          },
+        },
+        orderedProducts,
         deliveryType: zrDeliveryType,
-        products,
         amount: isPaid ? 0 : Math.round(existingOrder.totalAmount),
-        description: description || "Habillements Modest Fashion",
+        description: cleanDesc,
+        externalId: existingOrder.orderNumber || existingOrder.id,
       };
 
       const zrRes = await zrCreateParcel(settings, payload);
