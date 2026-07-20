@@ -281,3 +281,17 @@ export async function zrSearchCustomers(
     }),
   });
 }
+
+export async function zrSearchTerritories(
+  settings: ZRSettings,
+  keyword?: string
+): Promise<{ ok: boolean; data?: any; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<any>(settings, "/territories/search", {
+    method: "POST",
+    body: JSON.stringify({
+      keyword,
+      pageSize: 50,
+      pageNumber: 1,
+    }),
+  });
+}

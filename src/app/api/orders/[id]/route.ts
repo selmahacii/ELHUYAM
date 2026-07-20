@@ -134,6 +134,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       const rawDesc = description || "Habillements Modest Fashion";
       const cleanDesc = rawDesc.length > 240 ? rawDesc.slice(0, 240) : rawDesc;
 
+      const fullStreetAddress = `${existingOrder.shippingStreet || ""}, ${existingOrder.shippingCity || ""}, ${wilayaName}`.replace(/^,\s*/, "").trim() || wilayaName;
+
+      let cityTerritoryId = "53c9e062-9c4e-4c77-8b71-55eabf887f83";
+      let districtTerritoryId = "8d0b6cd9-7712-47d2-9ea4-460246494c32";
+
       const payload = {
         customer: {
           customerId,
@@ -141,6 +146,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           phone: {
             number1: phoneIntl,
           },
+        },
+        deliveryAddress: {
+          street: fullStreetAddress,
+          cityTerritoryId,
+          districtTerritoryId,
         },
         orderedProducts,
         deliveryType: zrDeliveryType,
