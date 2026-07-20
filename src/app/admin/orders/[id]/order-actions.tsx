@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-hot-toast";
 import { AlertTriangle, Truck } from "lucide-react";
+import EditOrderDialog from "./edit-order-dialog";
 
 const ORDER_STATUSES = [
   { value: "PENDING",          label: "Pending" },
@@ -164,9 +165,12 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
       )}
 
       <div className="bg-white border border-black/10 p-5 space-y-4">
-        <h3 className="font-display text-base text-black font-semibold border-b border-black/10 pb-3">
+        <h3 className="font-display text-base text-black font-semibold border-b border-black/10 pb-3 flex items-center justify-between">
           Update Order
         </h3>
+
+        {/* Full Order & Cart Edit Dialog */}
+        <EditOrderDialog order={order} />
 
         {/* Order status */}
         <div>

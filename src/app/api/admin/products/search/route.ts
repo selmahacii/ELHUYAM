@@ -11,20 +11,36 @@ export async function GET(req: NextRequest) {
   }
 
   const q = req.nextUrl.searchParams.get("q")?.trim() ?? "";
-  const limit = Math.min(20, parseInt(req.nextUrl.searchParams.get("limit") ?? "8"));
+  const limit = Math.min(30, parseInt(req.nextUrl.searchParams.get("limit") ?? "10"));
 
-  if (q.length < 2) return successResponse([]);
+  const whereClause: any = { archived: false };
+  if (q.length >= 2) {
+    whereClause.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { sku: { contains: q, mode: "insensitive" } },
+    ];
+  }
 
   const products = await db.product.findMany({
-    where: {
-      OR: [
-        { title: { contains: q } },
-        { sku: { contains: q } },
-      ],
-      archived: false,
-      stock: { gt: 0 },
+    where: whereClause,
+    select: {
+      id: true,
+      title: true,
+      price: true,
+      discountPrice: true,
+      stock: true,
+      images: true,
+      variants: {
+        select: {
+          id: true,
+          size: true,
+          color: true,
+          colorHex: true,
+          stock: true,
+          price: true,
+        },
+      },
     },
-    select: { id: true, title: true, price: true, discountPrice: true, stock: true, images: true },
     take: limit,
     orderBy: { createdAt: "desc" },
   });
