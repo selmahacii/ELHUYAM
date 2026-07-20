@@ -11,24 +11,26 @@ export function formatPrice(amount: number, currency = "DZD"): string {
       style: "currency",
       currency: "EUR",
       minimumFractionDigits: 2,
-    }).format(amount);
+    }).format(amount).replace(/[\u00a0\u202f]/g, " ");
   }
   return new Intl.NumberFormat("fr-DZ", {
     style: "currency",
     currency: "DZD",
     minimumFractionDigits: 2,
-  }).format(amount);
+  }).format(amount).replace(/[\u00a0\u202f]/g, " ");
 }
 
 export function formatDate(date: Date | string): string {
+  if (!date) return "";
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(new Date(date)).replace(/[\u00a0\u202f]/g, " ");
 }
 
 export function formatDateTime(date: Date | string): string {
+  if (!date) return "";
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "long",
@@ -36,7 +38,7 @@ export function formatDateTime(date: Date | string): string {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-  }).format(new Date(date));
+  }).format(new Date(date)).replace(/[\u00a0\u202f]/g, " ");
 }
 
 import slugifyPkg from "slugify";

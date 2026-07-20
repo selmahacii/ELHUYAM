@@ -37,23 +37,36 @@ export async function POST(req: NextRequest, { params }: Props) {
       );
     }
 
-    // Get wilaya name or fallback
-    const wilaya = getWilayaByCode(order.wilayaCode ?? "");
-    const wilayaName = wilaya ? wilaya.name : (order.shippingState ?? "Alger");
+    // Format phone number cleanly (e.g. 0770386357)
+    let phoneClean = (order.shippingPhone ?? "").replace(/\s+/g, "").replace(/^(\+213|00213|213)/, "0");
+    if (!phoneClean.startsWith("0") && phoneClean.length === 9) {
+      phoneClean = "0" + phoneClean;
+    }
+
+    // Get wilaya name and code
+    const wilayaObj = getWilayaByCode(order.wilayaCode ?? "");
+    const wilayaCode = order.wilayaCode ?? "16";
+    const wilayaName = wilayaObj ? wilayaObj.name : (order.shippingState ?? "Alger");
 
     // Build the package description/items list
     const description = order.items
       .map((item: any) => `${item.productTitle} (x${item.quantity})`)
       .join(", ");
 
-    // Prepare ZR Express parcel payload
+    const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || "Client";
+    const address = (order.shippingStreet ?? order.shippingCity ?? wilayaName).trim() || wilayaName;
+
+    // Prepare ZR Express parcel payload with aliases for 100% field compatibility
     const payload = {
-      customerName: `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim(),
-      customerPhone: order.shippingPhone ?? "",
-      address: order.shippingStreet ?? "",
-      wilaya: wilayaName,
-      deliveryType: order.deliveryType, // DOMICILE or STOPDESK
-      amount: order.paymentStatus === "PAID" ? 0 : order.totalAmount, // COD amount
+      customerName,
+      customerPhone: phoneClean || "0550000000",
+      phone: phoneClean || "0550000000",
+      address,
+      wilaya: wilayaCode,
+      wilayaName,
+      commune: order.shippingCity ?? wilayaName,
+      deliveryType: order.deliveryType ?? "DOMICILE",
+      amount: order.paymentStatus === "PAID" ? 0 : Math.round(order.totalAmount),
       description: description || "Habillements Modest Fashion",
     };
 

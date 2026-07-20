@@ -93,21 +93,34 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         );
       }
 
-      const wilaya = getWilayaByCode(existingOrder.wilayaCode ?? "");
-      const wilayaName = wilaya ? wilaya.name : (existingOrder.shippingState ?? "Alger");
+      // Format phone number cleanly (e.g. 0770386357)
+      let phoneClean = (existingOrder.shippingPhone ?? "").replace(/\s+/g, "").replace(/^(\+213|00213|213)/, "0");
+      if (!phoneClean.startsWith("0") && phoneClean.length === 9) {
+        phoneClean = "0" + phoneClean;
+      }
+
+      const wilayaObj = getWilayaByCode(existingOrder.wilayaCode ?? "");
+      const wilayaCode = existingOrder.wilayaCode ?? "16";
+      const wilayaName = wilayaObj ? wilayaObj.name : (existingOrder.shippingState ?? "Alger");
+
       const description = existingOrder.items
         .map((item: any) => `${item.productTitle} (x${item.quantity})`)
         .join(", ");
 
       const isPaid = (finalPaymentStatus ?? existingOrder.paymentStatus) === "PAID";
+      const customerName = `${existingOrder.shippingFirstName ?? ""} ${existingOrder.shippingLastName ?? ""}`.trim() || "Client";
+      const address = (existingOrder.shippingStreet ?? existingOrder.shippingCity ?? wilayaName).trim() || wilayaName;
 
       const payload = {
-        customerName: `${existingOrder.shippingFirstName ?? ""} ${existingOrder.shippingLastName ?? ""}`.trim(),
-        customerPhone: existingOrder.shippingPhone ?? "",
-        address: existingOrder.shippingStreet ?? "",
-        wilaya: wilayaName,
-        deliveryType: existingOrder.deliveryType, // DOMICILE or STOPDESK
-        amount: isPaid ? 0 : existingOrder.totalAmount, // COD amount to collect
+        customerName,
+        customerPhone: phoneClean || "0550000000",
+        phone: phoneClean || "0550000000",
+        address,
+        wilaya: wilayaCode,
+        wilayaName,
+        commune: existingOrder.shippingCity ?? wilayaName,
+        deliveryType: existingOrder.deliveryType ?? "DOMICILE",
+        amount: isPaid ? 0 : Math.round(existingOrder.totalAmount),
         description: description || "Habillements Modest Fashion",
       };
 

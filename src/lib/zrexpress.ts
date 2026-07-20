@@ -100,9 +100,20 @@ async function zrFetch<T>(
     try { json = JSON.parse(text); } catch { json = { message: text }; }
 
     if (!res.ok) {
-      const err = (json as Record<string, unknown>)?.message as string | undefined;
-      console.error(`[ZR Express API Error] Failed with message:`, err ?? `HTTP ${res.status}`);
-      return { ok: false, error: err ?? `HTTP ${res.status}`, status: res.status, rawBody: text };
+      let errStr: string | undefined;
+      if (json && typeof json === "object") {
+        const j = json as Record<string, any>;
+        if (typeof j.message === "string" && j.message) errStr = j.message;
+        else if (typeof j.error === "string" && j.error) errStr = j.error;
+        else if (Array.isArray(j.errors)) errStr = j.errors.join(", ");
+        else if (typeof j.detail === "string" && j.detail) errStr = j.detail;
+      }
+      if (!errStr && text) {
+        errStr = text.length > 200 ? text.slice(0, 200) + "..." : text;
+      }
+      const finalErr = errStr || `HTTP ${res.status}`;
+      console.error(`[ZR Express API Error] Failed with message:`, finalErr);
+      return { ok: false, error: finalErr, status: res.status, rawBody: text };
     }
     return { ok: true, data: json as T };
   } catch (e) {
