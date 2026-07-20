@@ -83,8 +83,10 @@ async function zrFetch<T>(
       ...options,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${settings.secretKey}`,
+        "X-Tenant": settings.tenantId,
+        "X-Api-Key": settings.secretKey,
         "X-Tenant-Id": settings.tenantId,
+        Authorization: `Bearer ${settings.secretKey}`,
         ...(options.headers as Record<string, string> | undefined),
       },
       next: { revalidate: 0 },
