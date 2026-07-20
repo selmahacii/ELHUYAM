@@ -38,20 +38,22 @@ export async function getZRSettings(): Promise<ZRSettings | null> {
   });
   const map = Object.fromEntries(rows.map((r: any) => [r.key, r.value]));
   if (!map.zr_secret_key || !map.zr_tenant_id) return null;
-  return { secretKey: map.zr_secret_key, tenantId: map.zr_tenant_id };
+  return { secretKey: String(map.zr_secret_key).trim(), tenantId: String(map.zr_tenant_id).trim() };
 }
 
 export async function saveZRSettings(settings: ZRSettings): Promise<void> {
+  const secretKey = settings.secretKey.trim();
+  const tenantId = settings.tenantId.trim();
   await Promise.all([
     db.setting.upsert({
       where: { key: "zr_secret_key" },
-      create: { key: "zr_secret_key", value: settings.secretKey },
-      update: { value: settings.secretKey },
+      create: { key: "zr_secret_key", value: secretKey },
+      update: { value: secretKey },
     }),
     db.setting.upsert({
       where: { key: "zr_tenant_id" },
-      create: { key: "zr_tenant_id", value: settings.tenantId },
-      update: { value: settings.tenantId },
+      create: { key: "zr_tenant_id", value: tenantId },
+      update: { value: tenantId },
     }),
   ]);
 }
