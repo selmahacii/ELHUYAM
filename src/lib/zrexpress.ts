@@ -164,3 +164,52 @@ export async function zrTestConnection(settings: ZRSettings): Promise<{ ok: bool
     rawBody: res.rawBody
   };
 }
+
+// ── Catalog & Stock Management API ────────────────────────────────────────────
+
+export interface ZRProductPayload {
+  id?: string;
+  name: string;
+  categoryId: string;
+  subCategoryId: string;
+  basePrice: number;
+  purchasePrice?: number;
+  length: number;
+  width: number;
+  height: number;
+  weight?: number;
+  localStock: number;
+  sku?: string;
+}
+
+export async function zrCreateProduct(
+  settings: ZRSettings,
+  payload: ZRProductPayload
+): Promise<{ ok: boolean; data?: { id: string }; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<{ id: string }>(settings, "/products", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function zrUpdateProduct(
+  settings: ZRSettings,
+  id: string,
+  payload: Partial<ZRProductPayload> & { id: string }
+): Promise<{ ok: boolean; data?: { id: string }; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<{ id: string }>(settings, `/products/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function zrCreateStockMovement(
+  settings: ZRSettings,
+  products: Array<{ productId: string; quantity: number }>,
+  hubStockId?: string
+): Promise<{ ok: boolean; data?: { id: string }; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<{ id: string }>(settings, "/stock-movements/product/warehouse-stock/user", {
+    method: "POST",
+    body: JSON.stringify({ products, hubStockId }),
+  });
+}
