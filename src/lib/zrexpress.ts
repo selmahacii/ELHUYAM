@@ -105,7 +105,9 @@ async function zrFetch<T>(
         const j = json as Record<string, any>;
         if (typeof j.message === "string" && j.message) errStr = j.message;
         else if (typeof j.error === "string" && j.error) errStr = j.error;
-        else if (Array.isArray(j.errors)) errStr = j.errors.join(", ");
+        else if (Array.isArray(j.errors)) {
+          errStr = j.errors.map((e: any) => typeof e === "string" ? e : (e.description || e.message || JSON.stringify(e))).join(" | ");
+        }
         else if (typeof j.detail === "string" && j.detail) errStr = j.detail;
       }
       if (!errStr && text) {

@@ -111,6 +111,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       const customerName = `${existingOrder.shippingFirstName ?? ""} ${existingOrder.shippingLastName ?? ""}`.trim() || "Client";
       const address = (existingOrder.shippingStreet ?? existingOrder.shippingCity ?? wilayaName).trim() || wilayaName;
 
+      const zrDeliveryType = (existingOrder.deliveryType === "STOPDESK" || existingOrder.deliveryType === "pickup-point")
+        ? "pickup-point"
+        : "home";
+
+      const orderedProducts = existingOrder.items.map((item: any) => ({
+        name: item.productTitle,
+        title: item.productTitle,
+        productTitle: item.productTitle,
+        quantity: item.quantity,
+        price: item.price ?? 0,
+      }));
+
       const payload = {
         customerName,
         customerPhone: phoneClean || "0550000000",
@@ -119,7 +131,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         wilaya: wilayaCode,
         wilayaName,
         commune: existingOrder.shippingCity ?? wilayaName,
-        deliveryType: existingOrder.deliveryType ?? "DOMICILE",
+        deliveryType: zrDeliveryType,
+        DeliveryType: zrDeliveryType,
+        delivery_type: zrDeliveryType,
+        orderedProducts,
+        OrderedProducts: orderedProducts,
         amount: isPaid ? 0 : Math.round(existingOrder.totalAmount),
         description: description || "Habillements Modest Fashion",
       };

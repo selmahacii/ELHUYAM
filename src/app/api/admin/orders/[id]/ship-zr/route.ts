@@ -56,7 +56,21 @@ export async function POST(req: NextRequest, { params }: Props) {
     const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || "Client";
     const address = (order.shippingStreet ?? order.shippingCity ?? wilayaName).trim() || wilayaName;
 
-    // Prepare ZR Express parcel payload with aliases for 100% field compatibility
+    // Map ZR Express delivery type ('home' or 'pickup-point')
+    const zrDeliveryType = (order.deliveryType === "STOPDESK" || order.deliveryType === "pickup-point")
+      ? "pickup-point"
+      : "home";
+
+    // Format products array
+    const orderedProducts = order.items.map((item: any) => ({
+      name: item.productTitle,
+      title: item.productTitle,
+      productTitle: item.productTitle,
+      quantity: item.quantity,
+      price: item.price ?? 0,
+    }));
+
+    // Prepare ZR Express parcel payload per official API validation rules
     const payload = {
       customerName,
       customerPhone: phoneClean || "0550000000",
@@ -65,7 +79,11 @@ export async function POST(req: NextRequest, { params }: Props) {
       wilaya: wilayaCode,
       wilayaName,
       commune: order.shippingCity ?? wilayaName,
-      deliveryType: order.deliveryType ?? "DOMICILE",
+      deliveryType: zrDeliveryType,
+      DeliveryType: zrDeliveryType,
+      delivery_type: zrDeliveryType,
+      orderedProducts,
+      OrderedProducts: orderedProducts,
       amount: order.paymentStatus === "PAID" ? 0 : Math.round(order.totalAmount),
       description: description || "Habillements Modest Fashion",
     };
