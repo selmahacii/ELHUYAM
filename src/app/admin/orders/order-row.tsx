@@ -121,7 +121,11 @@ export default function OrderRow({ order, role }: OrderRowProps) {
       if (newStatus === "DELIVERED") {
         setPaymentStatus("PAID");
       }
-      toast.success("Order status updated");
+      if (data.data?.trackingNumber) {
+        toast.success(`Confirmée et transmise à ZR Express (N° ${data.data.trackingNumber})`);
+      } else {
+        toast.success("Statut mis à jour avec succès");
+      }
       setIsModalOpen(false);
       router.refresh();
     } catch {

@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     // Capture target carrier and tracking info
-    const finalCarrier = carrier !== undefined ? carrier : existingOrder.carrier;
+    let finalCarrier = carrier !== undefined ? carrier : existingOrder.carrier;
     const finalStatus = status !== undefined ? status : existingOrder.status;
     const finalTracking = trackingNumber !== undefined ? trackingNumber : existingOrder.trackingNumber;
 
@@ -81,8 +81,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     let autoParcelId = existingOrder.zrParcelId;
     let autoNoteAddition = "";
 
-    // Automatically transmit to ZR Express if status is changing to CONFIRMED
-    if (finalStatus === "CONFIRMED" && finalCarrier === "ZR_EXPRESS" && !autoTrackingNumber) {
+    // Automatically transmit to ZR Express if status is changing to CONFIRMED for national orders
+    const isZRTarget = !finalCarrier || finalCarrier === "ZR_EXPRESS";
+    if (finalStatus === "CONFIRMED" && !existingOrder.isInternational && isZRTarget && !autoTrackingNumber) {
+      finalCarrier = "ZR_EXPRESS";
       const settings = await getZRSettings();
       if (!settings) {
         return errorResponse(
