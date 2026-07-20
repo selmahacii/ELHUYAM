@@ -172,8 +172,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         );
       }
 
-      autoTrackingNumber = zrRes.data.trackingNumber;
-      autoParcelId = zrRes.data.id;
+      autoTrackingNumber = zrRes.data.trackingNumber || (zrRes.data as any).tracking || (zrRes.data as any).barcode || zrRes.data.id;
+      autoParcelId = zrRes.data.id || (zrRes.data as any).parcelId || autoTrackingNumber;
       autoNoteAddition = ` [Transmis automatiquement à ZR Express. N° Suivi: ${autoTrackingNumber}]`;
     }
 

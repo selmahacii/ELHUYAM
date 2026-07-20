@@ -320,13 +320,14 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
         </div>
       </div>
 
-      {/* ── Table Container ───────────────────────────────────────────────────── */}
+      {/* ── Table & Cards Container ─────────────────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/70">
-                {["Visual", "Order N°", "Customer", "Items", "Amount", "Payment", "Status", "Date", ""].map((h) => (
+                {["Commande & Cliente", "Articles", "Montant", "Paiement", "Statut", "Date", "Action"].map((h) => (
                   <th key={h} className="px-4 py-3.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold">{h}</th>
                 ))}
               </tr>
@@ -334,12 +335,12 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
             <tbody className="divide-y divide-gray-50">
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-5 py-16 text-center">
+                  <td colSpan={7} className="px-5 py-16 text-center">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-300">
                         <Package className="w-8 h-8" />
                       </div>
-                      <p className="text-xs text-slate-400 font-medium">No orders found.</p>
+                      <p className="text-xs text-slate-400 font-medium">Aucune commande trouvée.</p>
                     </div>
                   </td>
                 </tr>
@@ -350,6 +351,19 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards List View */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {orders.length === 0 && (
+            <div className="p-8 text-center text-xs text-slate-400 font-medium">
+              Aucune commande trouvée.
+            </div>
+          )}
+          {orders.map((order: any) => (
+            <OrderRow key={order.id} order={order} role={role} isMobileView={true} />
+          ))}
+        </div>
+      </div>
 
         {/* ── Pagination ──────────────────────────────────────────────────────── */}
         {totalPages > 1 && (
@@ -396,7 +410,6 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
             </div>
           </div>
         )}
-      </div>
 
     </div>
   );

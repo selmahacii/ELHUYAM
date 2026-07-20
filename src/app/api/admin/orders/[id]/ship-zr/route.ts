@@ -127,15 +127,17 @@ export async function POST(req: NextRequest, { params }: Props) {
     }
 
     const parcel = res.data;
+    const trackingNumber = parcel.trackingNumber || (parcel as any).tracking || (parcel as any).barcode || parcel.id;
+    const zrParcelId = parcel.id || (parcel as any).parcelId || trackingNumber;
 
     // Update order with tracking number and carrier info
     await db.$transaction([
       db.order.update({
         where: { id: order.id },
         data: {
-          trackingNumber: parcel.trackingNumber,
+          trackingNumber,
           carrier: "ZR_EXPRESS",
-          zrParcelId: parcel.id,
+          zrParcelId,
           status: "CONFIRMED",
         },
       }),
@@ -143,14 +145,14 @@ export async function POST(req: NextRequest, { params }: Props) {
         data: {
           orderId: order.id,
           status: "CONFIRMED",
-          note: `Colis transmis automatiquement à ZR Express. N° Suivi: ${parcel.trackingNumber}`,
+          note: `Colis transmis automatiquement à ZR Express. N° Suivi: ${trackingNumber}`,
           changedById: session.user.id,
         },
       }),
     ]);
 
     return successResponse({
-      trackingNumber: parcel.trackingNumber,
+      trackingNumber,
       message: "Colis transmis avec succès à ZR Express",
     });
   } catch (e) {
