@@ -61,50 +61,25 @@ export async function POST(req: NextRequest, { params }: Props) {
       ? "pickup-point"
       : "home";
 
-    // Format products array with productName and stockType=none
-    const orderedProducts = order.items.map((item: any) => ({
+    // Format products array with productName and stockType=none per ZR Express validation
+    const products = order.items.map((item: any) => ({
       productName: item.productTitle,
-      ProductName: item.productTitle,
-      name: item.productTitle,
-      title: item.productTitle,
       quantity: item.quantity,
       price: item.price ?? 0,
       stockType: "none",
-      StockType: "none",
     }));
 
     // Prepare ZR Express parcel payload per official API validation rules
     const payload = {
       customerName,
-      CustomerName: customerName,
       customerPhone: phoneClean || "0550000000",
-      CustomerPhone: phoneClean || "0550000000",
-      phone: phoneClean || "0550000000",
-
       deliveryAddress,
-      DeliveryAddress: deliveryAddress,
-      address: deliveryAddress,
-
       wilaya: wilayaCode,
-      Wilaya: wilayaCode,
-      wilayaName,
       commune: order.shippingCity || wilayaName,
-      Commune: order.shippingCity || wilayaName,
-
       deliveryType: zrDeliveryType,
-      DeliveryType: zrDeliveryType,
-      delivery_type: zrDeliveryType,
-
-      orderedProducts,
-      OrderedProducts: orderedProducts,
-      products: orderedProducts,
-      Products: orderedProducts,
-
+      products,
       amount: order.paymentStatus === "PAID" ? 0 : Math.round(order.totalAmount),
-      Amount: order.paymentStatus === "PAID" ? 0 : Math.round(order.totalAmount),
-
       description: description || "Habillements Modest Fashion",
-      Description: description || "Habillements Modest Fashion",
     };
 
     // Call the API

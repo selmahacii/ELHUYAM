@@ -115,48 +115,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         ? "pickup-point"
         : "home";
 
-      const orderedProducts = existingOrder.items.map((item: any) => ({
+      const products = existingOrder.items.map((item: any) => ({
         productName: item.productTitle,
-        ProductName: item.productTitle,
-        name: item.productTitle,
-        title: item.productTitle,
         quantity: item.quantity,
         price: item.price ?? 0,
         stockType: "none",
-        StockType: "none",
       }));
 
       const payload = {
         customerName,
-        CustomerName: customerName,
         customerPhone: phoneClean || "0550000000",
-        CustomerPhone: phoneClean || "0550000000",
-        phone: phoneClean || "0550000000",
-
         deliveryAddress,
-        DeliveryAddress: deliveryAddress,
-        address: deliveryAddress,
-
         wilaya: wilayaCode,
-        Wilaya: wilayaCode,
-        wilayaName,
         commune: existingOrder.shippingCity || wilayaName,
-        Commune: existingOrder.shippingCity || wilayaName,
-
         deliveryType: zrDeliveryType,
-        DeliveryType: zrDeliveryType,
-        delivery_type: zrDeliveryType,
-
-        orderedProducts,
-        OrderedProducts: orderedProducts,
-        products: orderedProducts,
-        Products: orderedProducts,
-
+        products,
         amount: isPaid ? 0 : Math.round(existingOrder.totalAmount),
-        Amount: isPaid ? 0 : Math.round(existingOrder.totalAmount),
-
         description: description || "Habillements Modest Fashion",
-        Description: description || "Habillements Modest Fashion",
       };
 
       const zrRes = await zrCreateParcel(settings, payload);
