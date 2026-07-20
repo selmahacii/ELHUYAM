@@ -86,9 +86,10 @@ export async function POST(req: NextRequest, { params }: Props) {
     const res = await zrCreateParcel(settings, payload);
 
     if (!res.ok || !res.data) {
+      const errorMsg = res.error || res.rawBody || "Erreur lors de la création du colis chez ZR Express";
       return NextResponse.json({
         success: false,
-        error: res.error ?? "Erreur lors de la création du colis chez ZR Express",
+        error: errorMsg,
         errorDetails: {
           status: res.status,
           rawBody: res.rawBody

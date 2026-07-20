@@ -100,18 +100,26 @@ async function zrFetch<T>(
     try { json = JSON.parse(text); } catch { json = { message: text }; }
 
     if (!res.ok) {
-      let errStr: string | undefined;
+      let errStr = "";
       if (json && typeof json === "object") {
         const j = json as Record<string, any>;
-        if (typeof j.message === "string" && j.message) errStr = j.message;
-        else if (typeof j.error === "string" && j.error) errStr = j.error;
-        else if (Array.isArray(j.errors)) {
+        if (Array.isArray(j.errors)) {
           errStr = j.errors.map((e: any) => typeof e === "string" ? e : (e.description || e.message || JSON.stringify(e))).join(" | ");
+        } else if (j.errors && typeof j.errors === "object") {
+          const errList: string[] = [];
+          for (const [key, val] of Object.entries(j.errors)) {
+            if (Array.isArray(val)) errList.push(`${key}: ${val.join(", ")}`);
+            else if (typeof val === "string") errList.push(`${key}: ${val}`);
+          }
+          if (errList.length > 0) errStr = errList.join(" | ");
         }
-        else if (typeof j.detail === "string" && j.detail) errStr = j.detail;
+        if (!errStr && typeof j.detail === "string" && j.detail) errStr = j.detail;
+        if (!errStr && typeof j.message === "string" && j.message) errStr = j.message;
+        if (!errStr && typeof j.error === "string" && j.error) errStr = j.error;
+        if (!errStr && typeof j.title === "string" && j.title) errStr = j.title;
       }
       if (!errStr && text) {
-        errStr = text.length > 200 ? text.slice(0, 200) + "..." : text;
+        errStr = text.length > 300 ? text.slice(0, 300) + "..." : text;
       }
       const finalErr = errStr || `HTTP ${res.status}`;
       console.error(`[ZR Express API Error] Failed with message:`, finalErr);

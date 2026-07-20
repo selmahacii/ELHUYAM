@@ -100,7 +100,8 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
       });
       const data = await res.json();
       if (!data.success) {
-        toast.error(data.error ?? "Transmission failed");
+        const errMsg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : "Transmission failed");
+        toast.error(errMsg, { duration: 6000 });
         return;
       }
       toast.success(data.message ?? "Package successfully created!");
