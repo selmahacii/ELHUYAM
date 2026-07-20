@@ -77,7 +77,14 @@ export async function POST(req: NextRequest, { params }: Props) {
       stockType: "none",
     }));
 
-    const fullStreetAddress = `${order.shippingStreet || ""}, ${order.shippingCity || ""}, ${wilayaName}`.replace(/^,\s*/, "").trim() || wilayaName;
+    const rawStreet = (order.shippingStreet || "").trim();
+    const rawCity = (order.shippingCity || "").trim();
+    let fullStreetAddress = rawStreet;
+    if (!fullStreetAddress) {
+      fullStreetAddress = rawCity ? `${rawCity}, ${wilayaName}` : wilayaName;
+    } else if (rawCity && !rawStreet.toLowerCase().includes(rawCity.toLowerCase())) {
+      fullStreetAddress = `${rawStreet}, ${rawCity}`;
+    }
 
     const { cityTerritoryId, districtTerritoryId } = await resolveZRTerritoryIds(
       settings,

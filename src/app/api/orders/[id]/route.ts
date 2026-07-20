@@ -134,7 +134,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       const rawDesc = description || "Habillements Modest Fashion";
       const cleanDesc = rawDesc.length > 240 ? rawDesc.slice(0, 240) : rawDesc;
 
-      const fullStreetAddress = `${existingOrder.shippingStreet || ""}, ${existingOrder.shippingCity || ""}, ${wilayaName}`.replace(/^,\s*/, "").trim() || wilayaName;
+      const rawStreet = (existingOrder.shippingStreet || "").trim();
+      const rawCity = (existingOrder.shippingCity || "").trim();
+      let fullStreetAddress = rawStreet;
+      if (!fullStreetAddress) {
+        fullStreetAddress = rawCity ? `${rawCity}, ${wilayaName}` : wilayaName;
+      } else if (rawCity && !rawStreet.toLowerCase().includes(rawCity.toLowerCase())) {
+        fullStreetAddress = `${rawStreet}, ${rawCity}`;
+      }
 
       const { cityTerritoryId, districtTerritoryId } = await resolveZRTerritoryIds(
         settings,
