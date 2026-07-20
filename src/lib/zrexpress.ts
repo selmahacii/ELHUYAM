@@ -296,6 +296,34 @@ export async function zrSearchTerritories(
   });
 }
 
+function extractTerritoryPair(items: any[]): { cityTerritoryId: string; districtTerritoryId: string } | null {
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  // 1. Preference 1: District item with explicit cityTerritoryId that differs from its own ID
+  for (const item of items) {
+    const cityId = item.cityTerritoryId || item.parentTerritoryId || item.parentId || item.cityId;
+    const distId = item.id || item.districtTerritoryId;
+    if (cityId && distId && cityId !== distId) {
+      return { cityTerritoryId: cityId, districtTerritoryId: distId };
+    }
+  }
+
+  // 2. Preference 2: A parent city item and a child district item
+  const cityItem = items.find((i) => !i.cityTerritoryId || i.cityTerritoryId === i.id || i.type === "city" || i.isCity);
+  const districtItem = items.find((i) => i.id && i.id !== cityItem?.id);
+
+  if (cityItem?.id && districtItem?.id && cityItem.id !== districtItem.id) {
+    return { cityTerritoryId: cityItem.id, districtTerritoryId: districtItem.id };
+  }
+
+  // 3. Preference 3: If 2 distinct items exist
+  if (items.length >= 2 && items[0]?.id && items[1]?.id && items[0].id !== items[1].id) {
+    return { cityTerritoryId: items[0].id, districtTerritoryId: items[1].id };
+  }
+
+  return null;
+}
+
 export async function resolveZRTerritoryIds(
   settings: ZRSettings,
   wilayaName: string,
@@ -328,13 +356,9 @@ export async function resolveZRTerritoryIds(
   for (const query of candidates) {
     try {
       const res = await zrSearchTerritories(settings, query);
-      if (res.ok && res.data?.items?.length > 0) {
-        const item = res.data.items[0];
-        const cityId = item.cityTerritoryId || item.id;
-        const districtId = item.id || item.districtTerritoryId || cityId;
-        if (cityId && districtId) {
-          return { cityTerritoryId: cityId, districtTerritoryId: districtId };
-        }
+      if (res.ok && Array.isArray(res.data?.items)) {
+        const pair = extractTerritoryPair(res.data.items);
+        if (pair) return pair;
       }
     } catch {
       // continue candidate loop
@@ -344,25 +368,18 @@ export async function resolveZRTerritoryIds(
   // Fallback to searching Wilaya Name directly
   try {
     const res = await zrSearchTerritories(settings, wilayaName);
-    if (res.ok && res.data?.items?.length > 0) {
-      const item = res.data.items[0];
-      const cityId = item.cityTerritoryId || item.id;
-      const districtId = item.id || item.districtTerritoryId || cityId;
-      if (cityId && districtId) {
-        return { cityTerritoryId: cityId, districtTerritoryId: districtId };
-      }
+    if (res.ok && Array.isArray(res.data?.items)) {
+      const pair = extractTerritoryPair(res.data.items);
+      if (pair) return pair;
     }
   } catch {}
 
   // Ultimate fallback to Alger
   try {
     const res = await zrSearchTerritories(settings, "Alger");
-    if (res.ok && res.data?.items?.length > 0) {
-      const item = res.data.items[0];
-      return {
-        cityTerritoryId: item.cityTerritoryId || item.id,
-        districtTerritoryId: item.id || item.districtTerritoryId,
-      };
+    if (res.ok && Array.isArray(res.data?.items)) {
+      const pair = extractTerritoryPair(res.data.items);
+      if (pair) return pair;
     }
   } catch {}
 
