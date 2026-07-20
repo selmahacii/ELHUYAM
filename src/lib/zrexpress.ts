@@ -78,15 +78,22 @@ async function zrFetch<T>(
     console.log(`[ZR Express API Request] Payload:`, options.body);
   }
 
+  const isJwt = settings.secretKey.startsWith("eyJ");
+  const defaultHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Tenant": settings.tenantId,
+    "X-Api-Key": settings.secretKey,
+    "X-Tenant-Id": settings.tenantId,
+  };
+  if (isJwt) {
+    defaultHeaders["Authorization"] = `Bearer ${settings.secretKey}`;
+  }
+
   try {
     const res = await fetch(url, {
       ...options,
       headers: {
-        "Content-Type": "application/json",
-        "X-Tenant": settings.tenantId,
-        "X-Api-Key": settings.secretKey,
-        "X-Tenant-Id": settings.tenantId,
-        Authorization: `Bearer ${settings.secretKey}`,
+        ...defaultHeaders,
         ...(options.headers as Record<string, string> | undefined),
       },
       next: { revalidate: 0 },
