@@ -221,3 +221,54 @@ export async function zrCreateStockMovement(
     body: JSON.stringify({ products, hubStockId }),
   });
 }
+
+// ── Customers API ─────────────────────────────────────────────────────────────
+
+export interface ZRCustomerPayload {
+  name: string;
+  phone: {
+    number1: string;
+    number2?: string;
+    number3?: string;
+  };
+  timeSlot?: "morning" | "afternoon" | "evening";
+  instruction?: string;
+  deliveryPreference?: "home" | "pickup-point";
+  addresses?: Array<{
+    street?: string;
+    city?: string;
+    district?: string;
+    postalCode?: string;
+    country?: string;
+    cityTerritoryId?: string;
+    districtTerritoryId?: string;
+    isPrimary?: boolean;
+  }>;
+}
+
+export async function zrCreateIndividualCustomer(
+  settings: ZRSettings,
+  payload: ZRCustomerPayload
+): Promise<{ ok: boolean; data?: { id: string }; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<{ id: string }>(settings, "/customers/individual", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function zrSearchCustomers(
+  settings: ZRSettings,
+  keyword?: string,
+  pageNumber = 1,
+  pageSize = 10
+): Promise<{ ok: boolean; data?: any; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<any>(settings, "/customers/search", {
+    method: "POST",
+    body: JSON.stringify({
+      keyword,
+      pageNumber,
+      pageSize,
+      includePrimaryAddressOnly: true,
+    }),
+  });
+}
