@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Package, User, Phone, MapPin, Truck } from "lucide-react";
+import { Eye, Package, User, Phone, MapPin, Truck, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { getWilayaByCode } from "@/lib/wilayas";
@@ -59,7 +59,32 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
   const [status, setStatus] = useState(order.status);
   const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus);
   const [updating, setUpdating] = useState(false);
+  const [transmitting, setTransmitting] = useState(false);
+  const [trackingNumber, setTrackingNumber] = useState<string | null | undefined>(order.trackingNumber);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  async function handleTransmitZR() {
+    setTransmitting(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/ship-zr`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!data.success) {
+        const errMsg = typeof data.error === "string" ? data.error : (data.error ? JSON.stringify(data.error) : "Échec de la transmission à ZR Express");
+        toast.error(errMsg);
+        return;
+      }
+      toast.success(data.message ?? "Colis créé avec succès chez ZR Express !");
+      setTrackingNumber(data.trackingNumber);
+      setStatus("CONFIRMED");
+      router.refresh();
+    } catch {
+      toast.error("Erreur de connexion serveur");
+    } finally {
+      setTransmitting(false);
+    }
+  }
 
   const items = order.items;
 
@@ -204,45 +229,83 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
 
         {/* Modal Content */}
         <div className="p-6 space-y-6 flex-1">
-          {/* Statuses */}
-          <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 border border-slate-150 rounded-2xl">
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Statut de Commande
-              </label>
-              <select
-                value={status}
-                disabled={updating}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                className={`w-full text-xs font-bold px-3 py-1.5 border rounded-xl bg-white ${statusStyles}`}
-              >
-                <option value="PENDING">⏳ En attente</option>
-                <option value="CONFIRMED">✓ Confirmé</option>
-                <option value="PROCESSING">📦 En préparation</option>
-                <option value="SHIPPED">🚚 Expédié</option>
-                <option value="OUT_FOR_DELIVERY">🛵 En livraison</option>
-                <option value="DELIVERED">🎉 Livré</option>
-                <option value="CANCELLED">✕ Annulé</option>
-                <option value="REFUNDED">↩ Retourné</option>
-              </select>
+          {/* Statuses & ZR Action */}
+          <div className="bg-slate-50 p-4 border border-slate-150 rounded-2xl space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Statut de Commande
+                </label>
+                <select
+                  value={status}
+                  disabled={updating}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className={`w-full text-xs font-bold px-3 py-1.5 border rounded-xl bg-white ${statusStyles}`}
+                >
+                  <option value="PENDING">⏳ En attente</option>
+                  <option value="CONFIRMED">✓ Confirmé</option>
+                  <option value="PROCESSING">📦 En préparation</option>
+                  <option value="SHIPPED">🚚 Expédié</option>
+                  <option value="OUT_FOR_DELIVERY">🛵 En livraison</option>
+                  <option value="DELIVERED">🎉 Livré</option>
+                  <option value="CANCELLED">✕ Annulé</option>
+                  <option value="REFUNDED">↩ Retourné</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Statut de Paiement
+                </label>
+                <select
+                  value={paymentStatus}
+                  disabled={updating || (role === "CONFIRMATRICE" && paymentStatus !== "PAID")}
+                  onChange={(e) => handlePaymentStatusChange(e.target.value)}
+                  className={`w-full text-xs font-bold px-3 py-1.5 border rounded-xl bg-white ${paymentStyles}`}
+                >
+                  <option value="PENDING">⏳ En attente</option>
+                  <option value="PAID">💵 Payé</option>
+                  <option value="FAILED">✕ Échoué</option>
+                  <option value="REFUNDED">↩ Remboursé</option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Statut de Paiement
-              </label>
-              <select
-                value={paymentStatus}
-                disabled={updating || (role === "CONFIRMATRICE" && paymentStatus !== "PAID")}
-                onChange={(e) => handlePaymentStatusChange(e.target.value)}
-                className={`w-full text-xs font-bold px-3 py-1.5 border rounded-xl bg-white ${paymentStyles}`}
-              >
-                <option value="PENDING">⏳ En attente</option>
-                <option value="PAID">💵 Payé</option>
-                <option value="FAILED">✕ Échoué</option>
-                <option value="REFUNDED">↩ Remboursé</option>
-              </select>
-            </div>
+            {/* ZR Express Transmit Button or Tracking Badge */}
+            {!order.isInternational && (
+              <div className="pt-2 border-t border-slate-200/60">
+                {trackingNumber ? (
+                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs">
+                    <span className="flex items-center gap-1.5">
+                      <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      Colis transmis à ZR Express
+                    </span>
+                    <span className="font-mono text-emerald-950 font-extrabold bg-white px-2 py-0.5 rounded border border-emerald-200">
+                      N° Suivi: {trackingNumber}
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={transmitting || updating}
+                    onClick={handleTransmitZR}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all border border-emerald-500 hover:border-emerald-600 cursor-pointer disabled:opacity-60"
+                  >
+                    {transmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Transmission en cours à ZR Express...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Truck className="w-4 h-4" />
+                        <span>🚀 Transmettre le colis à ZR Express</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Customer & Shipping info */}
