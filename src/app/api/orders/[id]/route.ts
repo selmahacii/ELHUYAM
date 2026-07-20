@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
-import { getZRSettings, zrCreateParcel } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, resolveZRTerritoryIds } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import { updateOrderAdmin } from "@/lib/orders";
 
@@ -136,8 +136,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
       const fullStreetAddress = `${existingOrder.shippingStreet || ""}, ${existingOrder.shippingCity || ""}, ${wilayaName}`.replace(/^,\s*/, "").trim() || wilayaName;
 
-      let cityTerritoryId = "53c9e062-9c4e-4c77-8b71-55eabf887f83";
-      let districtTerritoryId = "8d0b6cd9-7712-47d2-9ea4-460246494c32";
+      const { cityTerritoryId, districtTerritoryId } = await resolveZRTerritoryIds(
+        settings,
+        wilayaName,
+        wilayaCode,
+        existingOrder.shippingCity,
+        existingOrder.shippingStreet
+      );
 
       const payload = {
         customer: {

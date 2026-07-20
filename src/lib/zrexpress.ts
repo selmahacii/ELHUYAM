@@ -295,3 +295,79 @@ export async function zrSearchTerritories(
     }),
   });
 }
+
+export async function resolveZRTerritoryIds(
+  settings: ZRSettings,
+  wilayaName: string,
+  wilayaCode: string,
+  city?: string | null,
+  street?: string | null
+): Promise<{ cityTerritoryId: string; districtTerritoryId: string }> {
+  const candidates: string[] = [];
+
+  // Extract commune candidates from freeform city/street strings
+  if (city && city.trim()) {
+    const parts = city.split(/[,/;–-]+/).map((p) => p.trim()).filter((p) => p.length >= 3);
+    candidates.push(...parts);
+  }
+
+  if (street && street.trim()) {
+    const parts = street.split(/[,/;–-]+/).map((p) => p.trim()).filter((p) => p.length >= 3);
+    candidates.push(...parts);
+  }
+
+  if (wilayaName && !candidates.includes(wilayaName)) {
+    candidates.push(wilayaName);
+  }
+
+  if (wilayaCode && !candidates.includes(wilayaCode)) {
+    candidates.push(wilayaCode);
+  }
+
+  // Try each candidate query
+  for (const query of candidates) {
+    try {
+      const res = await zrSearchTerritories(settings, query);
+      if (res.ok && res.data?.items?.length > 0) {
+        const item = res.data.items[0];
+        const cityId = item.cityTerritoryId || item.id;
+        const districtId = item.id || item.districtTerritoryId || cityId;
+        if (cityId && districtId) {
+          return { cityTerritoryId: cityId, districtTerritoryId: districtId };
+        }
+      }
+    } catch {
+      // continue candidate loop
+    }
+  }
+
+  // Fallback to searching Wilaya Name directly
+  try {
+    const res = await zrSearchTerritories(settings, wilayaName);
+    if (res.ok && res.data?.items?.length > 0) {
+      const item = res.data.items[0];
+      const cityId = item.cityTerritoryId || item.id;
+      const districtId = item.id || item.districtTerritoryId || cityId;
+      if (cityId && districtId) {
+        return { cityTerritoryId: cityId, districtTerritoryId: districtId };
+      }
+    }
+  } catch {}
+
+  // Ultimate fallback to Alger
+  try {
+    const res = await zrSearchTerritories(settings, "Alger");
+    if (res.ok && res.data?.items?.length > 0) {
+      const item = res.data.items[0];
+      return {
+        cityTerritoryId: item.cityTerritoryId || item.id,
+        districtTerritoryId: item.id || item.districtTerritoryId,
+      };
+    }
+  } catch {}
+
+  return {
+    cityTerritoryId: "53c9e062-9c4e-4c77-8b71-55eabf887f83",
+    districtTerritoryId: "8d0b6cd9-7712-47d2-9ea4-460246494c32",
+  };
+}

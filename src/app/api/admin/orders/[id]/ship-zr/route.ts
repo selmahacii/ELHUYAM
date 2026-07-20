@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel, zrSearchTerritories } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, zrSearchTerritories, resolveZRTerritoryIds } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 
 type Props = { params: Promise<{ id: string }> };
@@ -79,19 +79,13 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     const fullStreetAddress = `${order.shippingStreet || ""}, ${order.shippingCity || ""}, ${wilayaName}`.replace(/^,\s*/, "").trim() || wilayaName;
 
-    let cityTerritoryId = "53c9e062-9c4e-4c77-8b71-55eabf887f83";
-    let districtTerritoryId = "8d0b6cd9-7712-47d2-9ea4-460246494c32";
-
-    try {
-      const terrRes = await zrSearchTerritories(settings, order.shippingCity || wilayaName);
-      if (terrRes.ok && terrRes.data?.items?.length > 0) {
-        const item = terrRes.data.items[0];
-        if (item.cityTerritoryId) cityTerritoryId = item.cityTerritoryId;
-        if (item.id || item.districtTerritoryId) districtTerritoryId = item.id || item.districtTerritoryId;
-      }
-    } catch {
-      // fallback
-    }
+    const { cityTerritoryId, districtTerritoryId } = await resolveZRTerritoryIds(
+      settings,
+      wilayaName,
+      wilayaCode,
+      order.shippingCity,
+      order.shippingStreet
+    );
 
     const rawDesc = description || "Habillements Modest Fashion";
     const cleanDesc = rawDesc.length > 240 ? rawDesc.slice(0, 240) : rawDesc;
