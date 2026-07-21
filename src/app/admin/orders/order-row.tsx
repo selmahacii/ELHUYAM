@@ -138,7 +138,10 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
         setPaymentStatus("PAID");
       }
       if (data.data?.trackingNumber) {
+        setTrackingNumber(data.data.trackingNumber);
         toast.success(`Confirmée et transmise à ZR Express (N° ${data.data.trackingNumber})`);
+      } else if (data.warning) {
+        toast.error(data.warning, { duration: 6000 });
       } else {
         toast.success("Statut mis à jour avec succès");
       }

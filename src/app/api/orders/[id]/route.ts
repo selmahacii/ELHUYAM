@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
@@ -80,6 +80,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     let autoTrackingNumber = finalTracking;
     let autoParcelId = existingOrder.zrParcelId;
     let autoNoteAddition = "";
+    let zrWarning = "";
 
     // Automatically transmit to ZR Express if status is changing to CONFIRMED for national orders
     const isZRTarget = !finalCarrier || finalCarrier === "ZR_EXPRESS";
@@ -173,15 +174,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
       const zrRes = await zrCreateParcel(settings, payload);
       if (!zrRes.ok || !zrRes.data) {
-        return errorResponse(
-          `Erreur lors de la création du colis chez ZR Express : ${zrRes.error ?? "API inaccessible"}`,
-          400
-        );
+        zrWarning = `Commande confirmée en BDD, mais transmission ZR Express échouée: ${zrRes.error ?? "API non disponible"}`;
+        autoNoteAddition = ` [Tentative ZR Express échouée: ${zrRes.error ?? "API non disponible"}]`;
+      } else {
+        autoTrackingNumber = zrRes.data.trackingNumber || (zrRes.data as any).tracking || (zrRes.data as any).barcode || zrRes.data.id;
+        autoParcelId = zrRes.data.id || (zrRes.data as any).parcelId || autoTrackingNumber;
+        autoNoteAddition = ` [Transmis automatiquement à ZR Express. N° Suivi: ${autoTrackingNumber}]`;
       }
-
-      autoTrackingNumber = zrRes.data.trackingNumber || (zrRes.data as any).tracking || (zrRes.data as any).barcode || zrRes.data.id;
-      autoParcelId = zrRes.data.id || (zrRes.data as any).parcelId || autoTrackingNumber;
-      autoNoteAddition = ` [Transmis automatiquement à ZR Express. N° Suivi: ${autoTrackingNumber}]`;
     }
 
     const order = await updateOrderAdmin(
@@ -196,9 +195,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
       session?.user?.id
     );
- 
+
     revalidateTag("orders", "default");
-    return successResponse(order);
+    return NextResponse.json({
+      success: true,
+      data: order,
+      warning: zrWarning || undefined,
+    });
   } catch (err) {
     console.error("Error updating order:", err);
     return errorResponse("Failed to update order.", 500);

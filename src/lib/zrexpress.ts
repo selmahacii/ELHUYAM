@@ -32,13 +32,29 @@ export interface ZRStateHistory {
 
 // ── Settings helpers ──────────────────────────────────────────────────────────
 
+let cachedSettings: { settings: ZRSettings | null; timestamp: number } | null = null;
+
 export async function getZRSettings(): Promise<ZRSettings | null> {
+  const now = Date.now();
+  if (cachedSettings && now - cachedSettings.timestamp < 60000) {
+    return cachedSettings.settings;
+  }
+
   const rows = await db.setting.findMany({
     where: { key: { in: ["zr_secret_key", "zr_tenant_id"] } },
   });
   const map = Object.fromEntries(rows.map((r: any) => [r.key, r.value]));
-  if (!map.zr_secret_key || !map.zr_tenant_id) return null;
-  return { secretKey: String(map.zr_secret_key).trim(), tenantId: String(map.zr_tenant_id).trim() };
+  const secretKey = map.zr_secret_key ? String(map.zr_secret_key).trim() : process.env.ZR_EXPRESS_SECRET_KEY?.trim();
+  const tenantId = map.zr_tenant_id ? String(map.zr_tenant_id).trim() : process.env.ZR_EXPRESS_TENANT_ID?.trim();
+
+  if (!secretKey || !tenantId) {
+    cachedSettings = { settings: null, timestamp: now };
+    return null;
+  }
+
+  const settings = { secretKey, tenantId };
+  cachedSettings = { settings, timestamp: now };
+  return settings;
 }
 
 export async function saveZRSettings(settings: ZRSettings): Promise<void> {
@@ -324,6 +340,8 @@ function extractTerritoryPair(items: any[]): { cityTerritoryId: string; district
   return null;
 }
 
+const territoryCache = new Map<string, { cityTerritoryId: string; districtTerritoryId: string }>();
+
 export async function resolveZRTerritoryIds(
   settings: ZRSettings,
   wilayaName: string,
@@ -331,26 +349,26 @@ export async function resolveZRTerritoryIds(
   city?: string | null,
   street?: string | null
 ): Promise<{ cityTerritoryId: string; districtTerritoryId: string }> {
-  const candidates: string[] = [];
+  const cacheKey = `${wilayaCode}_${wilayaName}_${city ?? ""}_${street ?? ""}`;
+  if (territoryCache.has(cacheKey)) {
+    return territoryCache.get(cacheKey)!;
+  }
+
+  const candidatesSet = new Set<string>();
 
   // Extract commune candidates from freeform city/street strings
   if (city && city.trim()) {
-    const parts = city.split(/[,/;–-]+/).map((p) => p.trim()).filter((p) => p.length >= 3);
-    candidates.push(...parts);
+    city.split(/[,/;–-]+/).map((p) => p.trim()).filter((p) => p.length >= 3).forEach((p) => candidatesSet.add(p));
   }
 
   if (street && street.trim()) {
-    const parts = street.split(/[,/;–-]+/).map((p) => p.trim()).filter((p) => p.length >= 3);
-    candidates.push(...parts);
+    street.split(/[,/;–-]+/).map((p) => p.trim()).filter((p) => p.length >= 3).forEach((p) => candidatesSet.add(p));
   }
 
-  if (wilayaName && !candidates.includes(wilayaName)) {
-    candidates.push(wilayaName);
-  }
+  if (wilayaName) candidatesSet.add(wilayaName.trim());
+  if (wilayaCode) candidatesSet.add(wilayaCode.trim());
 
-  if (wilayaCode && !candidates.includes(wilayaCode)) {
-    candidates.push(wilayaCode);
-  }
+  const candidates = Array.from(candidatesSet);
 
   // Try each candidate query
   for (const query of candidates) {
@@ -358,7 +376,10 @@ export async function resolveZRTerritoryIds(
       const res = await zrSearchTerritories(settings, query);
       if (res.ok && Array.isArray(res.data?.items)) {
         const pair = extractTerritoryPair(res.data.items);
-        if (pair) return pair;
+        if (pair) {
+          territoryCache.set(cacheKey, pair);
+          return pair;
+        }
       }
     } catch {
       // continue candidate loop
@@ -370,7 +391,10 @@ export async function resolveZRTerritoryIds(
     const res = await zrSearchTerritories(settings, wilayaName);
     if (res.ok && Array.isArray(res.data?.items)) {
       const pair = extractTerritoryPair(res.data.items);
-      if (pair) return pair;
+      if (pair) {
+        territoryCache.set(cacheKey, pair);
+        return pair;
+      }
     }
   } catch {}
 
@@ -379,12 +403,17 @@ export async function resolveZRTerritoryIds(
     const res = await zrSearchTerritories(settings, "Alger");
     if (res.ok && Array.isArray(res.data?.items)) {
       const pair = extractTerritoryPair(res.data.items);
-      if (pair) return pair;
+      if (pair) {
+        territoryCache.set(cacheKey, pair);
+        return pair;
+      }
     }
   } catch {}
 
-  return {
+  const fallback = {
     cityTerritoryId: "53c9e062-9c4e-4c77-8b71-55eabf887f83",
     districtTerritoryId: "8d0b6cd9-7712-47d2-9ea4-460246494c32",
   };
+  territoryCache.set(cacheKey, fallback);
+  return fallback;
 }
