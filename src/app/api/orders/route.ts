@@ -350,3 +350,33 @@ export async function POST(req: NextRequest) {
     return errorResponse("Échec de la commande. Veuillez réessayer.", 500);
   }
 }
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return errorResponse("Unauthorized", 401);
+    }
+
+    const url = new URL(req.url);
+    const limit = Number(url.searchParams.get("limit") ?? "10");
+
+    const orders = await db.order.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: {
+        items: {
+          select: {
+            quantity: true,
+          },
+        },
+      },
+    });
+
+    return successResponse(orders);
+  } catch (error) {
+    console.error("[orders/GET]", error);
+    return errorResponse("Failed to fetch orders.", 500);
+  }
+}
