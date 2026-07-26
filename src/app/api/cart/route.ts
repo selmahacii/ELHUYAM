@@ -34,7 +34,8 @@ export async function GET() {
         product: {
           select: {
             id: true, title: true, slug: true, price: true,
-            discountPrice: true, images: true, stock: true,
+            discountPrice: true, priceEur: true, discountPriceEur: true,
+            images: true, stock: true,
           },
         },
       },
@@ -48,16 +49,22 @@ export async function GET() {
     const variants = variantIds.length > 0
       ? await db.productVariant.findMany({
           where: { id: { in: variantIds } },
-          select: { id: true, price: true },
+          select: { id: true, price: true, priceEur: true },
         })
       : [];
-    const variantMap: Record<string, number | null> = Object.fromEntries(
-      variants.map((v: { id: string; price: number | null }) => [v.id, v.price])
+    const variantMap = Object.fromEntries(
+      variants.map((v: any) => [v.id, { price: v.price, priceEur: v.priceEur }])
     );
 
-    const enriched = items.map((item: { variantId: string | null }) => ({
+    const enriched = items.map((item: any) => ({
       ...item,
-      variant: item.variantId ? { id: item.variantId, price: variantMap[item.variantId] ?? null } : null,
+      variant: item.variantId
+        ? {
+            id: item.variantId,
+            price: variantMap[item.variantId]?.price ?? null,
+            priceEur: variantMap[item.variantId]?.priceEur ?? null,
+          }
+        : null,
     }));
 
     return successResponse(enriched);
@@ -112,7 +119,14 @@ export async function POST(req: NextRequest) {
       cartItem = await db.cartItem.update({
         where: { id: existing.id },
         data: { quantity: { increment: quantity } },
-        include: { product: { select: { title: true, price: true, images: true } } },
+        include: {
+          product: {
+            select: {
+              title: true, price: true, priceEur: true,
+              discountPrice: true, discountPriceEur: true, images: true,
+            },
+          },
+        },
       });
     } else {
       cartItem = await db.cartItem.create({
@@ -124,7 +138,14 @@ export async function POST(req: NextRequest) {
           size: size || null,
           color: color || null,
         },
-        include: { product: { select: { title: true, price: true, images: true } } },
+        include: {
+          product: {
+            select: {
+              title: true, price: true, priceEur: true,
+              discountPrice: true, discountPriceEur: true, images: true,
+            },
+          },
+        },
       });
     }
 
