@@ -17,7 +17,7 @@ export default async function HeroSettingsPage() {
   const mobileSetting = await db.setting.findUnique({ where: { key: "hero_mobile_media" } });
 
   const initialDesktop = desktopSetting?.value || "/hero-mobile.png";
-  const initialMobile = mobileSetting?.value || "/IMG_2121.MOV";
+  const initialMobile = mobileSetting?.value || "https://res.cloudinary.com/dzykepxqv/video/upload/q_auto,f_auto/v1785421463/el-huyaam/hero/hero-mobile.mov";
 
   return (
     <div className="flex-1 space-y-6 p-8">
