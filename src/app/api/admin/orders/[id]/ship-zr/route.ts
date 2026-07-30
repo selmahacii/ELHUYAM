@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel, zrSearchTerritories, resolveZRTerritoryIds } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, zrSearchTerritories, resolveZRTerritoryIds, resolveZRHubId } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 
 type Props = { params: Promise<{ id: string }> };
@@ -100,6 +100,21 @@ export async function POST(req: NextRequest, { params }: Props) {
       order.shippingStreet
     );
 
+    // Pickup-point (stop desk) parcels require a top-level hubId — resolved
+    // by searching ZR's hub directory by the bureau name embedded in the
+    // checkout's "Bureau Stop Desk: <name>" street label.
+    let hubId: string | undefined;
+    if (zrDeliveryType === "pickup-point") {
+      const resolvedHubId = await resolveZRHubId(settings, order.shippingStreet ?? "", wilayaName);
+      if (!resolvedHubId) {
+        return errorResponse(
+          "Impossible de trouver le bureau Stop Desk correspondant chez ZR Express. Vérifiez l'adresse de livraison de la commande.",
+          400
+        );
+      }
+      hubId = resolvedHubId;
+    }
+
     const rawDesc = description || "Habillements Modest Fashion";
     const cleanDesc = rawDesc.length > 240 ? rawDesc.slice(0, 240) : rawDesc;
 
@@ -117,6 +132,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         cityTerritoryId,
         districtTerritoryId,
       },
+      ...(hubId ? { hubId } : {}),
       orderedProducts,
       deliveryType: zrDeliveryType,
       amount: order.paymentStatus === "PAID" ? 0 : Math.round(order.totalAmount),

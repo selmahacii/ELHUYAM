@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/api-response";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
-import { getZRSettings, zrCreateParcel, resolveZRTerritoryIds } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, resolveZRTerritoryIds, resolveZRHubId } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import { updateOrderAdmin } from "@/lib/orders";
 
@@ -155,6 +155,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         existingOrder.shippingStreet
       );
 
+      // Pickup-point (stop desk) parcels require a top-level hubId.
+      let hubId: string | undefined;
+      if (zrDeliveryType === "pickup-point") {
+        hubId = (await resolveZRHubId(settings, existingOrder.shippingStreet ?? "", wilayaName)) ?? undefined;
+      }
+
       const payload = {
         customer: {
           customerId,
@@ -168,6 +174,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           cityTerritoryId,
           districtTerritoryId,
         },
+        ...(hubId ? { hubId } : {}),
         orderedProducts,
         deliveryType: zrDeliveryType,
         amount: isPaid ? 0 : Math.round(existingOrder.totalAmount),

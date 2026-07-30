@@ -312,6 +312,33 @@ export async function zrSearchTerritories(
   });
 }
 
+// Pickup-point (stop desk) parcels require a top-level `hubId` in the
+// create-parcel payload — resolved by searching ZR's hub directory by name.
+export async function zrSearchHubs(
+  settings: ZRSettings,
+  keyword?: string
+): Promise<{ ok: boolean; data?: any; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<any>(settings, "/hubs/search", {
+    method: "POST",
+    body: JSON.stringify({
+      keyword,
+      pageSize: 20,
+      pageNumber: 1,
+    }),
+  });
+}
+
+export async function resolveZRHubId(
+  settings: ZRSettings,
+  bureauStreetLabel: string,
+  wilayaName: string
+): Promise<string | null> {
+  const bureauName = bureauStreetLabel.replace(/^Bureau Stop Desk:\s*/i, "").trim();
+  const res = await zrSearchHubs(settings, bureauName || wilayaName);
+  const items = res.ok && Array.isArray(res.data?.items) ? res.data.items : [];
+  return items[0]?.id ?? null;
+}
+
 function extractTerritoryPair(items: any[]): { cityTerritoryId: string; districtTerritoryId: string } | null {
   if (!Array.isArray(items) || items.length === 0) return null;
 
