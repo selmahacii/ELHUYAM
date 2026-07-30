@@ -94,8 +94,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         );
       }
 
-      // Format phone number cleanly (e.g. 0770386357)
-      let phoneClean = (existingOrder.shippingPhone ?? "").replace(/\s+/g, "").replace(/^(\+213|00213|213)/, "0");
+      // Format phone number cleanly (e.g. 0770386357) — strip invisible Unicode
+      // bidi control chars (RTL keyboards) as well as whitespace.
+      let phoneClean = (existingOrder.shippingPhone ?? "")
+        .replace(/[^\d+]/g, "")
+        .replace(/^(\+213|00213|213)/, "0");
       if (!phoneClean.startsWith("0") && phoneClean.length === 9) {
         phoneClean = "0" + phoneClean;
       }
