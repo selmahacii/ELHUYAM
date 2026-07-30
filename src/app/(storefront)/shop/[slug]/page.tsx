@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import ProductDetail from "@/components/shop/product-detail";
 import ProductCard from "@/components/shop/product-card";
 import { getTranslations } from "next-intl/server";
+import { getOptimizedImageUrl } from "@/lib/utils";
 
 export const revalidate = 300;
 
@@ -35,8 +36,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: product.metaTitle ?? product.title,
     description: product.metaDescription ?? product.description.slice(0, 160),
+    // Raw Cloudinary URLs here were the biggest bandwidth cost by far — every
+    // Instagram/WhatsApp link-preview fetch downloaded the untransformed
+    // original (1-2MB+) instead of a compressed, right-sized OG image.
     openGraph: {
-      images: product.images[0] ? [{ url: product.images[0] }] : [],
+      images: product.images[0] ? [{ url: getOptimizedImageUrl(product.images[0], 1200) }] : [],
     },
   };
 }
