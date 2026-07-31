@@ -52,6 +52,8 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   });
   if (!order) notFound();
 
+  const cur = order.isInternational ? "EUR" : "DZD";
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto px-4 md:px-0">
       
@@ -193,11 +195,11 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                       </div>
                       
                       <p className="text-[10px] text-zinc-400 mt-1.5 font-mono">
-                        {item.quantity} x {formatPrice(item.price)}
+                        {item.quantity} x {formatPrice(item.price, cur)}
                       </p>
                     </div>
                     <p className="font-semibold text-zinc-900 shrink-0 text-xs font-mono self-start pt-0.5">
-                      {formatPrice(item.price * item.quantity)}
+                      {formatPrice(item.price * item.quantity, cur)}
                     </p>
                   </div>
                 ))}
@@ -349,23 +351,23 @@ export default async function AdminOrderDetailPage({ params }: Props) {
             <div className="space-y-2 text-xs">
               <div className="flex justify-between text-zinc-500">
                 <span>Subtotal</span>
-                <span className="font-mono">{formatPrice(order.subtotal)}</span>
+                <span className="font-mono">{formatPrice(order.subtotal, cur)}</span>
               </div>
               <div className="flex justify-between text-zinc-500">
                 <span>Shipping fee</span>
-                <span className="font-mono">{order.shippingFee === 0 ? "Free" : formatPrice(order.shippingFee)}</span>
+                <span className="font-mono">{order.shippingFee === 0 ? "Free" : formatPrice(order.shippingFee, cur)}</span>
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-medium">
                   <span>Discount {order.couponCode && `(${order.couponCode})`}</span>
-                  <span className="font-mono">-{formatPrice(order.discount)}</span>
+                  <span className="font-mono">-{formatPrice(order.discount, cur)}</span>
                 </div>
               )}
             </div>
             
             <div className="flex justify-between font-bold text-zinc-900 text-xs border-t border-zinc-150 pt-2.5">
               <span>Total Amount</span>
-              <span className="text-sm text-zinc-950 font-mono">{formatPrice(order.totalAmount)}</span>
+              <span className="text-sm text-zinc-950 font-mono">{formatPrice(order.totalAmount, cur)}</span>
             </div>
             
             <div className="text-[10px] text-zinc-400 bg-zinc-50 p-2 border border-zinc-100 rounded-sm font-mono text-center">

@@ -86,10 +86,14 @@ export default function ZRTracking({ trackingNumber }: { trackingNumber: string 
     }
   }, [trackingNumber]);
 
-  // Initial load + poll every 30 s
+  // Initial load + poll every 60s. Order status itself is already kept in
+  // sync server-side by the ZR webhook regardless of whether this tab is
+  // open; this poll only refreshes the live tracking widget's display, and
+  // the API route caches ZR's response for 30s, so this interval mostly
+  // just re-reads that cache rather than re-hitting ZR Express.
   useEffect(() => {
     fetchTracking();
-    const interval = setInterval(() => fetchTracking(true), 30_000);
+    const interval = setInterval(() => fetchTracking(true), 60_000);
     return () => clearInterval(interval);
   }, [fetchTracking]);
 

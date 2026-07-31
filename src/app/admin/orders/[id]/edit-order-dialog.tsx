@@ -44,6 +44,8 @@ export default function EditOrderDialog({ order }: EditOrderDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const cur = order.isInternational ? "EUR" : "DZD";
+  const curLabel = order.isInternational ? "EUR" : "DA";
 
   // Form states - Customer & Shipping
   const [firstName, setFirstName] = useState(order.shippingFirstName ?? "");
@@ -116,7 +118,9 @@ export default function EditOrderDialog({ order }: EditOrderDialogProps) {
   // Handle select product for adding to cart
   const handleSelectProduct = (prod: any) => {
     setSelectedProduct(prod);
-    const initialPrice = prod.discountPrice ?? prod.price ?? 0;
+    const initialPrice = order.isInternational
+      ? (prod.discountPriceEur ?? prod.priceEur ?? 0)
+      : (prod.discountPrice ?? prod.price ?? 0);
     setNewPrice(initialPrice);
     setNewQty(1);
 
@@ -445,12 +449,12 @@ export default function EditOrderDialog({ order }: EditOrderDialogProps) {
                           onChange={(e) => handleUpdateItem(idx, "price", parseFloat(e.target.value) || 0)}
                           className="w-20 text-xs font-mono font-bold px-2 py-1 border border-zinc-250 rounded text-right bg-white"
                         />
-                        <span className="text-[10px] font-bold text-zinc-400">DA</span>
+                        <span className="text-[10px] font-bold text-zinc-400">{curLabel}</span>
                       </div>
 
                       {/* Line Subtotal */}
                       <p className="w-24 text-right text-xs font-mono font-bold text-zinc-900">
-                        {formatPrice(item.price * item.quantity)}
+                        {formatPrice(item.price * item.quantity, cur)}
                       </p>
 
                       {/* Delete */}
@@ -511,7 +515,10 @@ export default function EditOrderDialog({ order }: EditOrderDialogProps) {
                         </div>
                       </div>
                       <span className="text-xs font-bold font-mono text-zinc-800">
-                        {formatPrice(prod.discountPrice ?? prod.price)}
+                        {formatPrice(
+                          order.isInternational ? (prod.discountPriceEur ?? prod.priceEur) : (prod.discountPrice ?? prod.price),
+                          cur
+                        )}
                       </span>
                     </div>
                   ))}
@@ -612,7 +619,7 @@ export default function EditOrderDialog({ order }: EditOrderDialogProps) {
                     {/* Unit Price */}
                     <div>
                       <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1">
-                        Prix Unitaire (DA)
+                        Prix Unitaire ({curLabel})
                       </label>
                       <input
                         type="number"
@@ -640,21 +647,21 @@ export default function EditOrderDialog({ order }: EditOrderDialogProps) {
             <div className="bg-zinc-100/70 border border-zinc-200 rounded-sm p-4 space-y-2 text-xs font-mono">
               <div className="flex justify-between text-zinc-600">
                 <span>Sous-total Panier:</span>
-                <span className="font-bold">{formatPrice(subtotal)}</span>
+                <span className="font-bold">{formatPrice(subtotal, cur)}</span>
               </div>
               <div className="flex justify-between text-zinc-600">
                 <span>Frais de Livraison ({deliveryType === "STOPDESK" ? "StopDesk" : "Domicile"}):</span>
-                <span className="font-bold">{formatPrice(shippingFee)}</span>
+                <span className="font-bold">{formatPrice(shippingFee, cur)}</span>
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between text-emerald-700">
                   <span>Remise appliquée:</span>
-                  <span className="font-bold">-{formatPrice(order.discount)}</span>
+                  <span className="font-bold">-{formatPrice(order.discount, cur)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-bold text-zinc-950 border-t border-zinc-250 pt-2 font-display">
                 <span>TOTAL NOUVEAU:</span>
-                <span>{formatPrice(totalAmount)}</span>
+                <span>{formatPrice(totalAmount, cur)}</span>
               </div>
             </div>
           </div>

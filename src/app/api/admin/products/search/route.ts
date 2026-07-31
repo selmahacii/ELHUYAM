@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
       title: true,
       price: true,
       discountPrice: true,
+      priceEur: true,
+      discountPriceEur: true,
       stock: true,
       images: true,
       variants: {
@@ -38,6 +40,7 @@ export async function GET(req: NextRequest) {
           colorHex: true,
           stock: true,
           price: true,
+          priceEur: true,
         },
       },
     },
