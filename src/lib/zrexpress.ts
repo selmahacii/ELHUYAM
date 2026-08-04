@@ -571,13 +571,23 @@ export async function resolveZRHubId(
     targetWilayaName,
   ].filter((c) => c && c.length >= 3 && !/^\d+$/.test(c));
 
+  // Helper to check if a hub item is a valid pickup point
+  const isPickupHub = (h: any) =>
+    h.isPickupPoint !== false &&
+    h.isPickup !== false &&
+    h.pickup !== false &&
+    !String(h.type || h.hubType || "").toLowerCase().includes("tri");
+
   // 2. Search ZR Express hubs with specific candidate queries
   for (const query of candidateQueries) {
     try {
       const res = await zrSearchHubs(settings, query);
-      const items = res.data?.items || (Array.isArray(res.data) ? res.data : []);
-      if (res.ok && Array.isArray(items) && items.length > 0) {
-        const bestHub = items.find((h: any) => {
+      const rawItems = res.data?.items || (Array.isArray(res.data) ? res.data : []);
+      if (res.ok && Array.isArray(rawItems) && rawItems.length > 0) {
+        const pickupItems = rawItems.filter(isPickupHub);
+        const itemsToSearch = pickupItems.length > 0 ? pickupItems : rawItems;
+
+        const bestHub = itemsToSearch.find((h: any) => {
           const hName = (h.name || h.hubName || h.address || "").toLowerCase();
           const hCode = String(h.wilayaCode || h.code || "");
           return (
@@ -585,7 +595,7 @@ export async function resolveZRHubId(
             hCode === targetWilayaCode ||
             (targetWilayaName && hName.includes(targetWilayaName.toLowerCase()))
           );
-        }) || items[0];
+        }) || itemsToSearch[0];
 
         const foundId = bestHub?.id || bestHub?.hubId;
         if (foundId) {
@@ -599,9 +609,12 @@ export async function resolveZRHubId(
   // 3. Fetch all hubs for tenant and strictly filter by Wilaya Code or Wilaya Name
   try {
     const allRes = await zrGetAllHubs(settings);
-    const items = allRes.data?.items || (Array.isArray(allRes.data) ? allRes.data : []);
-    if (Array.isArray(items) && items.length > 0) {
-      const matched = items.find((item: any) => {
+    const rawItems = allRes.data?.items || (Array.isArray(allRes.data) ? allRes.data : []);
+    if (Array.isArray(rawItems) && rawItems.length > 0) {
+      const pickupItems = rawItems.filter(isPickupHub);
+      const itemsToSearch = pickupItems.length > 0 ? pickupItems : rawItems;
+
+      const matched = itemsToSearch.find((item: any) => {
         const name = (item.name || item.hubName || item.city || "").toLowerCase();
         const code = String(item.wilayaCode || item.code || "");
         return (
