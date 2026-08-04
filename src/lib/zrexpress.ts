@@ -1,4 +1,6 @@
 import { db } from "@/lib/db";
+import { BUREAUX } from "@/lib/bureaux";
+import { getWilayaByCode } from "@/lib/wilayas";
 
 const ZR_BASE = "https://api.zrexpress.app";
 const ZR_VERSION = "1";
@@ -183,6 +185,91 @@ export async function zrCreateParcel(
   });
 }
 
+export interface ZRBulkParcelsResponse {
+  totalRequested: number;
+  successCount: number;
+  failureCount: number;
+  successes: Array<{
+    index: number;
+    parcelId: string;
+    trackingNumber?: string | null;
+    externalId?: string | null;
+  }>;
+  failures: Array<{
+    index: number;
+    errorCode?: string | null;
+    errorMessage?: string | null;
+    externalId?: string | null;
+  }>;
+}
+
+export async function zrCreateBulkParcels(
+  settings: ZRSettings,
+  parcels: Array<Record<string, unknown>>
+): Promise<{ ok: boolean; data?: ZRBulkParcelsResponse; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<ZRBulkParcelsResponse>(settings, "/parcels/bulk", {
+    method: "POST",
+    body: JSON.stringify({ parcels }),
+  });
+}
+
+export async function zrCreateBulkRefundParcels(
+  settings: ZRSettings,
+  parcels: Array<Record<string, unknown>>
+): Promise<{ ok: boolean; data?: ZRBulkParcelsResponse; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<ZRBulkParcelsResponse>(settings, "/parcels/bulk-refund", {
+    method: "POST",
+    body: JSON.stringify({ parcels }),
+  });
+}
+
+export interface ZRUpdateParcelStatePayload {
+  parcelId: string;
+  newStateId: string;
+  deliveryPersonId?: string | null;
+  arrivalHubId?: string | null;
+  comment?: string | null;
+}
+
+export interface ZRUpdateParcelStateResponse {
+  parcelId: string;
+  newStateId: string;
+  newStateName?: string | null;
+  trackingNumber?: string | null;
+}
+
+export async function zrUpdateParcelState(
+  settings: ZRSettings,
+  parcelId: string,
+  payload: ZRUpdateParcelStatePayload
+): Promise<{ ok: boolean; data?: ZRUpdateParcelStateResponse; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<ZRUpdateParcelStateResponse>(settings, `/parcels/${encodeURIComponent(parcelId)}/state`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface ZRUpdateDeliveryAddressPayload {
+  parcelId: string;
+  deliveryAddress?: {
+    cityTerritoryId: string;
+    districtTerritoryId: string;
+    street?: string | null;
+  };
+  hubId?: string | null;
+}
+
+export async function zrUpdateDeliveryAddress(
+  settings: ZRSettings,
+  id: string,
+  payload: ZRUpdateDeliveryAddressPayload
+): Promise<{ ok: boolean; data?: { id?: string | null }; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<{ id?: string | null }>(settings, `/parcels/${encodeURIComponent(id)}/deliveryAddress`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function zrTestConnection(settings: ZRSettings): Promise<{ ok: boolean; status?: number; error?: string; rawBody?: string }> {
   console.log(`[ZR Express Connection Test] Initiating connection test...`);
   const res = await zrFetch(settings, "/users/profile");
@@ -356,19 +443,27 @@ export async function resolveZRTerritoryIds(
 
   const candidatesSet = new Set<string>();
 
-  // Extract commune candidates from freeform city/street strings
-  if (city && city.trim()) {
-    city.split(/[,/;–-]+/).map((p) => p.trim()).filter((p) => p.length >= 3).forEach((p) => candidatesSet.add(p));
-  }
+  const cleanWord = (s: string) =>
+    s
+      .replace(/hub|bureau|مكتب|–|-|\d+/gi, " ")
+      .trim();
 
   if (street && street.trim()) {
-    street.split(/[,/;–-]+/).map((p) => p.trim()).filter((p) => p.length >= 3).forEach((p) => candidatesSet.add(p));
+    const cleanSt = cleanWord(street);
+    if (cleanSt.length >= 3) candidatesSet.add(cleanSt);
   }
 
-  if (wilayaName) candidatesSet.add(wilayaName.trim());
-  if (wilayaCode) candidatesSet.add(wilayaCode.trim());
+  if (city && city.trim()) {
+    const cleanCi = cleanWord(city);
+    if (cleanCi.length >= 3) candidatesSet.add(cleanCi);
+  }
 
-  const candidates = Array.from(candidatesSet);
+  if (wilayaName && wilayaName.trim()) {
+    candidatesSet.add(wilayaName.trim());
+  }
+
+  // Filter out numeric strings so numbers like "16" don't match Adrar or random territories
+  const candidates = Array.from(candidatesSet).filter((c) => !/^\d+$/.test(c));
 
   // Try each candidate query
   for (const query of candidates) {
@@ -386,17 +481,19 @@ export async function resolveZRTerritoryIds(
     }
   }
 
-  // Fallback to searching Wilaya Name directly
-  try {
-    const res = await zrSearchTerritories(settings, wilayaName);
-    if (res.ok && Array.isArray(res.data?.items)) {
-      const pair = extractTerritoryPair(res.data.items);
-      if (pair) {
-        territoryCache.set(cacheKey, pair);
-        return pair;
+  // Fallback to searching Wilaya Name directly (e.g. "Alger")
+  if (wilayaName) {
+    try {
+      const res = await zrSearchTerritories(settings, wilayaName.trim());
+      if (res.ok && Array.isArray(res.data?.items)) {
+        const pair = extractTerritoryPair(res.data.items);
+        if (pair) {
+          territoryCache.set(cacheKey, pair);
+          return pair;
+        }
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
   // Ultimate fallback to Alger
   try {
@@ -416,4 +513,109 @@ export async function resolveZRTerritoryIds(
   };
   territoryCache.set(cacheKey, fallback);
   return fallback;
+}
+
+export async function zrSearchHubs(
+  settings: ZRSettings,
+  keyword?: string
+): Promise<{ ok: boolean; data?: any; error?: string; status?: number; rawBody?: string }> {
+  return zrFetch<any>(settings, "/hubs/search", {
+    method: "POST",
+    body: JSON.stringify({
+      keyword,
+      pageSize: 50,
+      pageNumber: 1,
+    }),
+  });
+}
+
+export async function zrGetAllHubs(
+  settings: ZRSettings
+): Promise<{ ok: boolean; data?: any; error?: string; status?: number; rawBody?: string }> {
+  const searchRes = await zrSearchHubs(settings, "");
+  if (searchRes.ok && Array.isArray(searchRes.data?.items) && searchRes.data.items.length > 0) {
+    return searchRes;
+  }
+  return zrFetch<any>(settings, "/hubs");
+}
+
+const hubCache = new Map<string, string>();
+
+export async function resolveZRHubId(
+  settings: ZRSettings,
+  wilayaName: string,
+  wilayaCode: string,
+  city?: string | null,
+  street?: string | null
+): Promise<string | null> {
+  const cacheKey = `${wilayaCode}_${wilayaName}_${city ?? ""}_${street ?? ""}`;
+  if (hubCache.has(cacheKey)) {
+    return hubCache.get(cacheKey)!;
+  }
+
+  // 1. Try to match bureau from local database
+  const fullSearchStr = `${street ?? ""} ${city ?? ""}`;
+  const localBureau = BUREAUX.find(
+    (b) => fullSearchStr.toLowerCase().includes(b.name.toLowerCase()) || (street && street.toLowerCase().includes((b.commune || b.city).toLowerCase()))
+  );
+
+  const targetCommune = localBureau?.commune || city || "";
+  const targetWilayaName = localBureau ? getWilayaByCode(localBureau.wilayaCode)?.name || wilayaName : wilayaName;
+  const targetWilayaCode = localBureau?.wilayaCode || wilayaCode;
+
+  const candidateQueries = [
+    targetCommune,
+    street ? street.replace(/hub|bureau|مكتب|\d+/gi, "").trim() : "",
+    targetWilayaName,
+  ].filter((c) => c && c.length >= 3 && !/^\d+$/.test(c));
+
+  // 2. Search ZR Express hubs with specific candidate queries
+  for (const query of candidateQueries) {
+    try {
+      const res = await zrSearchHubs(settings, query);
+      const items = res.data?.items || (Array.isArray(res.data) ? res.data : []);
+      if (res.ok && Array.isArray(items) && items.length > 0) {
+        const bestHub = items.find((h: any) => {
+          const hName = (h.name || h.hubName || h.address || "").toLowerCase();
+          const hCode = String(h.wilayaCode || h.code || "");
+          return (
+            hName.includes(query.toLowerCase()) ||
+            hCode === targetWilayaCode ||
+            (targetWilayaName && hName.includes(targetWilayaName.toLowerCase()))
+          );
+        }) || items[0];
+
+        const foundId = bestHub?.id || bestHub?.hubId;
+        if (foundId) {
+          hubCache.set(cacheKey, foundId);
+          return foundId;
+        }
+      }
+    } catch {}
+  }
+
+  // 3. Fetch all hubs for tenant and strictly filter by Wilaya Code or Wilaya Name
+  try {
+    const allRes = await zrGetAllHubs(settings);
+    const items = allRes.data?.items || (Array.isArray(allRes.data) ? allRes.data : []);
+    if (Array.isArray(items) && items.length > 0) {
+      const matched = items.find((item: any) => {
+        const name = (item.name || item.hubName || item.city || "").toLowerCase();
+        const code = String(item.wilayaCode || item.code || "");
+        return (
+          code === targetWilayaCode ||
+          (targetWilayaName && name.includes(targetWilayaName.toLowerCase())) ||
+          (targetCommune && name.includes(targetCommune.toLowerCase()))
+        );
+      });
+
+      if (matched?.id || matched?.hubId) {
+        const foundId = matched.id || matched.hubId;
+        hubCache.set(cacheKey, foundId);
+        return foundId;
+      }
+    }
+  } catch {}
+
+  return null;
 }

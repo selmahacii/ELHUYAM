@@ -91,10 +91,12 @@ function checkMagicNumbers(buffer: Buffer): boolean {
   return false;
 }
 
+const cleanEnvStr = (s?: string) => (s ? s.trim().replace(/[<>'"\s]/g, "") : undefined);
 const CLOUDINARY_CONFIGURED =
-  !!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME &&
-  !!process.env.CLOUDINARY_API_KEY &&
-  !!process.env.CLOUDINARY_API_SECRET;
+  !!cleanEnvStr(process.env.CLOUDINARY_URL) ||
+  (!!cleanEnvStr(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) &&
+   !!cleanEnvStr(process.env.CLOUDINARY_API_KEY) &&
+   !!cleanEnvStr(process.env.CLOUDINARY_API_SECRET));
 
 export async function POST(req: NextRequest) {
   try {

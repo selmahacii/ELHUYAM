@@ -13,11 +13,11 @@ export function formatPrice(amount: number, currency = "DZD"): string {
       minimumFractionDigits: 2,
     }).format(amount).replace(/[\u00a0\u202f]/g, " ");
   }
-  return new Intl.NumberFormat("fr-DZ", {
-    style: "currency",
-    currency: "DZD",
+  const formattedNumber = new Intl.NumberFormat("fr-FR", {
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount).replace(/[\u00a0\u202f]/g, " ");
+  return `${formattedNumber} DA`;
 }
 
 export function formatDate(date: Date | string): string {
@@ -84,13 +84,21 @@ export function buildQueryString(params: Record<string, string | number | boolea
   return qs.toString();
 }
 
-export function getOptimizedImageUrl(url?: string | null, width = 400): string {
+export function getOptimizedImageUrl(
+  url?: string | null,
+  size: "thumb_100" | "card_400" | "detail_800" | number = 400
+): string {
   if (!url) return "/placeholder-product.jpg";
+
+  const width = typeof size === "number" ? size : 400;
 
   // Cloudinary
   if (url.includes("res.cloudinary.com")) {
     const parts = url.split("/upload/");
     if (parts.length === 2) {
+      if (typeof size === "string") {
+        return `${parts[0]}/upload/t_${size}/${parts[1]}`;
+      }
       return `${parts[0]}/upload/w_${width},q_auto,f_auto/${parts[1]}`;
     }
   }

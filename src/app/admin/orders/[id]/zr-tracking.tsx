@@ -25,23 +25,23 @@ interface ZRHistoryEntry {
 
 function StateIcon({ name }: { name?: string }) {
   const lower = (name ?? "").toLowerCase();
-  if (lower.includes("livré") || lower.includes("delivered"))
+  if (lower.includes("livré") || lower.includes("delivered") || lower.includes("encaiss") || lower.includes("livre") || lower.includes("recouv"))
     return <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />;
-  if (lower.includes("transit") || lower.includes("livraison"))
+  if (lower.includes("transit") || lower.includes("livraison") || lower.includes("wilaya"))
     return <Truck className="w-4 h-4 text-blue-500 shrink-0" />;
-  if (lower.includes("annul") || lower.includes("retour"))
+  if (lower.includes("annul") || lower.includes("retour") || lower.includes("échou") || lower.includes("echou"))
     return <XCircle className="w-4 h-4 text-red-500 shrink-0" />;
-  if (lower.includes("récupéré") || lower.includes("picked"))
+  if (lower.includes("récupéré") || lower.includes("recupere") || lower.includes("picked") || lower.includes("bureau") || lower.includes("dispatch") || lower.includes("expédier") || lower.includes("expedier") || lower.includes("confirm") || lower.includes("reçu") || lower.includes("recue"))
     return <Package className="w-4 h-4 text-amber-500 shrink-0" />;
   return <Clock className="w-4 h-4 text-gray-400 shrink-0" />;
 }
 
 function stateBadgeClass(name?: string): string {
   const lower = (name ?? "").toLowerCase();
-  if (lower.includes("livré") || lower.includes("delivered")) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (lower.includes("transit") || lower.includes("livraison")) return "bg-blue-50 text-blue-700 border-blue-200";
-  if (lower.includes("annul") || lower.includes("retour")) return "bg-red-50 text-red-700 border-red-200";
-  if (lower.includes("récupéré") || lower.includes("confirmé")) return "bg-amber-50 text-amber-700 border-amber-200";
+  if (lower.includes("livré") || lower.includes("delivered") || lower.includes("encaiss") || lower.includes("livre") || lower.includes("recouv")) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (lower.includes("transit") || lower.includes("livraison") || lower.includes("wilaya")) return "bg-blue-50 text-blue-700 border-blue-200";
+  if (lower.includes("annul") || lower.includes("retour") || lower.includes("échou") || lower.includes("echou")) return "bg-red-50 text-red-700 border-red-200";
+  if (lower.includes("récupéré") || lower.includes("recupere") || lower.includes("picked") || lower.includes("bureau") || lower.includes("dispatch") || lower.includes("expédier") || lower.includes("expedier") || lower.includes("confirm") || lower.includes("reçu") || lower.includes("recue")) return "bg-amber-50 text-amber-700 border-amber-200";
   return "bg-gray-50 text-gray-600 border-gray-200";
 }
 

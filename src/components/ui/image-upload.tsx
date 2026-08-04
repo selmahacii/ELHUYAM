@@ -55,28 +55,38 @@ export function ImageUpload({
     <div className="space-y-3">
       {/* Preview grid */}
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {value.map((url, idx) => (
-            <div
-              key={url}
-              className="relative w-28 h-28 border border-brand-200 bg-brand-50 overflow-hidden group"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt={`Image ${idx + 1}`} className="object-cover w-full h-full" />
-              <button
-                type="button"
-                onClick={() => onRemove(url)}
-                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity"
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-3">
+            {value.map((url, idx) => (
+              <div
+                key={url}
+                className="relative w-28 h-28 border border-brand-200 bg-brand-50 overflow-hidden group"
               >
-                <Trash className="w-3 h-3" />
-              </button>
-              {idx === 0 && (
-                <span className="absolute bottom-0 left-0 right-0 bg-brand-900/60 text-white text-[9px] uppercase tracking-widest text-center py-0.5">
-                  Principal
-                </span>
-              )}
-            </div>
-          ))}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Image ${idx + 1}`} className="object-cover w-full h-full" />
+                <button
+                  type="button"
+                  onClick={() => onRemove(url)}
+                  className="absolute top-1.5 right-1.5 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full transition-all shadow-md z-10"
+                  title="Supprimer la photo"
+                >
+                  <Trash className="w-3.5 h-3.5" />
+                </button>
+                {idx === 0 && maxFiles > 1 && (
+                  <span className="absolute bottom-0 left-0 right-0 bg-brand-900/60 text-white text-[9px] uppercase tracking-widest text-center py-0.5">
+                    Principal
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemove(value[0])}
+            className="text-xs text-red-650 hover:text-red-800 font-semibold flex items-center gap-1.5 mt-1 transition-colors bg-red-50 hover:bg-red-100/50 px-2.5 py-1.5 border border-red-200/50 rounded-lg shadow-2xs w-fit"
+          >
+            <Trash className="w-3.5 h-3.5" /> Supprimer la photo
+          </button>
         </div>
       )}
 

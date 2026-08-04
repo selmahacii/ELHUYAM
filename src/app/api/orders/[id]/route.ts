@@ -7,6 +7,7 @@ import { revalidateTag } from "next/cache";
 import { getZRSettings, zrCreateParcel, resolveZRTerritoryIds } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
 import { updateOrderAdmin } from "@/lib/orders";
+import { sendOrderShippedEmail, sendOrderConfirmationEmail } from "@/lib/email";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -62,7 +63,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Fetch existing order to understand state and perform micro-details checks
     const existingOrder = await db.order.findUnique({
       where: { id },
-      include: { items: true },
+      include: {
+        items: true,
+        user: { select: { name: true, email: true } },
+      },
     });
     if (!existingOrder) return errorResponse("Order not found", 404);
  
@@ -174,12 +178,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
       const zrRes = await zrCreateParcel(settings, payload);
       if (!zrRes.ok || !zrRes.data) {
-        zrWarning = `Commande confirmée en BDD, mais transmission ZR Express échouée: ${zrRes.error ?? "API non disponible"}`;
-        autoNoteAddition = ` [Tentative ZR Express échouée: ${zrRes.error ?? "API non disponible"}]`;
+        zrWarning = `Order confirmed in database, but transmission to ZR Express failed: ${zrRes.error ?? "API unavailable"}`;
+        autoNoteAddition = ` [Failed to transmit to ZR Express: ${zrRes.error ?? "API unavailable"}]`;
       } else {
         autoTrackingNumber = zrRes.data.trackingNumber || (zrRes.data as any).tracking || (zrRes.data as any).barcode || zrRes.data.id;
         autoParcelId = zrRes.data.id || (zrRes.data as any).parcelId || autoTrackingNumber;
-        autoNoteAddition = ` [Transmis automatiquement à ZR Express. N° Suivi: ${autoTrackingNumber}]`;
+        autoNoteAddition = ` [Automatically transmitted to ZR Express. Tracking N°: ${autoTrackingNumber}]`;
       }
     }
 
@@ -195,6 +199,53 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
       session?.user?.id
     );
+
+    // Trigger confirmation email if transitioning to CONFIRMED
+    const statusJustChangedToConfirmed = status === "CONFIRMED" && existingOrder.status !== "CONFIRMED";
+    if (statusJustChangedToConfirmed) {
+      const userEmail = order.user?.email || existingOrder.user?.email;
+      if (userEmail) {
+        const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || order.user?.name || "Customer";
+        sendOrderConfirmationEmail(
+          userEmail,
+          customerName,
+          order.orderNumber,
+          order.totalAmount,
+          order.isInternational,
+          order.items.map((i: any) => ({
+            productTitle: i.productTitle,
+            quantity: i.quantity,
+            price: i.price ?? 0,
+          }))
+        ).catch((err) => console.error("[email/confirmed/patch]", err));
+      }
+    }
+
+    // Trigger shipping email if transitioning to SHIPPED or if tracking number is newly added
+    const statusJustChangedToShipped = status === "SHIPPED" && existingOrder.status !== "SHIPPED";
+    const trackingNewlyAdded = !!autoTrackingNumber && !existingOrder.trackingNumber;
+
+    if (statusJustChangedToShipped || trackingNewlyAdded) {
+      const userEmail = order.user?.email || existingOrder.user?.email;
+      const trackingToUse = autoTrackingNumber || existingOrder.trackingNumber;
+
+      if (userEmail && trackingToUse) {
+        const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || order.user?.name || "Customer";
+        sendOrderShippedEmail(
+          userEmail,
+          customerName,
+          order.orderNumber,
+          trackingToUse,
+          order.totalAmount,
+          order.isInternational,
+          order.items.map((i: any) => ({
+            productTitle: i.productTitle,
+            quantity: i.quantity,
+            price: i.price,
+          }))
+        ).catch((err) => console.error("[email/shipped/patch]", err));
+      }
+    }
 
     revalidateTag("orders", "default");
     return NextResponse.json({

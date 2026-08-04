@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { formatPrice, formatDate, getOptimizedImageUrl } from "@/lib/utils";
 import Link from "next/link";
 import { AlertTriangle, Package, Folder, TrendingUp, Sparkles, Filter, X, Search } from "lucide-react";
 import ProductRowActions from "./product-row-actions";
@@ -285,9 +285,8 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
                   <td className="px-4 py-3">
                     <Link href={`/shop/${product.slug}`} target="_blank" className="flex items-center gap-3 group/product">
                       {product.images[0] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img 
-                          src={product.images[0]} 
+                          src={getOptimizedImageUrl(product.images[0], 100)} 
                           alt="" 
                           className="w-10 h-13 object-cover bg-slate-150 rounded-lg shadow-2xs border border-slate-200/40 shrink-0 group-hover/product:opacity-85 transition-opacity duration-200" 
                         />

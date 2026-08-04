@@ -76,6 +76,7 @@ export default function ManualOrderModal() {
   // Customer
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
 
   // Product filters & selection
   const [selectedFilterCategory, setSelectedFilterCategory] = useState("");
@@ -212,6 +213,7 @@ export default function ManualOrderModal() {
   const reset = () => {
     setCustomerName("");
     setCustomerPhone("");
+    setCustomerEmail("");
     setItems([]);
     setProductSearch("");
     setSelectedFilterCategory("");
@@ -237,6 +239,10 @@ export default function ManualOrderModal() {
     setError("");
     if (!customerName.trim()) return setError("Client name is required.");
     if (!customerPhone.trim()) return setError("Phone number is required.");
+    if (!customerEmail.trim()) return setError("Email address is required.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim())) {
+      return setError("Please enter a valid email address.");
+    }
     if (items.length === 0) return setError("Add at least one product.");
     if (!wilayaCode) return setError("Select a wilaya.");
 
@@ -248,6 +254,7 @@ export default function ManualOrderModal() {
       const payload = {
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
+        customerEmail: customerEmail.trim().toLowerCase(),
         items: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -335,6 +342,16 @@ export default function ManualOrderModal() {
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="0555 123 456"
+                      className="w-full border border-black/20 px-3 py-2 text-sm focus:outline-none focus:border-black text-black bg-white"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-black font-medium mb-1 block">Email *</label>
+                    <input
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="fatima@domain.com"
                       className="w-full border border-black/20 px-3 py-2 text-sm focus:outline-none focus:border-black text-black bg-white"
                     />
                   </div>

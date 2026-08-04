@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCartStore } from "@/stores/cart-store";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, getOptimizedImageUrl } from "@/lib/utils";
 import { WILAYAS, getShippingCost } from "@/lib/wilayas";
 import { COUNTRIES } from "@/lib/countries";
 import { COMMUNES } from "@/lib/communes";
@@ -23,6 +23,7 @@ const checkoutSchema = z.object({
   firstName: z.string().min(1, "First name required"),
   lastName: z.string().min(1, "Last name required"),
   phone: z.string().min(1, "Phone required"),
+  email: z.string().transform(v => v.trim()).refine((val) => val.length > 0, { message: "L'adresse e-mail est obligatoire" }).refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse e-mail valide" }),
   isInternational: z.boolean().optional().default(false),
   country: z.string().optional(),
   wilayaCode: z.string().optional(),
@@ -219,6 +220,7 @@ export default function CheckoutPage() {
           firstName: data.firstName,
           lastName: data.lastName,
           phone: data.phone,
+          email: data.email,
           isInternational: data.isInternational,
           country: data.country,
           wilayaCode: data.isInternational ? undefined : data.wilayaCode,
@@ -360,6 +362,11 @@ export default function CheckoutPage() {
                   </p>
                 )}
                 {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
+              </div>
+              <div className="sm:col-span-2">
+                <label className={labelCls}>{t("email")} *</label>
+                <input {...register("email")} type="email" className={inputCls} placeholder="example@domain.com" autoComplete="email" />
+                {errors.email && <p className={errorCls}>{errors.email.message}</p>}
               </div>
             </div>
           </section>
@@ -551,7 +558,7 @@ export default function CheckoutPage() {
               {items.map((item) => (
                 <div key={item.id} className="flex gap-3 border-b border-neutral-100 pb-3 last:border-0 last:pb-0">
                   <div className="w-14 h-14 bg-neutral-200 shrink-0 relative overflow-hidden">
-                    {item.image && <Image src={item.image} alt={item.title} fill className="object-cover" />}
+                    {item.image && <Image src={getOptimizedImageUrl(item.image, 100)} alt={item.title} fill className="object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-black truncate font-semibold">{item.title}</p>

@@ -6,6 +6,7 @@ import Providers from "@/components/providers";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
 import { auth } from "@/auth";
+import { Analytics } from "@vercel/analytics/next";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -119,6 +120,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Providers session={session}>
               {children}
               <RegionModal />
+              <Analytics />
             </Providers>
           </RegionProvider>
         </NextIntlClientProvider>

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     const {
-      firstName, lastName, phone, wilayaCode, deliveryType,
+      firstName, lastName, phone, email, wilayaCode, deliveryType,
       street, city, couponCode, paymentMethod, notes,
       isInternational, country,
     } = parsed.data;
@@ -40,20 +40,62 @@ export async function POST(req: NextRequest) {
 
     if (dbUser) {
       userId = dbUser.id;
+      if (email && email.trim()) {
+        const cleanEmail = email.trim().toLowerCase();
+        if (dbUser.email !== cleanEmail) {
+          const emailUser = await db.user.findUnique({ where: { email: cleanEmail } });
+          if (!emailUser) {
+            await db.user.update({
+              where: { id: userId },
+              data: { email: cleanEmail },
+            });
+          }
+        }
+      }
     } else {
-      // Look for an existing user with this exact phone number
-      const existingUser = await db.user.findFirst({
-        where: { phone: phone.trim() },
-      });
+      const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : null;
+      let existingUser = null;
+
+      if (cleanEmail) {
+        existingUser = await db.user.findUnique({
+          where: { email: cleanEmail },
+        });
+      }
+
+      if (!existingUser) {
+        existingUser = await db.user.findFirst({
+          where: { phone: phone.trim() },
+        });
+      }
 
       if (existingUser) {
         userId = existingUser.id;
+        
+        // 1. Update email if empty or changed
+        if (cleanEmail && existingUser.email !== cleanEmail) {
+          const emailUser = await db.user.findUnique({ where: { email: cleanEmail } });
+          if (!emailUser) {
+            await db.user.update({
+              where: { id: userId },
+              data: { email: cleanEmail },
+            });
+          }
+        }
+
+        // 2. Update phone if empty or changed
+        if (phone && phone.trim() && existingUser.phone !== phone.trim()) {
+          await db.user.update({
+            where: { id: userId },
+            data: { phone: phone.trim() },
+          });
+        }
       } else {
         // Automatically provision a guest account (passwordless)
         const guestUser = await db.user.create({
           data: {
             name: `${firstName.trim()} ${lastName.trim()}`,
             phone: phone.trim(),
+            email: cleanEmail,
             role: "CUSTOMER",
           },
         });
@@ -331,6 +373,7 @@ export async function POST(req: NextRequest) {
         customer.name ?? "Client",
         order.orderNumber,
         order.totalAmount,
+        order.isInternational,
         order.items.map((i: any) => ({ productTitle: i.productTitle, quantity: i.quantity, price: i.price }))
       ).catch(() => null);
     }

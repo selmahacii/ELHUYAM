@@ -22,7 +22,7 @@ const manualOrderSchema = z.object({
   userId: z.string().max(50).optional(),
   customerName: z.string().min(1, "Nom client requis").max(100),
   customerPhone: z.string().min(9, "Téléphone requis").max(20),
-  customerEmail: z.string().email().max(254).optional().or(z.literal("")),
+  customerEmail: z.string().email("Adresse email valide requise").max(254),
 
   items: z.array(manualOrderItemSchema).min(1, "Au moins un produit requis").max(50),
 
@@ -138,25 +138,56 @@ export async function POST(req: NextRequest) {
 
     // Resolve user
     let resolvedUserId = userId;
-    if (!resolvedUserId) {
+    let resolvedUserObj = null;
+
+    if (resolvedUserId) {
+      resolvedUserObj = await db.user.findUnique({ where: { id: resolvedUserId } });
+    } else {
       const phoneClean = customerPhone.trim();
-      if (customerEmail) {
-        const existing = await db.user.findUnique({ where: { email: customerEmail } });
-        resolvedUserId = existing?.id;
+      const emailClean = customerEmail && customerEmail.trim() ? customerEmail.trim().toLowerCase() : null;
+
+      if (emailClean) {
+        resolvedUserObj = await db.user.findUnique({ where: { email: emailClean } });
       }
-      if (!resolvedUserId && phoneClean) {
-        const existing = await db.user.findFirst({ where: { phone: phoneClean } });
-        resolvedUserId = existing?.id;
+      if (!resolvedUserObj && phoneClean) {
+        resolvedUserObj = await db.user.findFirst({ where: { phone: phoneClean } });
+      }
+
+      if (resolvedUserObj) {
+        resolvedUserId = resolvedUserObj.id;
       }
     }
 
-    if (!resolvedUserId) {
-      if (customerEmail) {
+    if (resolvedUserObj) {
+      const phoneClean = customerPhone.trim();
+      const emailClean = customerEmail && customerEmail.trim() ? customerEmail.trim().toLowerCase() : null;
+
+      // 1. Update email if empty or different (and unique)
+      if (emailClean && resolvedUserObj.email !== emailClean) {
+        const emailUser = await db.user.findUnique({ where: { email: emailClean } });
+        if (!emailUser) {
+          await db.user.update({
+            where: { id: resolvedUserId },
+            data: { email: emailClean },
+          });
+        }
+      }
+
+      // 2. Update phone if empty or different
+      if (phoneClean && resolvedUserObj.phone !== phoneClean) {
+        await db.user.update({
+          where: { id: resolvedUserId },
+          data: { phone: phoneClean },
+        });
+      }
+    } else {
+      const emailClean = customerEmail && customerEmail.trim() ? customerEmail.trim().toLowerCase() : null;
+      if (emailClean) {
         const ghost = await db.user.create({
           data: {
             name: customerName,
-            email: customerEmail,
-            phone: customerPhone,
+            email: emailClean,
+            phone: customerPhone.trim(),
             role: "CUSTOMER",
             emailVerified: new Date(),
           },
@@ -167,7 +198,7 @@ export async function POST(req: NextRequest) {
         const ghost = await db.user.create({
           data: {
             name: customerName,
-            phone: customerPhone,
+            phone: customerPhone.trim(),
             role: "CUSTOMER",
           },
         });

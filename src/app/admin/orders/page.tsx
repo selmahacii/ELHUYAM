@@ -59,6 +59,7 @@ export default async function AdminOrdersPage({ searchParams }: SearchParams) {
         items: {
           select: {
             quantity: true,
+            price: true,
             productTitle: true,
             productImage: true,
             size: true,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useCallback } from "react";
+import { useState, useCallback, startTransition } from "react";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard, Package, Tag, ShoppingBag, Users,
@@ -86,7 +86,10 @@ function NavItem({
     if (typeof window !== "undefined" && window.__navProgressStart) {
       window.__navProgressStart();
     }
-    router.push(href);
+    // Defer the router push to let the close animation/paint complete and avoid blocking INP
+    setTimeout(() => {
+      router.push(href);
+    }, 0);
   }, [href, pathname, onNavigate, router]);
 
   return (
@@ -161,7 +164,11 @@ export function AdminSidebar({
             </div>
           </div>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              startTransition(() => {
+                setIsOpen(false);
+              });
+            }}
             className="lg:hidden text-zinc-500 hover:text-white p-1 -mr-1 transition-colors"
             aria-label="Close"
           >
@@ -243,7 +250,11 @@ export function AdminSidebar({
       <div className="lg:hidden bg-[#0F0E0C] px-4 py-3.5 flex items-center justify-between shrink-0 border-b border-zinc-900/70 shadow-sm">
         <Link href="/admin" className="font-display text-sm font-extrabold tracking-[0.18em] text-[#FAF9F6]">EL HUYAM</Link>
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            startTransition(() => {
+              setIsOpen(true);
+            });
+          }}
           className="text-zinc-400 p-2 -mr-2 hover:text-[#FAF9F6] active:bg-zinc-900 rounded-xl transition-all"
           aria-label="Open menu"
         >

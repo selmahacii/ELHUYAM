@@ -2,17 +2,43 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { updateOrderAdmin } from "@/lib/orders";
+import { sendOrderShippedEmail } from "@/lib/email";
 
 // ZR Express state → our OrderStatus mapping
 const ZR_STATE_MAP: Record<string, string> = {
+  // French variants from ZR Express dashboard
+  "prêt à expédier":     "CONFIRMED",
+  "prêt a expédier":     "CONFIRMED",
+  "pret a expedier":     "CONFIRMED",
+  "commande reçue":      "CONFIRMED",
+  "commande recue":      "CONFIRMED",
+  "au bureau":           "PROCESSING",
+  "confirmée au bureau": "PROCESSING",
+  "confirmee au bureau": "PROCESSING",
+  "confirmé au bureau":  "PROCESSING",
+  "confirme au bureau":  "PROCESSING",
+  "dispatch":            "PROCESSING",
+  "vers wilaya":         "SHIPPED",
+  "en livraison":        "OUT_FOR_DELIVERY",
+  "sortie en livraison": "OUT_FOR_DELIVERY",
+  "livré":               "DELIVERED",
+  "livre":               "DELIVERED",
+  "encaissé":            "DELIVERED",
+  "encaisse":            "DELIVERED",
+  "recouvert":           "DELIVERED",
+  "retourné":            "REFUNDED",
+  "retourne":            "REFUNDED",
+  "annulé":              "CANCELLED",
+  "annule":              "CANCELLED",
+  "échoué":              "CANCELLED",
+  "echoue":              "CANCELLED",
   "en attente":          "PENDING",
   "confirmé":            "CONFIRMED",
+  "confirme":            "CONFIRMED",
   "récupéré":            "PROCESSING",
+  "recupere":            "PROCESSING",
   "en transit":          "SHIPPED",
-  "sorti en livraison":  "OUT_FOR_DELIVERY",
-  "livré":               "DELIVERED",
-  "retourné":            "REFUNDED",
-  "annulé":              "CANCELLED",
+
   // English variants
   "pending":             "PENDING",
   "confirmed":           "CONFIRMED",
@@ -61,10 +87,33 @@ export async function POST(req: NextRequest) {
     const newStatus = stateName ? mapZRState(stateName) : null;
 
     if (newStatus && newStatus !== order.status) {
-      await updateOrderAdmin(order.id, {
+      const updatedOrder = await updateOrderAdmin(order.id, {
         status: newStatus,
         note: `ZR Express: ${stateName}`
       });
+
+      // Send email if order status changed to SHIPPED
+      if (newStatus === "SHIPPED") {
+        const userEmail = updatedOrder.user?.email || order.user?.email;
+        const trackingToUse = updatedOrder.trackingNumber || order.trackingNumber;
+
+        if (userEmail && trackingToUse) {
+          const customerName = `${updatedOrder.shippingFirstName ?? ""} ${updatedOrder.shippingLastName ?? ""}`.trim() || updatedOrder.user?.name || "Customer";
+          sendOrderShippedEmail(
+            userEmail,
+            customerName,
+            updatedOrder.orderNumber,
+            trackingToUse,
+            updatedOrder.totalAmount,
+            updatedOrder.isInternational,
+            updatedOrder.items.map((i: any) => ({
+              productTitle: i.productTitle,
+              quantity: i.quantity,
+              price: i.price,
+            }))
+          ).catch((err) => console.error("[email/shipped/webhook]", err));
+        }
+      }
     }
 
     return successResponse({ received: true });

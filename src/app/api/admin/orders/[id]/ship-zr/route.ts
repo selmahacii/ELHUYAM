@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { getZRSettings, zrCreateParcel, zrSearchTerritories, resolveZRTerritoryIds } from "@/lib/zrexpress";
+import { getZRSettings, zrCreateParcel, zrSearchTerritories, resolveZRTerritoryIds, resolveZRHubId } from "@/lib/zrexpress";
 import { getWilayaByCode } from "@/lib/wilayas";
+import { sendOrderShippedEmail } from "@/lib/email";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -97,8 +98,19 @@ export async function POST(req: NextRequest, { params }: Props) {
     const rawDesc = description || "Habillements Modest Fashion";
     const cleanDesc = rawDesc.length > 240 ? rawDesc.slice(0, 240) : rawDesc;
 
+    let hubId: string | null = null;
+    if (zrDeliveryType === "pickup-point") {
+      hubId = await resolveZRHubId(
+        settings,
+        wilayaName,
+        wilayaCode,
+        order.shippingCity,
+        order.shippingStreet
+      );
+    }
+
     // Prepare ZR Express parcel payload per official CreateParcelRequest API schema
-    const payload = {
+    const payload: Record<string, any> = {
       customer: {
         customerId,
         name: customerName,
@@ -118,11 +130,15 @@ export async function POST(req: NextRequest, { params }: Props) {
       externalId: order.orderNumber || order.id,
     };
 
+    if (zrDeliveryType === "pickup-point" && hubId) {
+      payload.hubId = hubId;
+    }
+
     // Call the API
     const res = await zrCreateParcel(settings, payload);
 
     if (!res.ok || !res.data) {
-      const errorMsg = res.error || res.rawBody || "Erreur lors de la création du colis chez ZR Express";
+      const errorMsg = res.error || res.rawBody || "Error creating parcel at ZR Express";
       return NextResponse.json({
         success: false,
         error: errorMsg,
@@ -152,17 +168,36 @@ export async function POST(req: NextRequest, { params }: Props) {
         data: {
           orderId: order.id,
           status: "CONFIRMED",
-          note: `Colis transmis automatiquement à ZR Express. N° Suivi: ${trackingNumber}`,
+          note: `Automatically transmitted to ZR Express. Tracking N°: ${trackingNumber}`,
           changedById: session.user.id,
         },
       }),
     ]);
 
+    // Send shipping confirmation email to the customer!
+    const userEmail = (await db.user.findUnique({ where: { id: order.userId } }))?.email;
+    if (userEmail) {
+      const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || "Customer";
+      sendOrderShippedEmail(
+        userEmail,
+        customerName,
+        order.orderNumber,
+        trackingNumber,
+        order.totalAmount,
+        order.isInternational,
+        order.items.map((i: any) => ({
+          productTitle: i.productTitle,
+          quantity: i.quantity,
+          price: i.price,
+        }))
+      ).catch((err) => console.error("[email/shipped/ship-zr]", err));
+    }
+
     return successResponse({
       trackingNumber,
-      message: "Colis transmis avec succès à ZR Express",
+      message: "Package successfully created and transmitted to ZR Express",
     });
   } catch (e) {
-    return errorResponse(e instanceof Error ? e.message : "Erreur serveur", 500);
+    return errorResponse(e instanceof Error ? e.message : "Internal Server Error", 500);
   }
 }

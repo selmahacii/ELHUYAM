@@ -184,6 +184,7 @@
     "firstName": "First Name",
     "lastName": "Last Name",
     "phone": "Phone Number",
+    "email": "Email Address",
     "wilaya": "Wilaya (Province)",
     "selectWilaya": "Select your wilaya...",
     "street": "Street Address",

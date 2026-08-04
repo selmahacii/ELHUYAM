@@ -4,13 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Package, User, Phone, MapPin, Truck, Loader2 } from "lucide-react";
+import { Eye, Package, User, Phone, MapPin, Truck, Loader2, Mail } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { getWilayaByCode } from "@/lib/wilayas";
 
 interface OrderItem {
   quantity: number;
+  price: number;
   productTitle: string;
   productImage?: string | null;
   size?: string | null;
@@ -62,6 +63,8 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
   const [transmitting, setTransmitting] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState<string | null | undefined>(order.trackingNumber);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [activeEmailTab, setActiveEmailTab] = useState<"confirmation" | "shipped">("shipped");
 
   async function handleTransmitZR() {
     setTransmitting(true);
@@ -521,6 +524,260 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
         </div>
 
         {isModalOpen && renderModal()}
+        {isEmailModalOpen && renderEmailModal()}
+      </div>
+    );
+  }
+
+  // Email Template Preview Helpers
+  function getOrderConfirmationHtml(order: any) {
+    const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || order.user?.name || "Customer";
+    const currency = order.isInternational ? "EUR" : "DZD";
+    const locale = order.isInternational ? "fr-FR" : "fr-DZ";
+    const formattedTotal = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: 2,
+    }).format(order.totalAmount).replace(/[\u00a0\u202f]/g, " ");
+
+    const itemsHtml = order.items
+      .map(
+        (item: any) => {
+          const formattedPrice = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+            style: "currency",
+            currency: currency,
+            minimumFractionDigits: 2,
+          }).format(item.price ?? 0).replace(/[\u00a0\u202f]/g, " ");
+
+          return `
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520;">${item.productTitle}</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520; text-align: center;">${item.quantity}</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520; text-align: right;">${formattedPrice}</td>
+            </tr>
+          `;
+        }
+      )
+      .join("");
+
+    return `
+      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #FAF9F6; padding: 40px; border: 1px solid #E8D5B7; font-size: 14px;">
+        <h1 style="font-size: 28px; letter-spacing: 4px; color: #1A1A1A; text-align: center; text-transform: uppercase; margin: 0 0 10px 0;">EL HUYAAM</h1>
+        <hr style="border: 1px solid #E8D5B7; margin: 20px 0;" />
+        <h2 style="color: #4A3520; text-align: center; font-size: 20px; margin: 0 0 15px 0;">Order Confirmed ✦</h2>
+        <p style="color: #7A5C38; line-height: 1.8;">Dear ${customerName}, thank you for your order. We will begin preparing it with care.</p>
+        <p style="color: #9A7A52; font-size: 13px; letter-spacing: 2px; font-weight: bold; margin: 15px 0 5px 0;">ORDER: ${order.orderNumber}</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 24px; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: left; font-size: 12px; letter-spacing: 1px;">PRODUCT</th>
+              <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: center; font-size: 12px; letter-spacing: 1px;">QTY</th>
+              <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: right; font-size: 12px; letter-spacing: 1px;">PRICE</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="padding-top: 16px; font-weight: bold; color: #1A1A1A;">TOTAL</td>
+              <td style="padding-top: 16px; font-weight: bold; color: #1A1A1A; text-align: right;">${formattedTotal}</td>
+            </tr>
+          </tfoot>
+        </table>
+        <div style="text-align: center; margin-top: 32px;">
+          <a href="${typeof window !== "undefined" ? window.location.origin : ""}/account/orders/${order.orderNumber}"
+             style="display: inline-block; padding: 14px 32px; background: #1A1A1A; color: #FAF9F6;
+                    text-decoration: none; letter-spacing: 2px; font-size: 13px; font-weight: bold;">
+            TRACK ORDER
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  function getOrderShippedHtml(order: any) {
+    const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || order.user?.name || "Customer";
+    const trackingNumber = order.trackingNumber || "PENDING_TRACKING";
+    const currency = order.isInternational ? "EUR" : "DZD";
+    const locale = order.isInternational ? "fr-FR" : "fr-DZ";
+    const formattedTotal = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: 2,
+    }).format(order.totalAmount).replace(/[\u00a0\u202f]/g, " ");
+
+    const itemsHtml = order.items
+      .map(
+        (item: any) => {
+          const formattedPrice = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+            style: "currency",
+            currency: currency,
+            minimumFractionDigits: 2,
+          }).format(item.price ?? 0).replace(/[\u00a0\u202f]/g, " ");
+
+          return `
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520;">${item.productTitle}</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520; text-align: center;">${item.quantity}</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520; text-align: right;">${formattedPrice}</td>
+            </tr>
+          `;
+        }
+      )
+      .join("");
+
+    return `
+      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; background: #FAF9F6; padding: 40px; border: 1px solid #E8D5B7; font-size: 14px;">
+        <h1 style="font-size: 28px; letter-spacing: 4px; color: #1A1A1A; text-align: center; text-transform: uppercase; margin: 0 0 10px 0;">EL HUYAAM</h1>
+        <hr style="border: 1px solid #E8D5B7; margin: 20px 0;" />
+        <h2 style="color: #4A3520; text-align: center; font-size: 22px; margin: 0 0 15px 0;">Your Order is with the Courier! 🚚</h2>
+        <p style="color: #7A5C38; line-height: 1.8; text-align: center; font-size: 14px;">
+          Dear ${customerName}, we are pleased to inform you that your package has been successfully handed over to the delivery company.
+        </p>
+        
+        <div style="background: rgba(232, 213, 183, 0.1); border: 1px dashed #E8D5B7; padding: 15px; margin: 25px 0; text-align: center; border-radius: 4px;">
+          <p style="color: #4A3520; font-size: 12px; font-weight: bold; text-transform: uppercase; margin: 0 0 5px 0;">Tracking Number</p>
+          <p style="color: #1A1A1A; font-family: monospace; font-size: 18px; font-weight: bold; margin: 0;">${trackingNumber}</p>
+        </div>
+
+        <p style="color: #9A7A52; font-size: 13px; letter-spacing: 2px; font-weight: bold; margin-top: 30px;">ORDER SUMMARY: ${order.orderNumber}</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 15px; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: left; font-size: 12px; letter-spacing: 1px;">PRODUCT</th>
+              <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: center; font-size: 12px; letter-spacing: 1px;">QTY</th>
+              <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: right; font-size: 12px; letter-spacing: 1px;">PRICE</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="padding-top: 16px; font-weight: bold; color: #1A1A1A;">TOTAL AMOUNT</td>
+              <td style="padding-top: 16px; font-weight: bold; color: #1A1A1A; text-align: right;">${formattedTotal}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div style="text-align: center; margin-top: 35px;">
+          <a href="${typeof window !== "undefined" ? window.location.origin : ""}/orders/track?orderNumber=${order.orderNumber}&phone=${trackingNumber}"
+             style="display: inline-block; padding: 14px 32px; background: #1A1A1A; color: #FAF9F6;
+                    text-decoration: none; letter-spacing: 2px; font-size: 13px; font-weight: bold; margin-bottom: 15px;">
+            TRACK YOUR SHIPMENT
+          </a>
+          <br />
+          <a href="https://wa.me/213772515448"
+             style="display: inline-block; padding: 12px 28px; background: #25D366; color: #FFFFFF;
+                    text-decoration: none; letter-spacing: 1px; font-size: 13px; font-weight: bold; border-radius: 4px;">
+            💬 CHAT ON WHATSAPP (+213 772 51 54 48)
+          </a>
+        </div>
+        
+        <p style="margin-top: 40px; color: #B8A99A; font-size: 12px; text-align: center;">
+          Thank you for choosing elegance and modesty.<br />
+          If you have any questions, reply directly to this email or contact us at <a href="mailto:elhuyamcollection09@gmail.com" style="color: #9A7A52; text-decoration: underline;">elhuyamcollection09@gmail.com</a>.
+        </p>
+      </div>
+    `;
+  }
+
+  function renderEmailModal() {
+    const emailSubject = activeEmailTab === "shipped" 
+      ? `Your order has been handed over to the shipping company — ${order.orderNumber}`
+      : `Order Confirmed — ${order.orderNumber}`;
+      
+    const emailHtml = activeEmailTab === "shipped"
+      ? getOrderShippedHtml(order)
+      : getOrderConfirmationHtml(order);
+
+    return (
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 cursor-default text-left font-sans"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsEmailModalOpen(false);
+        }}
+      >
+        <div 
+          className="bg-white rounded-3xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Modal Header */}
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+            <div>
+              <h3 className="font-display text-base font-bold text-slate-900 flex items-center gap-2">
+                📧 Email Template Preview
+              </h3>
+              <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                Recipient: {order.user?.email}
+              </p>
+            </div>
+            <button 
+              onClick={() => setIsEmailModalOpen(false)}
+              className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-700 transition-colors font-bold text-sm"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Modal Body */}
+          <div className="p-6 space-y-4 flex-1">
+            {/* Template Selector Tabs */}
+            <div className="flex border border-slate-200 p-1 rounded-xl bg-slate-50 gap-1 text-[11px] font-bold w-fit">
+              <button
+                type="button"
+                onClick={() => setActiveEmailTab("shipped")}
+                className={`px-3.5 py-1.5 rounded-lg transition-all ${
+                  activeEmailTab === "shipped"
+                    ? "bg-slate-950 text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                🚚 Shipping Confirmation (English)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveEmailTab("confirmation")}
+                className={`px-3.5 py-1.5 rounded-lg transition-all ${
+                  activeEmailTab === "confirmation"
+                    ? "bg-slate-950 text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                ✓ Order Confirmation (English)
+              </button>
+            </div>
+
+            {/* Email Header Details */}
+            <div className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 space-y-2 text-xs font-medium text-slate-700">
+              <div className="flex justify-between border-b border-slate-100 pb-2">
+                <span className="text-slate-400">From:</span>
+                <span className="font-mono text-slate-800">elhuyamcollection09@gmail.com</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-100 pb-2">
+                <span className="text-slate-400">To:</span>
+                <span className="font-mono text-slate-800">{order.user?.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Subject:</span>
+                <span className="font-semibold text-slate-900">{emailSubject}</span>
+              </div>
+            </div>
+
+            {/* Template HTML rendering inside container */}
+            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-[#FAF9F6] p-4 max-h-[360px] overflow-y-auto shadow-inner">
+              <div dangerouslySetInnerHTML={{ __html: emailHtml }} />
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end sticky bottom-0 z-10 gap-3">
+            <button
+              onClick={() => setIsEmailModalOpen(false)}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-650 transition-all cursor-pointer"
+            >
+              Close Preview
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -593,6 +850,26 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
               </a>
             ) : (
               <span className="italic text-slate-400 text-[10px]">Pas de téléphone</span>
+            )}
+          </div>
+
+          {/* Email / Template preview */}
+          <div className="flex items-center mt-1">
+            {order.user?.email ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEmailModalOpen(true);
+                }}
+                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-800 border border-indigo-200 text-[10.5px] font-extrabold px-2 py-0.5 rounded-lg flex items-center gap-1 transition-all duration-200 shadow-xs cursor-pointer"
+                title="View Email Template"
+              >
+                <Mail className="w-3 h-3 text-indigo-650 shrink-0" />
+                <span className="font-mono">{order.user.email}</span>
+              </button>
+            ) : (
+              <span className="italic text-slate-400 text-[10px]">Pas d'email</span>
             )}
           </div>
 
@@ -707,6 +984,13 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
       {isModalOpen && (
         <td className="p-0 border-none w-0 h-0 absolute overflow-hidden">
           {renderModal()}
+        </td>
+      )}
+
+      {/* Email Modal Cell */}
+      {isEmailModalOpen && (
+        <td className="p-0 border-none w-0 h-0 absolute overflow-hidden">
+          {renderEmailModal()}
         </td>
       )}
     </tr>
