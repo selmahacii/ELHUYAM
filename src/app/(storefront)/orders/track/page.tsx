@@ -99,7 +99,7 @@ function TrackingContent() {
             </div>
             <p className="text-xs text-brand-500 mt-1 flex items-center gap-1.5 pl-4">
               <Calendar className="w-3.5 h-3.5" />
-              {tDetail("placedOn")} {new Date(order.createdAt).toLocaleDateString()}
+              {tDetail("placedOn")} {new Date(order.createdAt).toLocaleDateString("en-GB")}
             </p>
           </div>
           <div className="flex items-center gap-3">

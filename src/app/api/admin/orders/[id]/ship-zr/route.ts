@@ -38,8 +38,14 @@ export async function POST(req: NextRequest, { params }: Props) {
       );
     }
 
-    // Format phone number cleanly (e.g. 0770386357)
-    let phoneClean = (order.shippingPhone ?? "").replace(/\s+/g, "").replace(/^(\+213|00213|213)/, "0");
+    // Format phone number cleanly (e.g. 0770386357).
+    // Phone numbers entered on RTL/Arabic keyboards can carry invisible Unicode
+    // bidi control characters (U+200E/F, U+202A-E, U+2066-9) around the digits,
+    // which broke ZR Express's validation (400) since they survived the old
+    // whitespace-only strip. Keep only digits and a leading +.
+    let phoneClean = (order.shippingPhone ?? "")
+      .replace(/[^\d+]/g, "")
+      .replace(/^(\+213|00213|213)/, "0");
     if (!phoneClean.startsWith("0") && phoneClean.length === 9) {
       phoneClean = "0" + phoneClean;
     }
@@ -95,6 +101,21 @@ export async function POST(req: NextRequest, { params }: Props) {
       order.shippingStreet
     );
 
+    // Pickup-point (stop desk) parcels require a top-level hubId — resolved
+    // by searching ZR's hub directory by the bureau name embedded in the
+    // checkout's "Bureau Stop Desk: <name>" street label.
+    let hubId: string | undefined;
+    if (zrDeliveryType === "pickup-point") {
+      const resolvedHubId = await resolveZRHubId(settings, order.shippingStreet ?? "", wilayaName);
+      if (!resolvedHubId) {
+        return errorResponse(
+          "Impossible de trouver le bureau Stop Desk correspondant chez ZR Express. Vérifiez l'adresse de livraison de la commande.",
+          400
+        );
+      }
+      hubId = resolvedHubId;
+    }
+
     const rawDesc = description || "Habillements Modest Fashion";
     const cleanDesc = rawDesc.length > 240 ? rawDesc.slice(0, 240) : rawDesc;
 
@@ -123,6 +144,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         cityTerritoryId,
         districtTerritoryId,
       },
+      ...(hubId ? { hubId } : {}),
       orderedProducts,
       deliveryType: zrDeliveryType,
       amount: order.paymentStatus === "PAID" ? 0 : Math.round(order.totalAmount),

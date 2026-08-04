@@ -49,8 +49,10 @@ export async function POST(req: NextRequest) {
     const cookieMatches = cookieOrder === order.orderNumber;
 
     // 2. Check if phone number is provided and matches shippingPhone
-    const cleanOrderPhone = order.shippingPhone?.replace(/\s+/g, "") || "";
-    const cleanInputPhone = phone?.replace(/\s+/g, "") || "";
+    // (strip everything but digits — older orders can have invisible Unicode
+    // bidi control chars from RTL keyboards embedded around the number)
+    const cleanOrderPhone = order.shippingPhone?.replace(/\D/g, "") || "";
+    const cleanInputPhone = phone?.replace(/\D/g, "") || "";
 
     const phoneMatches =
       cleanInputPhone.length >= 8 &&

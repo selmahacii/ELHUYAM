@@ -389,7 +389,7 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
         {/* Modal Footer */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between sticky bottom-0 z-10">
           <div className="text-sm font-bold text-slate-900">
-            Total: <span className="font-mono text-slate-900">{formatPrice(order.totalAmount)}</span>
+            Total: <span className="font-mono text-slate-900">{formatPrice(order.totalAmount, order.isInternational ? "EUR" : "DZD")}</span>
           </div>
           <Link
             href={`/admin/orders/${order.id}`}
@@ -480,7 +480,7 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
                 📦 Stop Desk
               </span>
             )}
-            <span className="font-bold text-slate-900 text-xs">{formatPrice(order.totalAmount)}</span>
+            <span className="font-bold text-slate-900 text-xs">{formatPrice(order.totalAmount, order.isInternational ? "EUR" : "DZD")}</span>
           </div>
         </div>
 
@@ -924,7 +924,7 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
 
       {/* 3. Total Price Amount */}
       <td className="px-4 py-3 font-bold text-slate-900 text-xs sm:text-sm">
-        {formatPrice(order.totalAmount)}
+        {formatPrice(order.totalAmount, order.isInternational ? "EUR" : "DZD")}
       </td>
 
       {/* 4. Dynamic Payment Status Select */}

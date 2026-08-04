@@ -52,6 +52,8 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   });
   if (!order) notFound();
 
+  const cur = order.isInternational ? "EUR" : "DZD";
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto px-4 md:px-0">
       

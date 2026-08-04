@@ -44,6 +44,8 @@ export default function EditOrderDialog({ order }: EditOrderDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const cur = order.isInternational ? "EUR" : "DZD";
+  const curLabel = order.isInternational ? "EUR" : "DA";
 
   // Form states - Customer & Shipping
   const [firstName, setFirstName] = useState(order.shippingFirstName ?? "");

@@ -31,6 +31,12 @@ export async function POST(req: NextRequest) {
       isInternational, country,
     } = parsed.data;
 
+    // Phone numbers typed on RTL/Arabic keyboards can carry invisible Unicode
+    // bidi control characters (U+200E/F, U+202A-E, U+2066-9) around the digits.
+    // Strip everything but digits/+ at intake so it never reaches ZR Express
+    // or order-tracking phone matching in a form that fails validation there.
+    const phone = rawPhone.replace(/[^\d+]/g, "");
+
     // 2. Identify or Auto-Create Customer Account (satisfies DB foreign key constraint)
     let userId: string;
     let dbUser = null;

@@ -19,7 +19,7 @@ export async function GET() {
 
     return successResponse({
       desktopMedia: desktopSetting?.value || "/hero-mobile.png",
-      mobileMedia: mobileSetting?.value || "/IMG_2121.MOV",
+      mobileMedia: mobileSetting?.value || "https://res.cloudinary.com/dzykepxqv/video/upload/q_auto,f_auto/v1785421463/el-huyaam/hero/hero-mobile.mov",
     });
   } catch {
     return errorResponse("Failed to load hero settings", 500);
