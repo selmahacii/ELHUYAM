@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     const {
-      firstName, lastName, phone, email, wilayaCode, deliveryType,
+      firstName, lastName, phone: rawPhone, email, wilayaCode, deliveryType,
       street, city, couponCode, paymentMethod, notes,
       isInternational, country,
     } = parsed.data;

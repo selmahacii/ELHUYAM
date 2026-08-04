@@ -101,21 +101,6 @@ export async function POST(req: NextRequest, { params }: Props) {
       order.shippingStreet
     );
 
-    // Pickup-point (stop desk) parcels require a top-level hubId — resolved
-    // by searching ZR's hub directory by the bureau name embedded in the
-    // checkout's "Bureau Stop Desk: <name>" street label.
-    let hubId: string | undefined;
-    if (zrDeliveryType === "pickup-point") {
-      const resolvedHubId = await resolveZRHubId(settings, order.shippingStreet ?? "", wilayaName);
-      if (!resolvedHubId) {
-        return errorResponse(
-          "Impossible de trouver le bureau Stop Desk correspondant chez ZR Express. Vérifiez l'adresse de livraison de la commande.",
-          400
-        );
-      }
-      hubId = resolvedHubId;
-    }
-
     const rawDesc = description || "Habillements Modest Fashion";
     const cleanDesc = rawDesc.length > 240 ? rawDesc.slice(0, 240) : rawDesc;
 
