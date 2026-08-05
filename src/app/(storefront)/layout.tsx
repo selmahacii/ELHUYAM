@@ -8,7 +8,7 @@ export default function StorefrontLayout({ children }: { children: React.ReactNo
     <div className="flex flex-col min-h-screen">
       <ScrollToTop />
       <Navbar />
-      <main className="flex-1 pt-[84px]">
+      <main className="flex-1 pt-[84px] min-h-[calc(100vh-84px)]">
         <PageTransition>{children}</PageTransition>
       </main>
       <Footer />

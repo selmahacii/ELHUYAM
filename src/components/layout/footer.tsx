@@ -46,7 +46,7 @@ export default async function Footer() {
   ];
 
   return (
-    <footer className="bg-[#050505] text-white border-t border-neutral-900">
+    <footer className="bg-[#050505] text-white border-t border-neutral-900 min-h-[380px]">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 py-12 md:py-20 grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-12">
         {/* Brand */}
         <div className="col-span-2 md:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
