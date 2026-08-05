@@ -1,69 +1,72 @@
-import { v2 as cloudinary } from "cloudinary";
-
 const cleanStr = (s?: string) => (s ? s.trim().replace(/[<>'"\s]/g, "") : undefined);
 
-const rawUrl = process.env.CLOUDINARY_URL ? cleanStr(process.env.CLOUDINARY_URL) : null;
+export const CLOUDINARY_CONFIG = {
+  cloudName: cleanStr(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) || "dzykepxqv",
+  folder: "el-huyaam/products",
+  defaultParams: "c_limit,f_auto,q_auto:eco",
+  profiles: {
+    product: "w_1200,c_limit,f_auto,q_auto:eco",
+    thumbnail: "w_400,c_limit,f_auto,q_auto:eco",
+  },
+} as const;
 
-if (rawUrl) {
-  const match = rawUrl.match(/^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/);
-  if (match) {
-    cloudinary.config({
-      api_key: match[1],
-      api_secret: match[2],
-      cloud_name: match[3],
-      secure: true,
-    });
-  } else {
-    cloudinary.config({
-      cloudinary_url: rawUrl,
-      secure: true,
-    });
-  }
-} else {
-  cloudinary.config({
-    cloud_name: cleanStr(process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME),
-    api_key: cleanStr(process.env.CLOUDINARY_API_KEY),
-    api_secret: cleanStr(process.env.CLOUDINARY_API_SECRET),
-    secure: true,
-  });
-}
-
-export async function uploadImage(
-  file: string,
-  folder = "el-huyaam/products"
-): Promise<{ url: string; publicId: string }> {
-  const result = await cloudinary.uploader.upload(file, {
-    folder,
-    resource_type: "auto",
-    transformation: [
-      { width: 1600, height: 1600, crop: "limit" },
-      { quality: "auto", fetch_format: "auto" }
-    ],
-  });
-  return { url: result.secure_url, publicId: result.public_id };
-}
-
-export async function deleteImage(publicId: string): Promise<void> {
-  await cloudinary.uploader.destroy(publicId);
-}
-
-export function getOptimizedUrl(
-  url: string | null | undefined,
-  options: { width?: number; height?: number; quality?: number } = {}
+/**
+ * Base transformer enforcing strictly the 2 profile transformations:
+ * - Product: w_1200,c_limit,f_auto,q_auto:eco
+ * - Thumbnail: w_400,c_limit,f_auto,q_auto:eco
+ */
+export function transformCloudinaryUrl(
+  urlOrPublicId: string | null | undefined,
+  transformPreset: string = CLOUDINARY_CONFIG.profiles.product
 ): string {
-  if (!url || typeof url !== "string") return "";
-  if (!url.includes("cloudinary.com")) return url;
-  const { width, height, quality = 80 } = options;
+  if (!urlOrPublicId || typeof urlOrPublicId !== "string") return "/placeholder-product.jpg";
 
-  const transforms: string[] = [];
-  if (width) transforms.push(`w_${width}`);
-  if (height) transforms.push(`h_${height}`);
-  if (width && height) transforms.push("c_fill");
-  transforms.push(`q_${quality}`);
-  transforms.push("f_auto");
+  let fullUrl = urlOrPublicId;
+  if (!fullUrl.startsWith("http://") && !fullUrl.startsWith("https://") && !fullUrl.startsWith("/")) {
+    fullUrl = `https://res.cloudinary.com/${CLOUDINARY_CONFIG.cloudName}/image/upload/${urlOrPublicId}`;
+  }
 
-  const transformStr = transforms.join(",");
-  return url.replace("/upload/", `/upload/${transformStr}/`);
+  if (!fullUrl.includes("res.cloudinary.com")) return fullUrl;
+
+  const parts = fullUrl.split("/upload/");
+  if (parts.length === 2) {
+    const afterUpload = parts[1];
+    const pathParts = afterUpload.split("/");
+    
+    // Check if the first path segment after /upload/ contains transformation flags
+    if (pathParts.length > 1 && /^(w_|h_|c_|q_|f_|t_|r_|e_|b_|a_|dpr_)/.test(pathParts[0])) {
+      return `${parts[0]}/upload/${transformPreset}/${pathParts.slice(1).join("/")}`;
+    }
+    return `${parts[0]}/upload/${transformPreset}/${afterUpload}`;
+  }
+
+  return fullUrl;
 }
 
-export default cloudinary;
+/**
+ * Product main / detail image helper -> w_1200,c_limit,f_auto,q_auto:eco
+ */
+export function getProductImage(urlOrPublicId?: string | null): string {
+  return transformCloudinaryUrl(urlOrPublicId, CLOUDINARY_CONFIG.profiles.product);
+}
+
+/**
+ * Thumbnail / card image helper -> w_400,c_limit,f_auto,q_auto:eco
+ */
+export function getThumbnail(urlOrPublicId?: string | null): string {
+  return transformCloudinaryUrl(urlOrPublicId, CLOUDINARY_CONFIG.profiles.thumbnail);
+}
+
+/**
+ * Legacy compatibility alias for getOptimizedUrl
+ */
+export function getOptimizedUrl(
+  url?: string | null,
+  options: { width?: number; profile?: "product" | "thumbnail" } = {}
+): string {
+  if (!url) return "/placeholder-product.jpg";
+  if (options.profile === "product" || (options.width && options.width > 400)) {
+    return getProductImage(url);
+  }
+  return getThumbnail(url);
+}

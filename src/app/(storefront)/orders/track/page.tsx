@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, getOptimizedImageUrl } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 import {
   Package, Check, Calendar, MapPin, Truck, ChevronRight,
   Loader2, Search, ArrowRight, HelpCircle
@@ -205,9 +206,10 @@ function TrackingContent() {
                 <div key={item.id} className="py-4 flex gap-4">
                   <div className="w-16 h-20 bg-brand-50 relative overflow-hidden shrink-0 border border-brand-100">
                     <Image
-                      src={getOptimizedImageUrl(item.productImage || (item.product?.images?.[0]), 150)}
+                      src={getThumbnail(item.productImage || (item.product?.images?.[0]))}
                       alt={item.productTitle}
                       fill
+                      loading="lazy"
                       className="object-cover"
                       sizes="64px"
                     />

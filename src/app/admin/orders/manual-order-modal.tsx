@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, Plus, Trash2, Search, Loader2, PackagePlus } from "lucide-react";
 import { WILAYAS } from "@/lib/wilayas";
 import { formatPrice } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 
 interface CategoryProp {
   id: string;
@@ -407,7 +408,7 @@ export default function ManualOrderModal() {
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             {vInfo.image ? (
                               <img
-                                src={vInfo.image}
+                                src={getThumbnail(vInfo.image)}
                                 alt=""
                                 className="w-10 h-12 object-cover flex-shrink-0 border border-black/10"
                               />
@@ -509,7 +510,7 @@ export default function ManualOrderModal() {
                       <div key={item.id} className="flex items-center gap-3 border border-black/10 p-3 bg-gray-50">
                         {item.image ? (
                           <img
-                            src={item.image}
+                            src={getThumbnail(item.image)}
                             alt=""
                             className="w-10 h-12 object-cover flex-shrink-0 border border-black/10"
                           />

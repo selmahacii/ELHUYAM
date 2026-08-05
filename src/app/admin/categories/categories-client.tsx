@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { slugify, getOptimizedImageUrl } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { ImageUpload } from "@/components/ui/image-upload";
 
@@ -281,7 +282,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {cat.image ? (
-                          <img src={getOptimizedImageUrl(cat.image, 100)} alt="" className="w-10 h-10 object-cover bg-slate-100 rounded-xl shadow-xs border border-slate-200/40 shrink-0" />
+                          <img src={getThumbnail(cat.image)} alt="" className="w-10 h-10 object-cover bg-slate-100 rounded-xl shadow-xs border border-slate-200/40 shrink-0" />
                         ) : (
                           <div className="w-10 h-10 bg-slate-50 border border-slate-200/50 rounded-xl flex items-center justify-center text-slate-400 shrink-0 shadow-xs">
                             <FolderOpen className="w-4 h-4 opacity-55" />
@@ -478,7 +479,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
                               <div key={sub.id} className="flex items-center justify-between p-2 border border-slate-150 rounded-xl bg-white shadow-2xs">
                                 <div className="flex items-center gap-2.5">
                                   {sub.image ? (
-                                    <img src={getOptimizedImageUrl(sub.image, 80)} alt="" className="w-8 h-8 object-cover bg-slate-100 rounded-lg shrink-0 border border-slate-200/40" />
+                                    <img src={getThumbnail(sub.image)} alt="" className="w-8 h-8 object-cover bg-slate-100 rounded-lg shrink-0 border border-slate-200/40" />
                                   ) : (
                                     <div className="w-8 h-8 bg-slate-50 border border-slate-250/50 rounded-lg flex items-center justify-center text-[10px] text-slate-400 shrink-0">—</div>
                                   )}
@@ -554,7 +555,7 @@ export default function CategoriesClient({ initialCategories }: { initialCategor
                             <div key={idx} className="flex items-center justify-between p-2 border border-slate-150 rounded-xl bg-white shadow-2xs">
                               <div className="flex items-center gap-2.5">
                                 {sub.image ? (
-                                  <img src={getOptimizedImageUrl(sub.image, 80)} alt="" className="w-8 h-8 object-cover bg-slate-100 rounded-lg shrink-0 border border-slate-200/40" />
+                                  <img src={getThumbnail(sub.image)} alt="" className="w-8 h-8 object-cover bg-slate-100 rounded-lg shrink-0 border border-slate-200/40" />
                                 ) : (
                                   <div className="w-8 h-8 bg-slate-50 border border-slate-250/50 rounded-lg flex items-center justify-center text-[10px] text-slate-400 shrink-0">—</div>
                                 )}

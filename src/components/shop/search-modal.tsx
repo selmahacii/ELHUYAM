@@ -5,6 +5,7 @@ import { Search, X, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice, cn, getOptimizedImageUrl } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 
 interface SearchResult {
   id: string;
@@ -108,9 +109,10 @@ export default function SearchModal({ open, onClose }: { open: boolean; onClose:
                     <div className="w-14 h-14 bg-brand-100 shrink-0 relative overflow-hidden">
                       {product.images[0] && (
                         <Image
-                          src={getOptimizedImageUrl(product.images[0], 100)}
+                          src={getThumbnail(product.images[0])}
                           alt={product.title}
                           fill
+                          loading="lazy"
                           className="object-cover"
                           sizes="56px"
                         />

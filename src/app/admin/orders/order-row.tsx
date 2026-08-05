@@ -6,7 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Eye, Package, User, Phone, MapPin, Truck, Loader2, Mail } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { formatDate, formatPrice } from "@/lib/utils";
+import { formatDate, formatPrice, cn } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 import { getWilayaByCode } from "@/lib/wilayas";
 
 interface OrderItem {
@@ -357,9 +358,11 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
                     {item.productImage || item.product?.images?.[0] ? (
                       <div className="w-10 h-12 relative rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-50">
                         <Image
-                          src={item.productImage || item.product!.images[0]}
+                          src={getThumbnail(item.productImage || item.product!.images[0])}
                           alt={item.productTitle}
                           fill
+                          loading="lazy"
+                          sizes="40px"
                           className="object-cover"
                         />
                       </div>

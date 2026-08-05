@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useWishlistStore } from "@/stores/wishlist-store";
 import { useCartStore } from "@/stores/cart-store";
 import { formatPrice, getOptimizedImageUrl } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
@@ -121,9 +122,10 @@ export default function WishlistPage() {
             <Link href={`/shop/${product.slug}`} className="block">
               <div className="relative aspect-[3/4] bg-brand-50 overflow-hidden mb-3">
                 <Image
-                  src={getOptimizedImageUrl(product.images[0], 400)}
+                  src={getThumbnail(product.images[0])}
                   alt={product.title}
                   fill
+                  loading="lazy"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />

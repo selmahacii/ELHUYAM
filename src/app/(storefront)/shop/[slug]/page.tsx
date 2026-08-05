@@ -6,6 +6,7 @@ import ProductDetail from "@/components/shop/product-detail";
 import ProductCard from "@/components/shop/product-card";
 import { getTranslations } from "next-intl/server";
 import { getOptimizedImageUrl } from "@/lib/utils";
+import { getProductImage } from "@/lib/cloudinary";
 
 export const revalidate = 300;
 
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Instagram/WhatsApp link-preview fetch downloaded the untransformed
     // original (1-2MB+) instead of a compressed, right-sized OG image.
     openGraph: {
-      images: product.images[0] ? [{ url: getOptimizedImageUrl(product.images[0], 1200) }] : [],
+      images: product.images[0] ? [{ url: getProductImage(product.images[0]) }] : [],
     },
   };
 }

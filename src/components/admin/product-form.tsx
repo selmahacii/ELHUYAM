@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { productSchema, type ProductInput } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { slugify, cn } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { Plus, X, Trash2, ImagePlus, Loader2, AlertTriangle, PackageX, TrendingDown, CheckCircle2, Eye } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
@@ -662,7 +663,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
               <div key={i} className="flex items-center gap-3 px-4 py-3">
                 {v.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={v.image} alt="" className="w-10 h-12 object-cover bg-gray-100 shrink-0 border border-gray-200" />
+                  <img src={getThumbnail(v.image)} alt="" className="w-10 h-12 object-cover bg-gray-100 shrink-0 border border-gray-200" />
                 ) : (
                   <div className="w-10 h-12 bg-gray-100 shrink-0 flex items-center justify-center">
                     <ImagePlus className="w-4 h-4 text-gray-300" />
@@ -924,7 +925,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
                   {bulkColorImage ? (
                     <div className="flex items-center gap-2 bg-white p-1 border border-gray-200 w-fit">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={bulkColorImage} alt="" className="w-10 h-12 object-cover" />
+                      <img src={getThumbnail(bulkColorImage)} alt="" className="w-10 h-12 object-cover" />
                       <button
                         type="button"
                         onClick={() => setBulkColorImage(null)}

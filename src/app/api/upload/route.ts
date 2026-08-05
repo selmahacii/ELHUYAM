@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
 
     if (CLOUDINARY_CONFIGURED) {
       // ── Cloudinary upload ────────────────────────────────────────────────────
-      const { uploadImage } = await import("@/lib/cloudinary");
+      const { uploadImage } = await import("@/lib/cloudinary-server");
       const base64 = Buffer.from(arrayBuffer).toString("base64");
       const dataUrl = `data:${file.type};base64,${base64}`;
       const result = await uploadImage(dataUrl, folder);

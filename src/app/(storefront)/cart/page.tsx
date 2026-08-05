@@ -7,6 +7,7 @@ import { ShoppingBag, Trash2, Minus, Plus, ArrowRight, Lock } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/stores/cart-store";
 import { formatPrice, getOptimizedImageUrl } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
@@ -76,7 +77,14 @@ export default function CartPage() {
                 className="relative w-24 h-32 shrink-0 bg-brand-50 overflow-hidden border border-transparent group-hover:border-soft-gold/30 transition-colors"
               >
                 {item.image && (
-                  <Image src={getOptimizedImageUrl(item.image, 150)} alt={item.title} fill className="object-cover" />
+                  <Image
+                    src={getThumbnail(item.image)}
+                    alt={item.title}
+                    fill
+                    loading="lazy"
+                    sizes="96px"
+                    className="object-cover"
+                  />
                 )}
               </Link>
 

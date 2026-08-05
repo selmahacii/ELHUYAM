@@ -10,7 +10,7 @@ import {
   Check, ChevronRight, Minus, Plus, AlertTriangle, Send, Loader2, ArrowLeft, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatPrice, calculateDiscountPercent, formatDate, getInitials, getOptimizedImageUrl } from "@/lib/utils";
+import { formatPrice, calculateDiscountPercent, formatDate, getInitials, getOptimizedImageUrl, getProductImage, getThumbnail } from "@/lib/utils";
 import { useCartStore } from "@/stores/cart-store";
 import { useWishlistStore } from "@/stores/wishlist-store";
 import { toast } from "react-hot-toast";
@@ -360,7 +360,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         <div className="space-y-3">
           <div className="relative aspect-[4/5] overflow-hidden bg-brand-50">
             <Image
-              src={getOptimizedImageUrl(currentImage, 800)}
+              src={getProductImage(currentImage)}
               alt={product.title}
               fill
               priority
@@ -390,7 +390,14 @@ export default function ProductDetail({ product }: { product: Product }) {
                     selectedImage === i ? "border-brand-900" : "border-transparent hover:border-brand-300"
                   )}
                 >
-                  <Image src={getOptimizedImageUrl(img, 150)} alt={`${product.title} ${i + 1}`} fill className="object-cover" />
+                  <Image
+                    src={getThumbnail(img)}
+                    alt={`${product.title} ${i + 1}`}
+                    fill
+                    loading="lazy"
+                    sizes="80px"
+                    className="object-cover"
+                  />
                 </button>
               ))}
             </div>

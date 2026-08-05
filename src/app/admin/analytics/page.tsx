@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 import { subDays, startOfDay, format } from "date-fns";
 import Link from "next/link";
 import nextDynamic from "next/dynamic";
@@ -214,7 +215,7 @@ export default async function AdminAnalyticsPage({ searchParams }: SearchParams)
                     {/* Visual thumbnail */}
                     {tp.product?.images?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={tp.product.images[0]} alt="" className="w-8 h-10 object-cover bg-slate-100 rounded-lg shrink-0 border border-slate-200/30 shadow-2xs" />
+                      <img src={getThumbnail(tp.product.images[0])} alt="" className="w-8 h-10 object-cover bg-slate-100 rounded-lg shrink-0 border border-slate-200/30 shadow-2xs" />
                     ) : (
                       <div className="w-8 h-10 bg-slate-50 border border-slate-200/40 rounded-lg flex items-center justify-center text-slate-350 shrink-0">
                         <Package className="w-3.5 h-3.5" />

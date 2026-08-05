@@ -84,30 +84,29 @@ export function buildQueryString(params: Record<string, string | number | boolea
   return qs.toString();
 }
 
+import { getProductImage, getThumbnail } from "@/lib/cloudinary";
+export { getProductImage, getThumbnail };
+
 export function getOptimizedImageUrl(
   url?: string | null,
-  size: "thumb_100" | "card_400" | "detail_800" | number = 400
+  size: "thumb_100" | "card_400" | "detail_800" | "product" | "thumbnail" | number = 400
 ): string {
   if (!url) return "/placeholder-product.jpg";
 
-  const width = typeof size === "number" ? size : 400;
-
-  // Cloudinary
-  if (url.includes("res.cloudinary.com")) {
-    const parts = url.split("/upload/");
-    if (parts.length === 2) {
-      if (typeof size === "string") {
-        return `${parts[0]}/upload/t_${size}/${parts[1]}`;
-      }
-      return `${parts[0]}/upload/w_${width},q_auto,f_auto/${parts[1]}`;
+  // Cloudinary: strictly map to 1 of 2 transformation profiles
+  if (url.includes("res.cloudinary.com") || (!url.startsWith("http") && !url.startsWith("/"))) {
+    if (size === "product" || size === "detail_800" || (typeof size === "number" && size > 400)) {
+      return getProductImage(url);
     }
+    return getThumbnail(url);
   }
 
   // Unsplash
   if (url.includes("images.unsplash.com")) {
     try {
+      const targetWidth = typeof size === "number" ? size : (size === "product" ? 1200 : 400);
       const urlObj = new URL(url);
-      urlObj.searchParams.set("w", width.toString());
+      urlObj.searchParams.set("w", targetWidth.toString());
       urlObj.searchParams.set("q", "80");
       urlObj.searchParams.set("auto", "format");
       return urlObj.toString();

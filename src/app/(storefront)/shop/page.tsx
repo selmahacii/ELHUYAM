@@ -11,6 +11,7 @@ import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import CatalogReviews from "@/components/shop/catalog-reviews";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
+import { getThumbnail } from "@/lib/cloudinary";
 
 export const metadata: Metadata = { title: "EL HUYAM" };
 
@@ -142,7 +143,7 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPagePro
                   {sub.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={sub.image}
+                      src={getThumbnail(sub.image)}
                       alt={sub.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />

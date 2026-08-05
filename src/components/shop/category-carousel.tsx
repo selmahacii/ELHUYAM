@@ -4,7 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getOptimizedImageUrl } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 
 type CategoryItem = {
   name: string;
@@ -64,9 +64,10 @@ export default function CategoryCarousel({ categories, discoverText }: CategoryC
           >
             {cat.image ? (
               <Image
-                src={getOptimizedImageUrl(cat.image, 500)}
+                src={getThumbnail(cat.image)}
                 alt={cat.name}
                 fill
+                loading="lazy"
                 className="object-cover transition-transform duration-1000 group-hover:scale-105"
                 sizes="(max-width: 640px) 33vw, (max-width: 1024px) 250px, 320px"
               />

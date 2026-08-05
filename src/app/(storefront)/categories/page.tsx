@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import { cn } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 
 const categoryTranslations: Record<string, string> = {
   "abaya": "عبايات",
@@ -80,11 +81,13 @@ export default async function CategoriesPage() {
               >
                 {cat.image ? (
                   <Image
-                    src={cat.image}
+                    src={getThumbnail(cat.image)}
                     alt={cat.name}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                     priority={i < 3}
+                    loading={i < 3 ? undefined : "lazy"}
+                    sizes="(max-width: 768px) 50vw, 33vw"
                   />
                 ) : (
                   <div className="absolute inset-0 arabesque-bg bg-brand-100" />

@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCartStore } from "@/stores/cart-store";
 import { formatPrice, getOptimizedImageUrl } from "@/lib/utils";
+import { getThumbnail } from "@/lib/cloudinary";
 import { WILAYAS, getShippingCost } from "@/lib/wilayas";
 import { COUNTRIES } from "@/lib/countries";
 import { COMMUNES } from "@/lib/communes";
@@ -558,7 +559,7 @@ export default function CheckoutPage() {
               {items.map((item) => (
                 <div key={item.id} className="flex gap-3 border-b border-neutral-100 pb-3 last:border-0 last:pb-0">
                   <div className="w-14 h-14 bg-neutral-200 shrink-0 relative overflow-hidden">
-                    {item.image && <Image src={getOptimizedImageUrl(item.image, 100)} alt={item.title} fill className="object-cover" />}
+                    {item.image && <Image src={getThumbnail(item.image)} alt={item.title} fill sizes="56px" loading="lazy" className="object-cover" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-black truncate font-semibold">{item.title}</p>
