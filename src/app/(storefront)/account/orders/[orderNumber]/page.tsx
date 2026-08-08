@@ -284,11 +284,31 @@ export default async function OrderDetailPage({ params }: Props) {
                 {t("shippingAddress")}
               </h3>
             </div>
-            <address className="not-italic text-xs sm:text-sm text-brand-700 leading-relaxed space-y-1">
-              <p className="font-semibold text-black uppercase tracking-wider">
+            <address className="not-italic text-xs sm:text-sm text-brand-700 leading-relaxed space-y-2">
+              <p className="font-semibold text-black uppercase tracking-wider text-sm">
                 {order.shippingFirstName} {order.shippingLastName}
               </p>
-              <p className="text-brand-600">{order.shippingStreet}</p>
+              {order.shippingPhone && (
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <p className="font-mono text-xs font-bold text-black bg-brand-50 border border-brand-100 px-2 py-1 select-all">
+                    📞 {order.shippingPhone}
+                  </p>
+                  <a
+                    href={`https://wa.me/${order.shippingPhone.replace(/[^\d+]/g, "").replace(/^0/, "213")}?text=${encodeURIComponent(`Bonjour, je vous contacte concernant ma commande ${order.orderNumber}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2.5 py-1 transition-all shadow-xs"
+                  >
+                    <span>WhatsApp</span>
+                  </a>
+                </div>
+              )}
+              {order.user?.email && (
+                <p className="text-xs font-mono text-brand-800 bg-brand-50/70 border border-brand-100/80 px-2 py-1 select-all break-all w-fit">
+                  ✉️ {order.user.email}
+                </p>
+              )}
+              <p className="text-brand-600 pt-1">{order.shippingStreet}</p>
               <p className="text-brand-600">
                 {order.shippingCity}, {order.shippingState} {order.shippingPostalCode}
               </p>

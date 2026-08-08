@@ -236,12 +236,31 @@ function TrackingContent() {
               <h3 className="text-xs uppercase tracking-widest text-brand-900 font-bold border-b border-brand-100 pb-2 mb-3">
                 {tDetail("shippingAddress")}
               </h3>
-              <div className="text-xs text-brand-750 space-y-1 font-medium not-italic">
-                <p className="font-bold text-black">{order.shippingFirstName} {order.shippingLastName}</p>
+              <div className="text-xs text-brand-750 space-y-2 font-medium not-italic">
+                <p className="font-bold text-black text-sm">{order.shippingFirstName} {order.shippingLastName}</p>
+                {order.shippingPhone && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-mono text-xs font-bold text-black bg-brand-50 border border-brand-100 px-2 py-1 select-all">
+                      📞 {order.shippingPhone}
+                    </p>
+                    <a
+                      href={`https://wa.me/${order.shippingPhone.replace(/[^\d+]/g, "").replace(/^0/, "213")}?text=${encodeURIComponent(`Bonjour, je vous contacte concernant ma commande ${order.orderNumber}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1 transition-all shadow-xs"
+                    >
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+                )}
+                {order.customerEmail && (
+                  <p className="text-xs font-mono text-brand-800 bg-brand-50/70 border border-brand-100/80 px-2 py-1 select-all break-all w-fit">
+                    ✉️ {order.customerEmail}
+                  </p>
+                )}
                 <p>{order.shippingStreet}</p>
                 <p>{order.shippingCity}, {order.shippingState || ""}</p>
-                <p>{order.shippingCountry}</p>
-                <p className="text-brand-500">{order.shippingPhone}</p>
+                <p className="text-[10px] uppercase tracking-widest text-brand-500">{order.shippingCountry}</p>
               </div>
             </div>
 

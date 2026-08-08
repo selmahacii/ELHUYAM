@@ -441,7 +441,7 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
 
         {/* Customer & Address Row */}
         <div className="flex flex-col gap-1.5 border-l-2 border-slate-200 pl-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-slate-900">{resolvedName}</span>
               {isGuest && (
@@ -458,13 +458,22 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs"
+                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10.5px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs shrink-0"
+                title="Contacter par WhatsApp"
               >
-                <Phone className="w-3 h-3 text-emerald-600" />
+                <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
                 <span className="font-mono">{phoneNum}</span>
               </a>
             )}
           </div>
+
+          {/* Email on Mobile */}
+          {order.user?.email && (
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-700 font-mono break-all bg-slate-50 border border-slate-150 px-2 py-1 rounded-md w-fit max-w-full">
+              <Mail className="w-3 h-3 text-indigo-600 shrink-0" />
+              <span className="truncate select-all">{order.user.email}</span>
+            </div>
+          )}
 
           <div className="text-[11px] text-slate-500 flex items-center gap-1">
             <MapPin className="w-3 h-3 text-slate-400 shrink-0" />

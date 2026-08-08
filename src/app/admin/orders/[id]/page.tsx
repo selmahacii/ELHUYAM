@@ -7,7 +7,7 @@ import Link from "next/link";
 import OrderActions from "./order-actions";
 import ZRTracking from "./zr-tracking";
 import { auth } from "@/auth";
-import { Package, User, MapPin, ClipboardList, Calendar, FileText } from "lucide-react";
+import { Package, User, MapPin, ClipboardList, Calendar, FileText, Phone } from "lucide-react";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -262,9 +262,11 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                   <div className="w-10 h-10 rounded-full bg-zinc-100 border border-zinc-250 flex items-center justify-center text-xs font-bold text-zinc-800 uppercase shrink-0">
                     {order.user?.name ? order.user.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2) : <User className="w-4 h-4 text-zinc-400" />}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-zinc-900 truncate">{order.user?.name || "Guest Customer"}</p>
-                    <p className="text-[11px] text-zinc-400 truncate mt-0.5">{order.user?.email || "No email address"}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-zinc-900 truncate">{order.user?.name || `${order.shippingFirstName} ${order.shippingLastName}`}</p>
+                    <p className="text-[11px] font-mono text-zinc-700 select-all break-all mt-0.5 bg-zinc-50 border border-zinc-200/80 px-2 py-1 rounded-md">
+                      {order.user?.email || "Pas d'adresse email"}
+                    </p>
                   </div>
                 </div>
 
@@ -292,15 +294,26 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                     </span>
                   )}
                 </div>
-                <address className="not-italic text-xs text-zinc-650 space-y-1">
+                <address className="not-italic text-xs text-zinc-650 space-y-2">
                   <p className="font-semibold text-zinc-900 text-sm mb-1">{order.shippingFirstName} {order.shippingLastName}</p>
                   {order.shippingPhone && (
-                    <p className="font-semibold text-zinc-800 flex items-center gap-1.5">
-                      <span className="text-[10px] text-zinc-400 font-normal">Phone:</span> {order.shippingPhone}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-mono text-xs font-bold text-zinc-900 bg-zinc-100 border border-zinc-200 px-2 py-1 rounded-md select-all">
+                        📞 {order.shippingPhone}
+                      </p>
+                      <a
+                        href={`https://wa.me/${order.shippingPhone.replace(/[^\d+]/g, "").replace(/^0/, "213")}?text=${encodeURIComponent(`Bonjour ${order.shippingFirstName}, concernant votre commande ${order.orderNumber}...`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold px-3 py-1 rounded-md transition-all shadow-sm"
+                      >
+                        <Phone className="w-3.5 h-3.5 fill-current shrink-0" />
+                        <span>WhatsApp</span>
+                      </a>
+                    </div>
                   )}
-                  {order.shippingStreet && <p className="text-zinc-500">{order.shippingStreet}</p>}
-                  <p className="text-zinc-700 font-medium">
+                  {order.shippingStreet && <p className="text-zinc-600 font-medium">{order.shippingStreet}</p>}
+                  <p className="text-zinc-800 font-semibold">
                     {order.shippingState ?? order.shippingCity}{order.wilayaCode ? ` (${order.wilayaCode})` : ""}
                   </p>
                   <p className="text-zinc-400 text-[10px] uppercase tracking-wider">{order.shippingCountry ?? "Algeria"}</p>
