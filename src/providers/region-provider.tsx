@@ -10,6 +10,7 @@ interface RegionContextType {
   setRegion: (region: Region) => void;
   isRegionModalOpen: boolean;
   setRegionModalOpen: (open: boolean) => void;
+  isInternationalEnabled: boolean;
 }
 
 const RegionContext = createContext<RegionContextType | undefined>(undefined);
@@ -17,15 +18,24 @@ const RegionContext = createContext<RegionContextType | undefined>(undefined);
 export function RegionProvider({
   children,
   initialRegion,
+  isInternationalEnabled = true,
 }: {
   children: React.ReactNode;
   initialRegion: Region;
+  isInternationalEnabled?: boolean;
 }) {
-  const [region, setRegionState] = useState<Region>(initialRegion);
-  const [isRegionModalOpen, setRegionModalOpen] = useState<boolean>(!initialRegion);
+  const activeInitialRegion = isInternationalEnabled ? initialRegion : "ALGERIA";
+  const [region, setRegionState] = useState<Region>(activeInitialRegion);
+  const [isRegionModalOpen, setRegionModalOpen] = useState<boolean>(
+    isInternationalEnabled ? !activeInitialRegion : false
+  );
   const router = useRouter();
 
   const setRegion = (newRegion: Region) => {
+    if (!isInternationalEnabled && newRegion === "INTERNATIONAL") {
+      newRegion = "ALGERIA";
+    }
+
     setRegionState(newRegion);
     if (newRegion) {
       // Set region cookie
@@ -43,7 +53,13 @@ export function RegionProvider({
 
   return (
     <RegionContext.Provider
-      value={{ region, setRegion, isRegionModalOpen, setRegionModalOpen }}
+      value={{
+        region: isInternationalEnabled ? region : "ALGERIA",
+        setRegion,
+        isRegionModalOpen: isInternationalEnabled ? isRegionModalOpen : false,
+        setRegionModalOpen,
+        isInternationalEnabled,
+      }}
     >
       {children}
     </RegionContext.Provider>

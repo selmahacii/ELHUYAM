@@ -16,16 +16,22 @@ import {
   Info,
   ShieldCheck,
   Truck,
-  HelpCircle
+  HelpCircle,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Props {
   initialConfigured: boolean;
   initialTenantId: string;
+  initialInternationalOrdersEnabled?: boolean;
 }
 
-export default function DeliverySettingsClient({ initialConfigured, initialTenantId }: Props) {
+export default function DeliverySettingsClient({
+  initialConfigured,
+  initialTenantId,
+  initialInternationalOrdersEnabled = true,
+}: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -38,6 +44,41 @@ export default function DeliverySettingsClient({ initialConfigured, initialTenan
   const [testing, setTesting] = useState(false);
   const [configured, setConfigured] = useState(initialConfigured);
   const [connected, setConnected] = useState<boolean | null>(null);
+
+  const [intlEnabled, setIntlEnabled] = useState(initialInternationalOrdersEnabled);
+  const [savingIntl, setSavingIntl] = useState(false);
+
+  async function handleToggleInternational(enabled: boolean) {
+    setSavingIntl(true);
+    setIntlEnabled(enabled);
+    try {
+      const res = await fetch("/api/admin/delivery-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secretKey: secretKey.trim() || "__KEEP__",
+          tenantId: tenantId.trim() || "ZR",
+          internationalOrdersEnabled: enabled,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(
+          enabled
+            ? "🌍 Commandes internationales activées !"
+            : "🔒 Commandes internationales désactivées !"
+        );
+      } else {
+        toast.error("Erreur lors de la mise à jour");
+        setIntlEnabled(!enabled);
+      }
+    } catch {
+      toast.error("Erreur réseau");
+      setIntlEnabled(!enabled);
+    } finally {
+      setSavingIntl(false);
+    }
+  }
 
   async function handleSave() {
     if (!secretKey.trim() && !configured) {
@@ -114,6 +155,70 @@ export default function DeliverySettingsClient({ initialConfigured, initialTenan
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      
+      {/* ── 🌍 Commandes Internationales Toggle Switch Card ─────────────────── */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center border border-indigo-150 shrink-0">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-display text-base font-bold text-slate-900">
+                Commandes Internationales & Devis (EUR)
+              </h2>
+              <p className="text-slate-500 text-xs mt-0.5">
+                Autoriser les clients de l'étranger à passer commande et demander un devis en EUR.
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Switch */}
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            <span className={`text-xs font-bold uppercase tracking-wider ${
+              intlEnabled ? "text-emerald-700" : "text-slate-400"
+            }`}>
+              {intlEnabled ? "Activé" : "Désactivé"}
+            </span>
+            <button
+              type="button"
+              disabled={savingIntl}
+              onClick={() => handleToggleInternational(!intlEnabled)}
+              className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                intlEnabled ? "bg-emerald-600" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  intlEnabled ? "translate-x-7" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className={`p-3.5 rounded-xl border text-xs font-medium flex items-center gap-2.5 transition-colors ${
+          intlEnabled
+            ? "bg-emerald-50/70 border-emerald-200 text-emerald-800"
+            : "bg-amber-50/70 border-amber-200 text-amber-800"
+        }`}>
+          {intlEnabled ? (
+            <>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                <strong>Activé :</strong> Le sélecteur de région/devise (EUR) et l'option de demande de devis international sont disponibles sur la boutique.
+              </span>
+            </>
+          ) : (
+            <>
+              <XCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Désactivé :</strong> Toutes les options et prix en EUR sont masqués sur la boutique. Seules les commandes locales en Algérie (DZD) sont autorisées.
+              </span>
+            </>
+          )}
+        </div>
+      </div>
       
       {/* ── Slim Header with Integrated Status ────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5">

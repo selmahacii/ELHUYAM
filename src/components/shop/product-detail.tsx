@@ -159,9 +159,9 @@ export default function ProductDetail({ product }: { product: Product }) {
   const tCommon = useTranslations("common");
   const tNav = useTranslations("nav");
   const locale = useLocale();
-  const { region } = useRegion();
+  const { region, isInternationalEnabled } = useRegion();
 
-  const isInternational = region === "INTERNATIONAL";
+  const isInternational = isInternationalEnabled && region === "INTERNATIONAL";
   const currency = isInternational ? "EUR" : "DZD";
 
   const translateCategoryName = (name: string) => {

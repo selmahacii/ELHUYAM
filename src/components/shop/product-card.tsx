@@ -43,9 +43,9 @@ export default function ProductCard({ product, className, priority = false }: Pr
   const inWishlist = isInWishlist(product.id);
   const t = useTranslations("product");
   const tShop = useTranslations("shop");
-  const { region } = useRegion();
+  const { region, isInternationalEnabled } = useRegion();
 
-  const isInternational = region === "INTERNATIONAL";
+  const isInternational = isInternationalEnabled && region === "INTERNATIONAL";
   const displayPrice = isInternational ? (product.priceEur || 0) : product.price;
   const displayDiscountPrice = isInternational ? product.discountPriceEur : product.discountPrice;
   const currency = isInternational ? "EUR" : "DZD";

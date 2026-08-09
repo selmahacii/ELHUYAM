@@ -17,9 +17,9 @@ export default function CartPage() {
   const t = useTranslations();
   const { status } = useSession();
   const { items, removeItem, updateQuantity, syncWithServer, subtotal } = useCartStore();
-  const { region } = useRegion();
+  const { region, isInternationalEnabled } = useRegion();
 
-  const isInternational = region === "INTERNATIONAL";
+  const isInternational = isInternationalEnabled && region === "INTERNATIONAL";
   const currency = isInternational ? "EUR" : "DZD";
 
   useEffect(() => {

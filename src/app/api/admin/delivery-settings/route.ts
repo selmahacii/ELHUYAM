@@ -2,11 +2,13 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { getZRSettings, saveZRSettings, zrTestConnection } from "@/lib/zrexpress";
+import { getInternationalOrdersEnabled, setInternationalOrdersEnabled } from "@/lib/settings";
 import { z } from "zod";
 
 const settingsSchema = z.object({
   secretKey: z.string().min(1, "Secret key is required"),
   tenantId: z.string().min(1, "Tenant ID is required"),
+  internationalOrdersEnabled: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -14,15 +16,31 @@ export async function GET() {
     const session = await auth();
     if (session?.user?.role !== "ADMIN") return errorResponse("Unauthorized", 401);
 
-    const settings = await getZRSettings();
-    if (!settings) return successResponse({ configured: false, secretKey: "", tenantId: "" });
+    const [settings, internationalOrdersEnabled] = await Promise.all([
+      getZRSettings(),
+      getInternationalOrdersEnabled(),
+    ]);
+
+    if (!settings) {
+      return successResponse({
+        configured: false,
+        secretKey: "",
+        tenantId: "",
+        internationalOrdersEnabled,
+      });
+    }
 
     // Mask the secret key — show only last 8 chars
     const maskedKey = settings.secretKey.length > 8
       ? "•".repeat(settings.secretKey.length - 8) + settings.secretKey.slice(-8)
       : settings.secretKey;
 
-    return successResponse({ configured: true, secretKey: maskedKey, tenantId: settings.tenantId });
+    return successResponse({
+      configured: true,
+      secretKey: maskedKey,
+      tenantId: settings.tenantId,
+      internationalOrdersEnabled,
+    });
   } catch {
     return errorResponse("Failed to load settings", 500);
   }
@@ -34,7 +52,6 @@ export async function PUT(req: NextRequest) {
     if (session?.user?.role !== "ADMIN") return errorResponse("Unauthorized", 401);
 
     const body = await req.json();
-    console.log("[ZR Settings API] Received update request for delivery settings");
 
     // Clean up inputs by trimming spaces/newlines from copy-paste
     if (body && typeof body === "object") {
@@ -44,37 +61,33 @@ export async function PUT(req: NextRequest) {
     
     const parsed = settingsSchema.safeParse(body);
     if (!parsed.success) {
-      console.warn("[ZR Settings API] Safe parse validation failed:", parsed.error.errors);
       return errorResponse(parsed.error.errors[0].message);
     }
 
-    let { secretKey, tenantId } = parsed.data;
+    let { secretKey, tenantId, internationalOrdersEnabled } = parsed.data;
+
+    if (typeof internationalOrdersEnabled === "boolean") {
+      await setInternationalOrdersEnabled(internationalOrdersEnabled);
+    }
 
     // "__KEEP__" is a sentinel sent from the UI when testing without changing the key
     if (secretKey === "__KEEP__") {
-      console.log("[ZR Settings API] Using sentinel '__KEEP__'. Fetching existing secretKey from db");
       const existing = await getZRSettings();
       if (!existing) {
-        console.warn("[ZR Settings API] Failed: no existing settings in database to test");
         return errorResponse("No stored credentials to test");
       }
       secretKey = existing.secretKey;
     }
 
-    const maskedKey = secretKey.length > 8
-      ? secretKey.slice(0, 4) + "..." + secretKey.slice(-4)
-      : "****";
-    console.log(`[ZR Settings API] Saving settings: Tenant ID="${tenantId}" | Secret Key="${maskedKey}"`);
     await saveZRSettings({ secretKey, tenantId });
 
-    // Test the connection with the new credentials
-    console.log("[ZR Settings API] Testing connection with new/saved credentials...");
+    // Test the connection with credentials
     const testResult = await zrTestConnection({ secretKey, tenantId });
-    console.log(`[ZR Settings API] Connection test result:`, testResult);
 
     return successResponse({ 
       configured: true, 
       connected: testResult.ok,
+      internationalOrdersEnabled: await getInternationalOrdersEnabled(),
       errorDetails: testResult.ok ? null : {
         status: testResult.status,
         error: testResult.error,

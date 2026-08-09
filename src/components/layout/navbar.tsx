@@ -89,7 +89,7 @@ export default function Navbar() {
   const t = useTranslations("nav");
   const tCommon = useTranslations("common");
   const locale = useLocale();
-  const { region, setRegion } = useRegion();
+  const { region, setRegion, isInternationalEnabled } = useRegion();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -313,7 +313,7 @@ export default function Navbar() {
 
               {/* Right: icons */}
               <div className="flex-1 flex items-center justify-end gap-1 lg:gap-2">
-                {mounted && (
+                {mounted && isInternationalEnabled && (
                   <button
                     onClick={() => setRegion(region === "ALGERIA" ? "INTERNATIONAL" : "ALGERIA")}
                     className={cn(
@@ -543,7 +543,7 @@ export default function Navbar() {
             {/* Bottom actions */}
             <div className="px-5 pb-8 pt-3 space-y-3 border-t border-brand-100/60 mt-2">
               <LanguageSwitcher className="justify-center text-brand-700 py-3 w-full bg-brand-50 rounded-2xl" />
-              {mounted && (
+              {mounted && isInternationalEnabled && (
                 <div className="flex gap-2 w-full">
                   <button
                     onClick={() => setRegion("ALGERIA")}

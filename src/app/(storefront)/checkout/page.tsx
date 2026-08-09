@@ -66,7 +66,7 @@ export default function CheckoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { items, subtotal, clearCart } = useCartStore();
-  const { region } = useRegion();
+  const { region, isInternationalEnabled } = useRegion();
   const [placing, setPlacing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -78,7 +78,7 @@ export default function CheckoutPage() {
   const tCart = useTranslations("cart");
   const tCommon = useTranslations("common");
 
-  const regionIsInternational = region === "INTERNATIONAL";
+  const regionIsInternational = isInternationalEnabled && region === "INTERNATIONAL";
 
   const {
     register,
@@ -92,7 +92,8 @@ export default function CheckoutPage() {
     defaultValues: { paymentMethod: "cod", deliveryType: "DOMICILE", isInternational: regionIsInternational },
   });
 
-  const isInternational = watch("isInternational");
+  const isInternationalRaw = watch("isInternational");
+  const isInternational = isInternationalEnabled && isInternationalRaw;
   const currency = isInternational ? "EUR" : "DZD";
   const sub = subtotal(isInternational);
   const selectedWilaya = watch("wilayaCode");
@@ -107,7 +108,7 @@ export default function CheckoutPage() {
   const phoneValue = watch("phone");
 
   useEffect(() => {
-    if (phoneValue) {
+    if (phoneValue && isInternationalEnabled) {
       const p = phoneValue.trim();
       if (p.length >= 2) {
         let detectedIntl = false;

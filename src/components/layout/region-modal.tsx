@@ -5,9 +5,9 @@ import { useRegion } from "@/providers/region-provider";
 import { Globe, MapPin } from "lucide-react";
 
 export function RegionModal() {
-  const { isRegionModalOpen, setRegion } = useRegion();
+  const { isRegionModalOpen, setRegion, isInternationalEnabled } = useRegion();
 
-  if (!isRegionModalOpen) return null;
+  if (!isInternationalEnabled || !isRegionModalOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">

@@ -76,14 +76,23 @@ export const viewport: Viewport = {
 import { cookies } from "next/headers";
 import { RegionProvider, Region } from "@/providers/region-provider";
 import { RegionModal } from "@/components/layout/region-modal";
+import { getInternationalOrdersEnabled } from "@/lib/settings";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
   
-  const cookieStore = await cookies();
+  const [cookieStore, isInternationalEnabled] = await Promise.all([
+    cookies(),
+    getInternationalOrdersEnabled(),
+  ]);
+
   const regionCookie = cookieStore.get("region")?.value;
-  const initialRegion = (regionCookie === "ALGERIA" || regionCookie === "INTERNATIONAL") ? (regionCookie as Region) : null;
+  let initialRegion: Region = (regionCookie === "ALGERIA" || regionCookie === "INTERNATIONAL") ? (regionCookie as Region) : null;
+
+  if (!isInternationalEnabled) {
+    initialRegion = "ALGERIA";
+  }
 
   let session = null;
   try {
@@ -116,7 +125,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <RegionProvider initialRegion={initialRegion}>
+          <RegionProvider initialRegion={initialRegion} isInternationalEnabled={isInternationalEnabled}>
             <Providers session={session}>
               {children}
               <RegionModal />
