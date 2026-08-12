@@ -81,7 +81,7 @@ export default function ProductCard({ product, className, priority = false }: Pr
   }
 
   return (
-    <Link href={`/shop/${product.slug}`} className={cn("group block", className)}>
+    <Link href={`/shop/${product.slug}`} prefetch={false} className={cn("group block", className)}>
       <div
         className="relative overflow-hidden bg-brand-50"
         onMouseEnter={() => setHovered(true)}

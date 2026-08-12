@@ -36,7 +36,15 @@ const nextConfig = {
     serverActions: { allowedOrigins: ["localhost:3001", "elhuyam.com"] },
   },
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      {
+        source: "/:path*.(png|jpg|jpeg|gif|webp|svg|mp4|mov|webm|woff2|woff|ttf|ico)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+    ];
   },
 };
 

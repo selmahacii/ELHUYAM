@@ -12,20 +12,24 @@ export function paginatedResponse<T>(
   data: T[],
   total: number,
   page: number,
-  limit: number
+  limit: number,
+  headers?: Record<string, string>
 ) {
-  return NextResponse.json({
-    success: true,
-    data,
-    pagination: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      hasNext: page * limit < total,
-      hasPrev: page > 1,
+  return NextResponse.json(
+    {
+      success: true,
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
     },
-  });
+    { headers }
+  );
 }
 
 export function getPaginationParams(searchParams: URLSearchParams) {

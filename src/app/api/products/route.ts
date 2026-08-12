@@ -64,7 +64,9 @@ export async function GET(req: NextRequest) {
       db.product.count({ where }),
     ]);
 
-    return paginatedResponse(products, total, page, limit);
+    return paginatedResponse(products, total, page, limit, {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    });
   } catch {
     return errorResponse("Failed to fetch products.", 500);
   }
