@@ -33,7 +33,7 @@ const nextConfig = {
     unoptimized: true,
   },
   experimental: {
-    serverActions: { allowedOrigins: ["localhost:3001", "elhuyam.com"] },
+    serverActions: { allowedOrigins: ["localhost:3000", "localhost:3001", "elhuyam.com", "*.elhuyam.com", "www.elhuyam.com", "*.vercel.app"] },
   },
   async headers() {
     return [

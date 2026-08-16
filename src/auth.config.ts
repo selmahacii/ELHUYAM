@@ -22,8 +22,14 @@ export const authConfig = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      if (url.startsWith(baseUrl)) return url;
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.startsWith("/")) return url;
+      try {
+        const urlObj = new URL(url);
+        const baseObj = new URL(baseUrl);
+        if (urlObj.origin === baseObj.origin || urlObj.hostname.endsWith("elhuyam.com") || urlObj.hostname.endsWith("vercel.app")) {
+          return url;
+        }
+      } catch {}
       return baseUrl;
     },
   },
