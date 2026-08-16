@@ -107,8 +107,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              // PAGE_LOAD ping — fires when page is fully reachable on this device
+              window.addEventListener('DOMContentLoaded', function() {
+                try {
+                  var t = performance.timing;
+                  var loadTime = t.domContentLoadedEventEnd - t.navigationStart;
+                  fetch('/api/debug-log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      level: 'PAGE_LOAD',
+                      message: 'Page loaded successfully',
+                      url: window.location.href,
+                      loadTime: loadTime
+                    })
+                  });
+                } catch(_) {}
+              });
+              // Client-side JS error capture
               window.addEventListener('error', function(e) {
                 try {
+                  // Ignore Facebook/Instagram IAB internal errors
+                  if (e.filename && e.filename.indexOf('iabjs://') === 0) return;
                   fetch('/api/debug-log', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

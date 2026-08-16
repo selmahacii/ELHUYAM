@@ -11,6 +11,35 @@ const ADMIN_ROLES = new Set(["ADMIN", "CONFIRMATRICE"]);
 
 const { auth } = NextAuth(authConfig);
 
+// ── Device / Browser detection ──────────────────────────────────────────────
+function classifyUA(ua: string): { device: string; browser: string } {
+  let device = "Desktop";
+  let browser = "Other";
+
+  // Device
+  if (/iPhone|iPad|iPod/.test(ua)) device = "iOS";
+  else if (/Android/.test(ua)) device = "Android";
+  else if (/Windows/.test(ua)) device = "Windows";
+  else if (/Macintosh/.test(ua)) device = "Mac";
+
+  // Browser / source
+  if (/Instagram/.test(ua)) browser = "Instagram-IAB";
+  else if (/FBAN|FBAV|FB_IAB/.test(ua)) browser = "Facebook-IAB";
+  else if (/GSA/.test(ua)) browser = "Google-App";
+  else if (/Snapchat/.test(ua)) browser = "Snapchat-IAB";
+  else if (/TikTok/.test(ua)) browser = "TikTok-IAB";
+  else if (/SamsungBrowser/.test(ua)) browser = "Samsung-Browser";
+  else if (/EdgA|Edg\//.test(ua)) browser = "Edge";
+  else if (/OPR|Opera/.test(ua)) browser = "Opera";
+  else if (/CriOS/.test(ua)) browser = "Chrome-iOS";
+  else if (/FxiOS/.test(ua)) browser = "Firefox-iOS";
+  else if (/Chrome/.test(ua) && !/Chromium/.test(ua)) browser = "Chrome";
+  else if (/Safari/.test(ua) && /Version\//.test(ua)) browser = "Safari";
+  else if (/Firefox/.test(ua)) browser = "Firefox";
+
+  return { device, browser };
+}
+
 export default auth((req: any) => {
   const { nextUrl, auth: session } = req;
   const isLoggedIn = !!session;
@@ -24,8 +53,8 @@ export default auth((req: any) => {
     req.headers.get("x-real-ip") ||
     req.ip ||
     "unknown";
-  const country = req.headers.get("x-vercel-ip-country") || "unknown";
-  const city = req.headers.get("x-vercel-ip-city") || "unknown";
+  const country = req.headers.get("x-vercel-ip-country") || "??";
+  const city = req.headers.get("x-vercel-ip-city") || "?";
   const ua = req.headers.get("user-agent") || "unknown";
   const referer = req.headers.get("referer") || "-";
   const host = req.headers.get("host") || "unknown";
@@ -33,32 +62,46 @@ export default auth((req: any) => {
   const path = nextUrl.pathname + (nextUrl.search || "");
   const userId = session?.user?.id ?? "anonymous";
   const userRole = role || "guest";
+  const { device, browser } = classifyUA(ua);
 
-  // Log every page visit cleanly
+  // Structured visit log — classifies device/browser for easy filtering
   console.log(
-    `[VISIT_LOG] ${now} | ${method} ${host}${path} | IP: ${ip} | Geo: ${city}, ${country} | User: ${userId} (${userRole}) | UA: ${ua.substring(0, 100)}`
+    JSON.stringify({
+      type: "VISIT",
+      ts: now,
+      method,
+      host,
+      path,
+      ip,
+      geo: `${city}, ${country}`,
+      device,
+      browser,
+      user: userId,
+      role: userRole,
+      referer: referer.substring(0, 120),
+    })
   );
 
   if (ADMIN_ROUTES.test(nextUrl.pathname)) {
     if (!isLoggedIn) {
-      console.log(`[REDIRECT] ${ip} → /auth/login (unauthenticated admin access attempt: ${path})`);
+      console.log(JSON.stringify({ type: "REDIRECT", ts: now, ip, geo: `${city}, ${country}`, device, browser, reason: "unauthenticated", from: path, to: "/auth/login" }));
       return NextResponse.redirect(new URL("/auth/login?callbackUrl=/admin", nextUrl));
     }
     if (!canAccessAdmin) {
-      console.log(`[REDIRECT] ${ip} userId=${userId} role=${role} → / (unauthorized admin access: ${path})`);
+      console.log(JSON.stringify({ type: "REDIRECT", ts: now, ip, geo: `${city}, ${country}`, device, browser, reason: "unauthorized", role, from: path, to: "/" }));
       return NextResponse.redirect(new URL("/", nextUrl));
     }
   }
 
   if (PROTECTED_ROUTES.test(nextUrl.pathname) && !isLoggedIn) {
     const callbackUrl = encodeURIComponent(nextUrl.pathname);
-    console.log(`[REDIRECT] ${ip} → /auth/login?callbackUrl=${callbackUrl} (protected route, not logged in)`);
+    console.log(JSON.stringify({ type: "REDIRECT", ts: now, ip, geo: `${city}, ${country}`, device, browser, reason: "not_logged_in", from: path, to: `/auth/login?callbackUrl=${callbackUrl}` }));
     return NextResponse.redirect(new URL(`/auth/login?callbackUrl=${callbackUrl}`, nextUrl));
   }
 
   if (AUTH_ROUTES.test(nextUrl.pathname) && isLoggedIn) {
     const dest = canAccessAdmin ? "/admin" : "/account";
-    console.log(`[REDIRECT] ${ip} userId=${userId} → ${dest} (already logged in, redirecting from auth route)`);
+    console.log(JSON.stringify({ type: "REDIRECT", ts: now, ip, geo: `${city}, ${country}`, device, browser, reason: "already_logged_in", from: path, to: dest }));
     return NextResponse.redirect(new URL(dest, nextUrl));
   }
 
