@@ -40,7 +40,14 @@ function classifyUA(ua: string): { device: string; browser: string } {
   return { device, browser };
 }
 
-export default auth((req: any) => {
+const AUTH_COOKIE_NAMES = [
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
+];
+
+const authMiddleware = auth((req: any) => {
   const { nextUrl, auth: session } = req;
   const isLoggedIn = !!session;
   const role = session?.user?.role ?? "";
@@ -107,6 +114,30 @@ export default auth((req: any) => {
 
   return NextResponse.next();
 });
+
+// A corrupt/stale session cookie (e.g. left over from a secret rotation or a
+// different deployment) makes NextAuth's JWT decode throw, which previously
+// crashed the middleware and blocked the whole site for that visitor —
+// while a fresh/private browser with no cookie worked fine. Catch it, wipe
+// the bad cookie, and let the request through instead of failing the page.
+export default async function middleware(req: any, ctx: any) {
+  try {
+    return await (authMiddleware as any)(req, ctx);
+  } catch (error) {
+    console.log(
+      JSON.stringify({
+        type: "MIDDLEWARE_AUTH_ERROR",
+        ts: new Date().toISOString(),
+        message: error instanceof Error ? error.message : String(error),
+      })
+    );
+    const res = NextResponse.next();
+    for (const name of AUTH_COOKIE_NAMES) {
+      res.cookies.delete(name);
+    }
+    return res;
+  }
+}
 
 // Run middleware on ALL page requests so Vercel logs capture every single visitor
 export const config = {
