@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-hot-toast";
-import { AlertTriangle, Truck } from "lucide-react";
+import { AlertTriangle, Truck, Store } from "lucide-react";
 import EditOrderDialog from "./edit-order-dialog";
 
 const ORDER_STATUSES = [
@@ -113,6 +113,37 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
       toast.error("Connection error");
     } finally {
       setTransmitting(false);
+    }
+  }
+
+  async function handleConfirmStorePickup() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "DELIVERED",
+          paymentStatus: "PAID",
+          carrier: "POINT_DE_VENTE",
+          note: "Commande confirmée et récupérée au point de vente (Magasin)",
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(data.error ?? "Failed to update order");
+        return;
+      }
+
+      setStatus("DELIVERED");
+      setPaymentStatus("PAID");
+      setCarrier("POINT_DE_VENTE");
+      toast.success("Commande confirmée et marquée comme récupérée au point de vente !");
+      router.refresh();
+    } catch {
+      toast.error("Connection error");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -259,6 +290,17 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
             className="w-full border border-black/20 px-3 py-2 text-sm focus:outline-none focus:border-black text-black bg-white resize-none transition-colors"
           />
         </div>
+
+        {/* Store Pickup Button */}
+        <Button
+          type="button"
+          className="w-full bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 py-2 px-4 shadow-sm border border-amber-500 transition-all font-medium text-xs uppercase tracking-wider"
+          onClick={handleConfirmStorePickup}
+          loading={saving}
+        >
+          <Store className="w-4 h-4" />
+          Confirmé & Récupéré en magasin (Payé)
+        </Button>
 
         {carrier === "ZR_EXPRESS" && !tracking && (
           <Button

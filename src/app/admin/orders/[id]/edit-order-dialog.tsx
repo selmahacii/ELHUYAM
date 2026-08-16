@@ -22,6 +22,7 @@ import {
   Search,
   Package,
   Loader2,
+  Store,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -250,11 +251,26 @@ export default function EditOrderDialog({ order }: EditOrderDialogProps) {
         <div className="p-6 space-y-6 bg-zinc-50/50">
           {/* Section 1: Customer & Delivery Details */}
           <div className="bg-white border border-zinc-200 rounded-sm p-5 space-y-4 shadow-xs">
-            <div className="flex items-center gap-2 border-b border-zinc-150 pb-2">
-              <User className="w-4 h-4 text-zinc-600" />
-              <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-900">
-                1. Coordonnées de la Cliente & Livraison
-              </h3>
+            <div className="flex items-center justify-between border-b border-zinc-150 pb-2">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-zinc-600" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-zinc-900">
+                  1. Coordonnées de la Cliente & Livraison
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeliveryType("STOPDESK");
+                  setStreet("Point de Vente / Récupération en Magasin");
+                  setNotes("Récupéré directement au point de vente (Magasin)");
+                  toast.success("Préréglage : Point de vente sélectionné");
+                }}
+                className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-sm flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Store className="w-3.5 h-3.5 text-amber-700" />
+                <span>🏬 Récupéré au point de vente (Magasin)</span>
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
