@@ -104,6 +104,40 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className="scroll-smooth">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('error', function(e) {
+                try {
+                  fetch('/api/debug-log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      level: 'error',
+                      message: e.message || 'Script error',
+                      url: e.filename || window.location.href,
+                      stack: e.error ? e.error.stack : null
+                    })
+                  });
+                } catch(_) {}
+              });
+              window.addEventListener('unhandledrejection', function(e) {
+                try {
+                  fetch('/api/debug-log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      level: 'unhandledrejection',
+                      message: String(e.reason),
+                      url: window.location.href,
+                      stack: e.reason && e.reason.stack ? e.reason.stack : null
+                    })
+                  });
+                } catch(_) {}
+              });
+            `,
+          }}
+        />
         {locale === "ar" && (
           <style dangerouslySetInnerHTML={{ __html: `
             body {
