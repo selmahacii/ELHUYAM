@@ -11,7 +11,7 @@ const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days (vs NextAuth default 30 days
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "elhuyam-auth-fallback-secret-key-123456",
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "3hnXt4WIWhXRm1+Ewu8etk2Jg6jeC+cmnizOIAWIWpc=",
   adapter: PrismaAdapter(db),
   session: {
     strategy: "jwt",
