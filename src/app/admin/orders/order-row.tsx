@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Package, User, Phone, MapPin, Truck, Loader2, Mail, Store } from "lucide-react";
+import { Eye, Package, User, Phone, MapPin, Truck, Loader2, Mail } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatDate, formatPrice, cn } from "@/lib/utils";
 import { getThumbnail } from "@/lib/cloudinary";
@@ -87,37 +87,6 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
       toast.error("Erreur de connexion serveur");
     } finally {
       setTransmitting(false);
-    }
-  }
-
-  async function handleConfirmStorePickup() {
-    setUpdating(true);
-    try {
-      const res = await fetch(`/api/orders/${order.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "DELIVERED",
-          paymentStatus: "PAID",
-          carrier: "POINT_DE_VENTE",
-          note: "Commande confirmée et récupérée au point de vente (Magasin)",
-        }),
-      });
-      const data = await res.json();
-      if (!data.success) {
-        toast.error(data.error ?? "Échec de la mise à jour");
-        return;
-      }
-
-      setStatus("DELIVERED");
-      setPaymentStatus("PAID");
-      toast.success("Commande confirmée et marquée comme récupérée au point de vente !");
-      setIsModalOpen(false);
-      router.refresh();
-    } catch {
-      toast.error("Erreur de connexion serveur");
-    } finally {
-      setUpdating(false);
     }
   }
 
@@ -309,9 +278,9 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
               </div>
             </div>
 
-            {/* ZR Express Transmit Button & Point de Vente Pickup Button */}
+            {/* ZR Express Transmit Button or Tracking Badge */}
             {!order.isInternational && (
-              <div className="pt-2 border-t border-slate-200/60 space-y-2">
+              <div className="pt-2 border-t border-slate-200/60">
                 {trackingNumber ? (
                   <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs">
                     <span className="flex items-center gap-1.5">
@@ -342,17 +311,6 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
                     )}
                   </button>
                 )}
-
-                {/* Point de Vente Store Pickup button */}
-                <button
-                  type="button"
-                  disabled={updating || transmitting}
-                  onClick={handleConfirmStorePickup}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs transition-all border border-amber-400 hover:border-amber-500 cursor-pointer disabled:opacity-60"
-                >
-                  <Store className="w-4 h-4" />
-                  <span>🏬 Confirmé & Récupéré au point de vente (Payé)</span>
-                </button>
               </div>
             )}
           </div>
