@@ -34,23 +34,10 @@ export default auth((req: any) => {
   const userId = session?.user?.id ?? "anonymous";
   const userRole = role || "guest";
 
+  // Log every page visit cleanly
   console.log(
-    JSON.stringify({
-      ts: now,
-      method,
-      host,
-      path,
-      ip,
-      country,
-      city,
-      userId,
-      userRole,
-      isLoggedIn,
-      referer,
-      ua: ua.substring(0, 120),
-    })
+    `[VISIT_LOG] ${now} | ${method} ${host}${path} | IP: ${ip} | Geo: ${city}, ${country} | User: ${userId} (${userRole}) | UA: ${ua.substring(0, 100)}`
   );
-  // ──────────────────────────────────────────────────────────────────────────
 
   if (ADMIN_ROUTES.test(nextUrl.pathname)) {
     if (!isLoggedIn) {
@@ -78,16 +65,9 @@ export default auth((req: any) => {
   return NextResponse.next();
 });
 
-// Only run session resolution on routes that actually gate on auth — every
-// other navigation (/, /shop, /shop/[slug], /categories, ...) used to pay for
-// a NextAuth session decode on every request for no reason.
+// Run middleware on ALL page requests so Vercel logs capture every single visitor
 export const config = {
   matcher: [
-    "/admin/:path*",
-    "/account/:path*",
-    "/wishlist/:path*",
-    "/auth/login",
-    "/auth/register",
-    "/auth/forgot-password",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|ico|css|js)$).*)",
   ],
 };
