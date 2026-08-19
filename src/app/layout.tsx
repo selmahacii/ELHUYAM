@@ -94,11 +94,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     initialRegion = "ALGERIA";
   }
 
+  const hasSessionCookie =
+    cookieStore.has("authjs.session-token") ||
+    cookieStore.has("__Secure-authjs.session-token") ||
+    cookieStore.has("next-auth.session-token") ||
+    cookieStore.has("__Secure-next-auth.session-token");
+
   let session = null;
-  try {
-    session = await auth();
-  } catch (error) {
-    console.error("🔴 CRITICAL ERROR IN ROOT LAYOUT (NextAuth):", error);
+  if (hasSessionCookie) {
+    try {
+      session = await auth();
+    } catch (error) {
+      console.error("🔴 CRITICAL ERROR IN ROOT LAYOUT (NextAuth):", error);
+    }
   }
 
   return (
@@ -107,24 +115,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // PAGE_LOAD ping — fires when page is fully reachable on this device
-              window.addEventListener('DOMContentLoaded', function() {
-                try {
-                  var t = performance.timing;
-                  var loadTime = t.domContentLoadedEventEnd - t.navigationStart;
-                  fetch('/api/debug-log', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      level: 'PAGE_LOAD',
-                      message: 'Page loaded successfully',
-                      url: window.location.href,
-                      loadTime: loadTime
-                    })
-                  });
-                } catch(_) {}
-              });
-              // Client-side JS error capture
+              // Client-side JS error capture only (no continuous pinging)
               window.addEventListener('error', function(e) {
                 try {
                   // Ignore Facebook/Instagram IAB internal errors

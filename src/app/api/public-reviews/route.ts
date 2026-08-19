@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
       db.publicReview.count({ where: { status: "APPROVED" } }),
     ]);
 
-    return paginatedResponse(reviews, total, page, limit);
+    const res = paginatedResponse(reviews, total, page, limit);
+    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
+    return res;
   } catch {
     return errorResponse("Impossible de récupérer les avis.", 500);
   }
