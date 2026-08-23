@@ -50,7 +50,11 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       isAuthenticated: false,
-      setAuthenticated: (auth) => set({ isAuthenticated: auth }),
+      setAuthenticated: (auth) => {
+        if (get().isAuthenticated !== auth) {
+          set({ isAuthenticated: auth });
+        }
+      },
 
       addItem: async ({ productId, quantity, size, color, variantId, productData }) => {
         try {

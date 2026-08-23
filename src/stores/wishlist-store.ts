@@ -16,7 +16,11 @@ export const useWishlistStore = create<WishlistStore>()(
     (set, get) => ({
       productIds: [],
       isAuthenticated: false,
-      setAuthenticated: (auth) => set({ isAuthenticated: auth }),
+      setAuthenticated: (auth) => {
+        if (get().isAuthenticated !== auth) {
+          set({ isAuthenticated: auth });
+        }
+      },
 
       toggleItem: async (productId) => {
         if (!get().isAuthenticated) {

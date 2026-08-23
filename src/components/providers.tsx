@@ -22,6 +22,8 @@ function StateSync() {
 
   // 1. Synchronize state with backend when authenticated
   useEffect(() => {
+    if (lastStatus.current === status) return;
+
     const authenticated = status === "authenticated";
     useCartStore.getState().setAuthenticated(authenticated);
     useWishlistStore.getState().setAuthenticated(authenticated);
