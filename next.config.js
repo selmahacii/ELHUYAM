@@ -12,6 +12,10 @@ const securityHeaders = [
   { key: "Permissions-Policy",     value: "camera=(), microphone=(), geolocation=(), payment=(self)" },
 ];
 
+const cdnCacheHeaders = [
+  { key: "Cache-Control", value: "public, s-maxage=600, stale-while-revalidate=3600" },
+];
+
 const nextConfig = {
   output: "standalone",
   serverExternalPackages: ["@prisma/client"],
@@ -24,12 +28,6 @@ const nextConfig = {
       { protocol: "https", hostname: "i.pinimg.com" },
       { protocol: "https", hostname: "**.pinimg.com" },
     ],
-    // Images are already resized/compressed at the CDN level via
-    // getOptimizedImageUrl() (Cloudinary w_/q_auto/f_auto params, Unsplash
-    // query params, Pinterest size variants) before reaching next/image, so
-    // Next's own Image Optimization pipeline would just reprocess an already
-    // correctly-sized image — wasted latency and counts against Vercel's
-    // Image Optimization request quota. Keep unoptimized.
     unoptimized: true,
   },
   experimental: {
@@ -43,6 +41,16 @@ const nextConfig = {
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
+      },
+      // Public static & content pages: Cache on Vercel Edge CDN for 10 min, stale-while-revalidate for 1h
+      // Triggers ZERO Vercel Function Invocations & 0 Active CPU when served from CDN!
+      {
+        source: "/(about|contact|faq|privacy|returns|shipping|terms|categories)",
+        headers: cdnCacheHeaders,
+      },
+      {
+        source: "/api/(categories|public-reviews)",
+        headers: cdnCacheHeaders,
       },
     ];
   },
