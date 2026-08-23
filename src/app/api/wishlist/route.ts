@@ -5,18 +5,7 @@ import { auth } from "@/auth";
 
 async function verifySession(actionName: string) {
   const session = await auth();
-  if (!session) {
-    console.warn(`[Wishlist API] ${actionName} failed: No session found (auth() returned null).`);
-    return null;
-  }
-  if (!session.user?.id) {
-    console.warn(`[Wishlist API] ${actionName} failed: Session exists but user.id is missing.`, session);
-    return null;
-  }
-
-  const userExists = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!userExists) {
-    console.warn(`[Wishlist API] ${actionName} failed: User ID "${session.user.id}" from session does not exist in the database.`);
+  if (!session?.user?.id) {
     return null;
   }
   return session;
