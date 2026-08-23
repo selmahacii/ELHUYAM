@@ -134,12 +134,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               });
               window.addEventListener('unhandledrejection', function(e) {
                 try {
+                  var msg = String(e.reason || '');
+                  if (msg.indexOf('AbortError') !== -1 || msg.indexOf('Transition was skipped') !== -1) return;
                   fetch('/api/debug-log', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       level: 'unhandledrejection',
-                      message: String(e.reason),
+                      message: msg,
                       url: window.location.href,
                       stack: e.reason && e.reason.stack ? e.reason.stack : null
                     })
