@@ -15,6 +15,15 @@ interface RegionContextType {
 
 const RegionContext = createContext<RegionContextType | undefined>(undefined);
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: read a cookie by name from document.cookie (client-side only)
+// ─────────────────────────────────────────────────────────────────────────────
+function getClientCookie(name: string): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
 export function RegionProvider({
   children,
   initialRegion,
@@ -24,12 +33,32 @@ export function RegionProvider({
   initialRegion: Region;
   isInternationalEnabled?: boolean;
 }) {
+  // Start with the server-provided initialRegion (may be null if Root Layout
+  // no longer reads cookies — the client-side effect below will hydrate it).
   const activeInitialRegion = isInternationalEnabled ? initialRegion : "ALGERIA";
   const [region, setRegionState] = useState<Region>(activeInitialRegion);
-  const [isRegionModalOpen, setRegionModalOpen] = useState<boolean>(
-    isInternationalEnabled ? !activeInitialRegion : false
-  );
+  const [isRegionModalOpen, setRegionModalOpen] = useState<boolean>(false);
   const router = useRouter();
+
+  // ── Client-side cookie read ───────────────────────────────────────────────
+  // Root Layout no longer calls cookies() server-side (it was causing 100% SSR
+  // by opting the entire route tree out of caching). We read the cookie here
+  // instead, after hydration, with no performance impact.
+  useEffect(() => {
+    if (!isInternationalEnabled) {
+      setRegionState("ALGERIA");
+      setRegionModalOpen(false);
+      return;
+    }
+    const cookieVal = getClientCookie("region");
+    const parsed: Region =
+      cookieVal === "ALGERIA" || cookieVal === "INTERNATIONAL"
+        ? (cookieVal as Region)
+        : null;
+    setRegionState(parsed);
+    // Show the region modal only if no region cookie is set yet
+    setRegionModalOpen(!parsed);
+  }, [isInternationalEnabled]);
 
   const setRegion = (newRegion: Region) => {
     if (!isInternationalEnabled && newRegion === "INTERNATIONAL") {

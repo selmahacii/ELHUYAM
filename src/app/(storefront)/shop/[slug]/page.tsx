@@ -10,6 +10,21 @@ import { getProductImage } from "@/lib/cloudinary";
 
 export const revalidate = 300;
 
+// ── generateStaticParams ──────────────────────────────────────────────────────
+// Pre-render every published product at build time so the first visitor hits
+// the CDN cache (ISR) instead of a cold server render + DB query.
+// dynamicParams = true (default) ensures new products added after the build
+// still render on-demand and are then cached for subsequent visitors.
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const products = await db.product.findMany({
+    where: { archived: false },
+    select: { slug: true },
+  });
+  return products.map((p) => ({ slug: p.slug }));
+}
+
 type Props = { params: Promise<{ slug: string }> };
 
 // React's cache() dedupes this across generateMetadata + the page component

@@ -1,7 +1,6 @@
 "use client";
 
 import { SessionProvider, useSession } from "next-auth/react";
-import type { Session } from "next-auth";
 import { Toaster } from "react-hot-toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
@@ -96,10 +95,20 @@ function StateSync() {
 
 interface ProvidersProps {
   children: React.ReactNode;
-  session?: Session | null;
 }
 
-export default function Providers({ children, session }: ProvidersProps) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Providers — No longer accepts a `session` prop.
+//
+// Previously, RootLayout called auth() server-side and passed the session here,
+// which forced the ENTIRE Next.js route tree into SSR (cookies() + auth() in
+// Root Layout = 0 ISR Reads across the whole app).
+//
+// SessionProvider with no `session` prop auto-fetches /api/auth/session once
+// on the client side. The session is available ~50-100ms after hydration —
+// imperceptible to users, and the navbar handles its own loading state.
+// ─────────────────────────────────────────────────────────────────────────────
+export default function Providers({ children }: ProvidersProps) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -114,7 +123,7 @@ export default function Providers({ children, session }: ProvidersProps) {
   );
 
   return (
-    <SessionProvider session={session} basePath="/api/auth">
+    <SessionProvider basePath="/api/auth">
       <QueryClientProvider client={queryClient}>
         <StateSync />
         {children}

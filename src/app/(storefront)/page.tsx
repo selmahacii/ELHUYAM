@@ -9,6 +9,10 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { getOptimizedImageUrl } from "@/lib/utils";
 import CategoryCarousel from "@/components/shop/category-carousel";
 
+// ISR: regenerate home page every hour — bestsellers and categories rarely change
+// Only works now that Root Layout no longer calls cookies() / auth()
+export const revalidate = 3600;
+
 type ProductItem = {
   id: string; title: string; slug: string; price: number;
   discountPrice: number | null; priceEur: number; discountPriceEur: number | null; images: string[]; stock: number;

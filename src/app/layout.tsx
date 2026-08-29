@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import Providers from "@/components/providers";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
-import { auth } from "@/auth";
 import { Analytics } from "@vercel/analytics/next";
 
 const cormorant = Cormorant_Garamond({
@@ -73,41 +72,28 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-import { cookies } from "next/headers";
-import { RegionProvider, Region } from "@/providers/region-provider";
+import { RegionProvider } from "@/providers/region-provider";
 import { RegionModal } from "@/components/layout/region-modal";
 import { getInternationalOrdersEnabled } from "@/lib/settings";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOT LAYOUT — Intentionally does NOT call cookies() or auth().
+//
+// Calling those Dynamic APIs here would force EVERY route in the app to SSR,
+// including totally static pages like /faq, /terms, /privacy, /shipping —
+// destroying ISR and CDN caching for 100% of routes (confirmed: 0 ISR Reads).
+//
+// Instead:
+// - Session is loaded client-side by SessionProvider (auto-fetches /api/auth/session)
+// - Region cookie is read client-side by RegionProvider (document.cookie in useEffect)
+// - isInternationalEnabled uses unstable_cache (no Dynamic API, safe here)
+// ─────────────────────────────────────────────────────────────────────────────
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
-  
-  const [cookieStore, isInternationalEnabled] = await Promise.all([
-    cookies(),
-    getInternationalOrdersEnabled(),
-  ]);
 
-  const regionCookie = cookieStore.get("region")?.value;
-  let initialRegion: Region = (regionCookie === "ALGERIA" || regionCookie === "INTERNATIONAL") ? (regionCookie as Region) : null;
-
-  if (!isInternationalEnabled) {
-    initialRegion = "ALGERIA";
-  }
-
-  const hasSessionCookie =
-    cookieStore.has("authjs.session-token") ||
-    cookieStore.has("__Secure-authjs.session-token") ||
-    cookieStore.has("next-auth.session-token") ||
-    cookieStore.has("__Secure-next-auth.session-token");
-
-  let session = null;
-  if (hasSessionCookie) {
-    try {
-      session = await auth();
-    } catch (error) {
-      console.error("🔴 CRITICAL ERROR IN ROOT LAYOUT (NextAuth):", error);
-    }
-  }
+  // Safe: uses unstable_cache internally, does NOT call cookies()/headers()
+  const isInternationalEnabled = await getInternationalOrdersEnabled();
 
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className="scroll-smooth">
@@ -172,8 +158,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <RegionProvider initialRegion={initialRegion} isInternationalEnabled={isInternationalEnabled}>
-            <Providers session={session}>
+          {/* initialRegion is null — RegionProvider reads document.cookie client-side */}
+          <RegionProvider initialRegion={null} isInternationalEnabled={isInternationalEnabled}>
+            {/* No session prop — SessionProvider auto-fetches /api/auth/session client-side */}
+            <Providers>
               {children}
               <RegionModal />
               <Analytics />

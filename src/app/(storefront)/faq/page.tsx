@@ -4,6 +4,9 @@ import { getLocale } from "next-intl/server";
 
 export const metadata: Metadata = { title: "FAQ — EL HUYAM" };
 
+// Static page — content never changes between deployments
+export const revalidate = false;
+
 const faqsEn = [
   { q: "How do I find my size?", a: "We provide a detailed size guide on each product page. Our abayas are available from XS to XXXL. For custom sizing requests, please contact us." },
   { q: "What materials do you use?", a: "We use premium fabrics: breathable linen, silky crepe de chine, luxurious chiffon, and soft cotton blends. Material details are specified on each product page." },
