@@ -49,9 +49,9 @@ export default function EmailPreviewModal({
   const customerName =
     `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() ||
     order.user?.name ||
-    "Chère cliente";
+    "Customer";
 
-  const customerEmail = order.user?.email || "Non renseigné";
+  const customerEmail = order.user?.email || "Not specified";
   const currency = order.isInternational ? "EUR" : "DZD";
   const locale = order.isInternational ? "fr-FR" : "fr-DZ";
 
@@ -104,19 +104,18 @@ export default function EmailPreviewModal({
         <!-- Header -->
         <div style="padding: 35px 30px 15px 30px; text-align: center;">
           <h1 style="font-family: Georgia, 'Playfair Display', serif; font-size: 30px; letter-spacing: 6px; color: #141414; text-transform: uppercase; margin: 0; font-weight: 700;">EL HUYAAM</h1>
-          <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">HAUTE COUTURE MODESTE</p>
+          <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">MODEST HAUTE COUTURE</p>
           <div style="margin: 16px auto 0 auto; color: #C5A880; font-size: 13px;">✦ ✦ ✦</div>
         </div>
 
         <!-- Greeting -->
         <div style="padding: 15px 35px 25px 35px; text-align: center;">
           <div style="display: inline-block; background: #FAF5EE; border: 1px solid #E3D5C1; color: #8A6538; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; margin-bottom: 18px;">
-            ✦ COMMANDE CONFIRMÉE ✦
+            ✦ ORDER CONFIRMED & DISPATCHED ✦
           </div>
-          <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Chère ${customerName},</h2>
+          <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Dear ${customerName},</h2>
           <p style="color: #6B5744; font-size: 14px; line-height: 1.8; margin: 0;">
-            Nous avons le grand plaisir de vous confirmer la bonne réception de votre commande. 
-            Nos artisans préparent dès à présent vos créations avec tout le soin, la délicatesse et le savoir-faire de la maison <strong>EL HUYAAM</strong>.
+            We are delighted to confirm that your order <strong>#${order.orderNumber}</strong> has been officially confirmed and handed over to our delivery partner (<strong>ZR Express</strong>). Your bespoke pieces are now on their way to you with the utmost care and refinement.
           </p>
         </div>
 
@@ -124,10 +123,10 @@ export default function EmailPreviewModal({
         <div style="padding: 0 35px 20px 35px;">
           <div style="background: #FDFBF7; border: 1px dashed #E2D3BE; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
             <div style="font-size: 11px; color: #8C7355; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">
-              RÉFÉRENCE : <span style="font-family: monospace; font-size: 13.5px; color: #141414; font-weight: bold;">#${order.orderNumber}</span>
+              ORDER NUMBER: <span style="font-family: monospace; font-size: 13.5px; color: #141414; font-weight: bold;">#${order.orderNumber}</span>
             </div>
-            <div style="font-size: 11px; color: #357A38; font-weight: 700; text-transform: uppercase;">
-              ✓ EN PRÉPARATION
+            <div style="font-size: 11px; color: #236E39; font-weight: 700; text-transform: uppercase;">
+              ✓ HANDED OVER TO COURIER
             </div>
           </div>
         </div>
@@ -137,9 +136,9 @@ export default function EmailPreviewModal({
           <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
             <thead>
               <tr>
-                <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CRÉATION</th>
-                <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTÉ</th>
-                <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRIX</th>
+                <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CREATION</th>
+                <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTY</th>
+                <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRICE</th>
               </tr>
             </thead>
             <tbody>
@@ -152,7 +151,7 @@ export default function EmailPreviewModal({
         <div style="padding: 0 35px 25px 35px;">
           <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
             <div style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-              MONTANT TOTAL
+              TOTAL AMOUNT
             </div>
             <div style="font-size: 18px; font-weight: 800; color: #141414;">
               ${formattedTotal}
@@ -162,30 +161,30 @@ export default function EmailPreviewModal({
 
         <!-- CTAs -->
         <div style="padding: 0 35px 30px 35px; text-align: center;">
-          <a href="https://www.elhuyam.com/account/orders/${order.orderNumber}"
+          <a href="https://www.elhuyam.com/orders/track?orderNumber=${order.orderNumber}"
              style="display: block; width: 85%; max-width: 360px; margin: 0 auto 10px auto; padding: 14px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 11.5px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center;">
-            SUIVRE MA COMMANDE EN DIRECT →
+            TRACK YOUR ORDER LIVE →
           </a>
           <a href="https://wa.me/213772515448"
              style="display: inline-block; padding: 9px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11px; font-weight: 700; border-radius: 6px; text-align: center;">
-            💬 Conseillère Privée sur WhatsApp (+213 772 51 54 48)
+            💬 VIP Concierge on WhatsApp (+213 772 51 54 48)
           </a>
         </div>
 
         <!-- Reassurance -->
         <div style="background-color: #FDFBF7; border-top: 1px solid #EBE4D8; border-bottom: 1px solid #EBE4D8; padding: 18px 20px; display: flex; justify-content: space-around; text-align: center;">
-          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">✦ Confection Noble</div>
-          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🚚 58 Wilayas & Monde</div>
-          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🤍 Service Privilège</div>
+          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">✦ Bespoke Tailoring</div>
+          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🚚 58 Wilayas & World</div>
+          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🤍 VIP Concierge</div>
         </div>
 
         <!-- Footer -->
         <div style="background-color: #FAF9F6; padding: 25px 30px; text-align: center;">
           <p style="font-family: Georgia, serif; font-style: italic; color: #7A5C38; font-size: 13px; margin: 0 0 8px 0;">
-            « La grâce et l&apos;élégance dans la modestie. »
+            « Grace and elegance in modesty. »
           </p>
           <p style="color: #A39281; font-size: 10.5px; margin: 0;">
-            © ${new Date().getFullYear()} EL HUYAAM. Tous droits réservés.
+            © ${new Date().getFullYear()} EL HUYAAM. All rights reserved.
           </p>
         </div>
 
@@ -203,18 +202,18 @@ export default function EmailPreviewModal({
         <!-- Header -->
         <div style="padding: 35px 30px 15px 30px; text-align: center;">
           <h1 style="font-family: Georgia, 'Playfair Display', serif; font-size: 30px; letter-spacing: 6px; color: #141414; text-transform: uppercase; margin: 0; font-weight: 700;">EL HUYAAM</h1>
-          <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">HAUTE COUTURE MODESTE</p>
+          <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">MODEST HAUTE COUTURE</p>
           <div style="margin: 16px auto 0 auto; color: #C5A880; font-size: 13px;">✦ ✦ ✦</div>
         </div>
 
         <!-- Status -->
         <div style="padding: 15px 35px 20px 35px; text-align: center;">
           <div style="display: inline-block; background: #EEF8F1; border: 1px solid #C4E8CD; color: #236E39; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; margin-bottom: 18px;">
-            🚚 COLIS EXPÉDIÉ & REMIS AU LIVREUR
+            🚚 PARCEL DISPATCHED & IN TRANSIT
           </div>
-          <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Chère ${customerName},</h2>
+          <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Dear ${customerName},</h2>
           <p style="color: #6B5744; font-size: 14px; line-height: 1.8; margin: 0;">
-            Excellente nouvelle ! Votre précieux colis a été soigneusement emballé et confié à notre transporteur partenaire (<strong>ZR Express</strong>). Il est en cours d&apos;acheminement vers votre adresse.
+            Wonderful news! Your order has been carefully packaged and handed over to our trusted courier partner (<strong>ZR Express</strong>). It is now actively in transit to your delivery address.
           </p>
         </div>
 
@@ -222,13 +221,13 @@ export default function EmailPreviewModal({
         <div style="padding: 0 35px 25px 35px;">
           <div style="background: #FAF7F2; border: 1.5px dashed #C5A880; border-radius: 12px; padding: 18px 20px; text-align: center;">
             <p style="font-size: 10.5px; color: #8A6538; text-transform: uppercase; font-weight: 800; letter-spacing: 2px; margin: 0 0 5px 0;">
-              NUMÉRO DE SUIVI DU COLIS
+              OFFICIAL TRACKING NUMBER
             </p>
             <p style="font-family: monospace; font-size: 19px; font-weight: 800; color: #141414; letter-spacing: 2px; margin: 0 0 6px 0;">
               ${trackingToUse}
             </p>
             <p style="font-size: 11px; color: #7A5C38; margin: 0;">
-              Transporteur : <strong>ZR Express</strong> • Suivi en temps réel
+              Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Express Delivery
             </p>
           </div>
         </div>
@@ -238,9 +237,9 @@ export default function EmailPreviewModal({
           <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
             <thead>
               <tr>
-                <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CRÉATION</th>
-                <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTÉ</th>
-                <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRIX</th>
+                <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CREATION</th>
+                <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTY</th>
+                <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRICE</th>
               </tr>
             </thead>
             <tbody>
@@ -253,7 +252,7 @@ export default function EmailPreviewModal({
         <div style="padding: 0 35px 25px 35px;">
           <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
             <div style="font-family: Georgia, serif; font-size: 13px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1px;">
-              MONTANT TOTAL À RÉGLER
+              TOTAL AMOUNT DUE
             </div>
             <div style="font-size: 17px; font-weight: 800; color: #141414;">
               ${formattedTotal}
@@ -265,21 +264,21 @@ export default function EmailPreviewModal({
         <div style="padding: 0 35px 30px 35px; text-align: center;">
           <a href="https://www.elhuyam.com/orders/track?orderNumber=${order.orderNumber}&phone=${trackingToUse}"
              style="display: block; width: 85%; max-width: 360px; margin: 0 auto 10px auto; padding: 14px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 11.5px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center;">
-            SUIVRE MON COLIS EN DIRECT →
+            TRACK YOUR SHIPMENT LIVE →
           </a>
           <a href="https://wa.me/213772515448"
              style="display: inline-block; padding: 9px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11px; font-weight: 700; border-radius: 6px; text-align: center;">
-            💬 Contacter le Service Client sur WhatsApp
+            💬 Contact Customer Support on WhatsApp
           </a>
         </div>
 
         <!-- Footer -->
         <div style="background-color: #FAF9F6; padding: 25px 30px; text-align: center;">
           <p style="font-family: Georgia, serif; font-style: italic; color: #7A5C38; font-size: 13px; margin: 0 0 8px 0;">
-            « La grâce et l&apos;élégance dans la modestie. »
+            « Grace and elegance in modesty. »
           </p>
           <p style="color: #A39281; font-size: 10.5px; margin: 0;">
-            © ${new Date().getFullYear()} EL HUYAAM. Tous droits réservés.
+            © ${new Date().getFullYear()} EL HUYAAM. All rights reserved.
           </p>
         </div>
 
@@ -289,15 +288,15 @@ export default function EmailPreviewModal({
 
   const activeSubject =
     activeTab === "confirmation"
-      ? `Commande Confirmée #${order.orderNumber} ✦ EL HUYAAM`
-      : `Votre colis est en route ! 🚚 #${order.orderNumber} ✦ EL HUYAAM`;
+      ? `Order Confirmed & Dispatched #${order.orderNumber} ✦ EL HUYAAM`
+      : `Your Parcel is on Its Way! 🚚 #${order.orderNumber} ✦ EL HUYAAM`;
 
   const currentHtml = activeTab === "confirmation" ? confirmationHtml : shippedHtml;
 
   const handleCopyHtml = () => {
     navigator.clipboard.writeText(currentHtml);
     setCopied(true);
-    toast.success("Code HTML de l'email copié !");
+    toast.success("Email HTML code copied!");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -321,10 +320,10 @@ export default function EmailPreviewModal({
             </div>
             <div>
               <h3 className="font-display text-base font-bold text-slate-900 flex items-center gap-2">
-                Aperçu de l&apos;E-mail Client (Haute Couture)
+                Customer Email Preview (Haute Couture)
               </h3>
               <p className="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
-                <span>Destinataire :</span>
+                <span>Recipient:</span>
                 <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
                   {customerEmail}
                 </span>
@@ -354,7 +353,7 @@ export default function EmailPreviewModal({
               }`}
             >
               <FileCheck className="w-4 h-4" />
-              <span>📋 Confirmation de Commande</span>
+              <span>📋 Order Confirmed & Dispatched</span>
             </button>
             <button
               type="button"
@@ -366,7 +365,7 @@ export default function EmailPreviewModal({
               }`}
             >
               <Truck className="w-4 h-4" />
-              <span>🚚 Expédition / Remise Colis</span>
+              <span>🚚 Parcel in Transit</span>
             </button>
           </div>
 
@@ -377,14 +376,14 @@ export default function EmailPreviewModal({
               className="px-3 py-1.5 text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-              <span>{copied ? "Copié !" : "Copier HTML"}</span>
+              <span>{copied ? "Copied!" : "Copy HTML"}</span>
             </button>
           </div>
         </div>
 
         {/* Subject header preview */}
         <div className="px-6 py-2.5 bg-amber-50/40 border-b border-amber-100 flex items-center gap-2 text-xs shrink-0">
-          <span className="font-bold text-amber-900 uppercase tracking-wider text-[10px]">Objet :</span>
+          <span className="font-bold text-amber-900 uppercase tracking-wider text-[10px]">Subject:</span>
           <span className="font-semibold text-slate-800 font-sans">{activeSubject}</span>
         </div>
 
@@ -399,14 +398,14 @@ export default function EmailPreviewModal({
         {/* Modal Footer */}
         <div className="px-6 py-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 shrink-0">
           <span>
-            Expéditeur automatique : <strong className="text-slate-800 font-mono">EL HUYAAM &lt;elhuyamcollection09@gmail.com&gt;</strong>
+            Sender: <strong className="text-slate-800 font-mono">EL HUYAAM &lt;elhuyamcollection09@gmail.com&gt;</strong>
           </span>
           <button
             type="button"
             onClick={onClose}
             className="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all shadow-xs cursor-pointer"
           >
-            Fermer l&apos;aperçu
+            Close Preview
           </button>
         </div>
       </div>

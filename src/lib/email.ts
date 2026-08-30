@@ -47,16 +47,16 @@ async function sendEmail({ to, subject, html }: EmailOptions) {
   });
 }
 
-// ─── 1. Welcome Email (Haute Couture) ─────────────────────────────────────────
+// ─── 1. Welcome Email (English Luxury) ────────────────────────────────────────
 export async function sendWelcomeEmail(name: string, email: string) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.elhuyam.com";
   await sendEmail({
     to: email,
-    subject: "Bienvenue dans l'univers EL HUYAAM ✦",
+    subject: "Welcome to the World of EL HUYAAM ✦",
     html: `
       <!DOCTYPE html>
-      <html lang="fr">
-      <head><meta charset="utf-8"><title>Bienvenue chez EL HUYAAM</title></head>
+      <html lang="en">
+      <head><meta charset="utf-8"><title>Welcome to EL HUYAAM</title></head>
       <body style="margin: 0; padding: 0; background-color: #F7F5F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F7F5F0; padding: 40px 10px;">
           <tr>
@@ -70,7 +70,7 @@ export async function sendWelcomeEmail(name: string, email: string) {
                 <tr>
                   <td align="center" style="padding: 40px 30px 20px 30px; text-align: center;">
                     <h1 style="font-family: Georgia, 'Playfair Display', serif; font-size: 30px; letter-spacing: 6px; color: #141414; text-transform: uppercase; margin: 0; font-weight: 700;">EL HUYAAM</h1>
-                    <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">HAUTE COUTURE MODESTE</p>
+                    <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">MODEST HAUTE COUTURE</p>
                     <div style="margin: 18px auto 0 auto; color: #C5A880; font-size: 13px;">✦ ✦ ✦</div>
                   </td>
                 </tr>
@@ -78,24 +78,24 @@ export async function sendWelcomeEmail(name: string, email: string) {
                 <tr>
                   <td style="padding: 10px 40px 30px 40px; text-align: center;">
                     <div style="display: inline-block; background: #FAF5EE; border: 1px solid #E3D5C1; color: #8A6538; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; margin-bottom: 20px;">
-                      ✦ BIENVENUE DANS LA MAISON ✦
+                      ✦ WELCOME TO OUR MAISON ✦
                     </div>
-                    <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 16px 0; font-weight: normal;">Chère ${name},</h2>
+                    <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 16px 0; font-weight: normal;">Dear ${name},</h2>
                     <p style="color: #6B5744; font-size: 14.5px; line-height: 1.8; margin: 0 0 24px 0;">
-                      C&apos;est avec un immense privilège que nous vous accueillons au sein de la communauté <strong>EL HUYAAM</strong>. 
-                      Notre maison célèbre l&apos;élégance intemporelle, la grâce et le raffinement de la modest fashion à travers des créations aux étoffes d&apos;exception.
+                      It is an honor to welcome you to the <strong>EL HUYAAM</strong> family. 
+                      Our house celebrates timeless elegance, modesty, and grace through bespoke craftsmanship and noble fabrics.
                     </p>
                     <a href="${appUrl}/shop"
                        style="display: inline-block; padding: 15px 36px; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 6px;">
-                      DÉCOUVRIR LA NOUVELLE COLLECTION →
+                      DISCOVER NEW COLLECTION →
                     </a>
                   </td>
                 </tr>
                 <!-- Footer -->
                 <tr>
                   <td style="background-color: #FAF9F6; border-top: 1px solid #EBE4D8; padding: 25px 30px; text-align: center;">
-                    <p style="font-family: Georgia, serif; font-style: italic; color: #8C7355; font-size: 13px; margin: 0 0 8px 0;">« La grâce et l&apos;élégance dans la modestie. »</p>
-                    <p style="color: #A39281; font-size: 11px; margin: 0;">© ${new Date().getFullYear()} EL HUYAAM. Tous droits réservés.</p>
+                    <p style="font-family: Georgia, serif; font-style: italic; color: #8C7355; font-size: 13px; margin: 0 0 8px 0;">« Grace and elegance in modesty. »</p>
+                    <p style="color: #A39281; font-size: 11px; margin: 0;">© ${new Date().getFullYear()} EL HUYAAM. All rights reserved.</p>
                   </td>
                 </tr>
               </table>
@@ -108,17 +108,17 @@ export async function sendWelcomeEmail(name: string, email: string) {
   });
 }
 
-// ─── 2. Password Reset Email ──────────────────────────────────────────────────
+// ─── 2. Password Reset Email (English Luxury) ─────────────────────────────────
 export async function sendPasswordResetEmail(name: string, email: string, token: string) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.elhuyam.com";
   const resetUrl = `${appUrl}/auth/reset-password?token=${token}`;
   await sendEmail({
     to: email,
-    subject: "Réinitialisation de votre mot de passe — EL HUYAAM",
+    subject: "Reset Your EL HUYAAM Password ✦",
     html: `
       <!DOCTYPE html>
-      <html lang="fr">
-      <head><meta charset="utf-8"><title>Réinitialisation du mot de passe</title></head>
+      <html lang="en">
+      <head><meta charset="utf-8"><title>Reset Your Password — EL HUYAAM</title></head>
       <body style="margin: 0; padding: 0; background-color: #F7F5F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F7F5F0; padding: 40px 10px;">
           <tr>
@@ -130,29 +130,29 @@ export async function sendPasswordResetEmail(name: string, email: string, token:
                 <tr>
                   <td align="center" style="padding: 40px 30px 20px 30px; text-align: center;">
                     <h1 style="font-family: Georgia, 'Playfair Display', serif; font-size: 30px; letter-spacing: 6px; color: #141414; text-transform: uppercase; margin: 0; font-weight: 700;">EL HUYAAM</h1>
-                    <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">HAUTE COUTURE MODESTE</p>
+                    <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">MODEST HAUTE COUTURE</p>
                     <div style="margin: 18px auto 0 auto; color: #C5A880; font-size: 13px;">✦ ✦ ✦</div>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 40px 35px 40px; text-align: center;">
-                    <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 20px; margin: 0 0 16px 0; font-weight: normal;">Réinitialisation de votre mot de passe</h2>
+                    <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 20px; margin: 0 0 16px 0; font-weight: normal;">Password Reset Request</h2>
                     <p style="color: #6B5744; font-size: 14.5px; line-height: 1.8; margin: 0 0 24px 0;">
-                      Bonjour ${name}, nous avons reçu une demande de réinitialisation du mot de passe associé à votre compte. 
-                      Ce lien sécurisé expirera dans 1 heure.
+                      Hello ${name}, we received a request to reset your password. 
+                      This secure link will expire in 1 hour.
                     </p>
                     <a href="${resetUrl}"
                        style="display: inline-block; padding: 14px 34px; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 6px;">
-                      RÉINITIALISER MON MOT DE PASSE →
+                      RESET PASSWORD →
                     </a>
                     <p style="color: #A39281; font-size: 12px; margin-top: 30px; line-height: 1.6;">
-                      Si vous n&apos;êtes pas à l&apos;origine de cette demande, vous pouvez ignorer cet e-mail en toute sérénité.
+                      If you did not request this, you can safely ignore this email.
                     </p>
                   </td>
                 </tr>
                 <tr>
                   <td style="background-color: #FAF9F6; border-top: 1px solid #EBE4D8; padding: 20px 30px; text-align: center;">
-                    <p style="color: #A39281; font-size: 11px; margin: 0;">© ${new Date().getFullYear()} EL HUYAAM. Tous droits réservés.</p>
+                    <p style="color: #A39281; font-size: 11px; margin: 0;">© ${new Date().getFullYear()} EL HUYAAM. All rights reserved.</p>
                   </td>
                 </tr>
               </table>
@@ -165,7 +165,7 @@ export async function sendPasswordResetEmail(name: string, email: string, token:
   });
 }
 
-// ─── 3. Order Confirmation Email (Haute Couture Luxury) ──────────────────────
+// ─── 3. Order Confirmation Email (English - Confirmed & Dispatched) ───────────
 export async function sendOrderConfirmationEmail(
   email: string,
   name: string,
@@ -213,11 +213,11 @@ export async function sendOrderConfirmationEmail(
 
   await sendEmail({
     to: email,
-    subject: `Commande Confirmée #${orderNumber} ✦ EL HUYAAM`,
+    subject: `Order Confirmed & Dispatched #${orderNumber} ✦ EL HUYAAM`,
     html: `
       <!DOCTYPE html>
-      <html lang="fr">
-      <head><meta charset="utf-8"><title>Commande Confirmée — EL HUYAAM</title></head>
+      <html lang="en">
+      <head><meta charset="utf-8"><title>Order Confirmed & Dispatched — EL HUYAAM</title></head>
       <body style="margin: 0; padding: 0; background-color: #F7F5F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F7F5F0; padding: 40px 10px;">
           <tr>
@@ -233,7 +233,7 @@ export async function sendOrderConfirmationEmail(
                 <tr>
                   <td align="center" style="padding: 40px 30px 15px 30px; text-align: center;">
                     <h1 style="font-family: Georgia, 'Playfair Display', serif; font-size: 32px; letter-spacing: 7px; color: #141414; text-transform: uppercase; margin: 0; font-weight: 700;">EL HUYAAM</h1>
-                    <p style="font-size: 10.5px; letter-spacing: 4px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">HAUTE COUTURE MODESTE</p>
+                    <p style="font-size: 10.5px; letter-spacing: 4px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">MODEST HAUTE COUTURE</p>
                     <div style="margin: 18px auto 0 auto; color: #C5A880; font-size: 13px;">✦ ✦ ✦</div>
                   </td>
                 </tr>
@@ -242,26 +242,25 @@ export async function sendOrderConfirmationEmail(
                 <tr>
                   <td style="padding: 15px 40px 25px 40px; text-align: center;">
                     <div style="display: inline-block; background: #FAF5EE; border: 1px solid #E3D5C1; color: #8A6538; font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; padding: 7px 18px; border-radius: 24px; margin-bottom: 20px;">
-                      ✦ COMMANDE CONFIRMÉE ✦
+                      ✦ ORDER CONFIRMED & DISPATCHED ✦
                     </div>
-                    <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 23px; margin: 0 0 14px 0; font-weight: normal;">Chère ${name},</h2>
+                    <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 23px; margin: 0 0 14px 0; font-weight: normal;">Dear ${name},</h2>
                     <p style="color: #6B5744; font-size: 14.5px; line-height: 1.85; margin: 0;">
-                      Nous avons le grand plaisir de vous confirmer la bonne réception de votre commande. 
-                      Nos artisans et couturières préparent dès à présent vos créations avec tout le soin, la délicatesse et le savoir-faire qui caractérisent la maison <strong>EL HUYAAM</strong>.
+                      We are delighted to confirm that your order <strong>#${orderNumber}</strong> has been officially confirmed and handed over to our shipping partner (<strong>ZR Express</strong>). Your bespoke pieces are now on their way to you with the utmost care and refinement.
                     </p>
                   </td>
                 </tr>
 
-                <!-- Order Reference Card -->
+                <!-- Order Reference & Courier Card -->
                 <tr>
                   <td style="padding: 0 40px 25px 40px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: #FDFBF7; border: 1px dashed #E2D3BE; border-radius: 12px; padding: 16px 20px;">
                       <tr>
                         <td align="left" style="font-size: 11px; color: #8C7355; text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px;">
-                          RÉFÉRENCE COMMANDE : <span style="font-family: monospace; font-size: 14px; color: #141414; font-weight: bold; letter-spacing: 1px;">#${orderNumber}</span>
+                          ORDER NUMBER: <span style="font-family: monospace; font-size: 14px; color: #141414; font-weight: bold; letter-spacing: 1px;">#${orderNumber}</span>
                         </td>
-                        <td align="right" style="font-size: 11px; color: #357A38; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                          ✓ EN PRÉPARATION
+                        <td align="right" style="font-size: 11px; color: #236E39; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                          ✓ HANDED OVER TO COURIER
                         </td>
                       </tr>
                     </table>
@@ -274,9 +273,9 @@ export async function sendOrderConfirmationEmail(
                     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
                       <thead>
                         <tr>
-                          <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CRÉATION</th>
-                          <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTÉ</th>
-                          <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRIX</th>
+                          <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CREATION</th>
+                          <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTY</th>
+                          <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRICE</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -292,7 +291,7 @@ export async function sendOrderConfirmationEmail(
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 24px;">
                       <tr>
                         <td align="left" style="font-family: Georgia, serif; font-size: 14px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-                          MONTANT TOTAL
+                          TOTAL AMOUNT
                         </td>
                         <td align="right" style="font-family: -apple-system, sans-serif; font-size: 19px; font-weight: 800; color: #141414; letter-spacing: 0.5px;">
                           ${formattedTotal}
@@ -305,13 +304,13 @@ export async function sendOrderConfirmationEmail(
                 <!-- Dual Action CTAs -->
                 <tr>
                   <td align="center" style="padding: 0 40px 35px 40px;">
-                    <a href="${appUrl}/account/orders/${orderNumber}"
+                    <a href="${appUrl}/orders/track?orderNumber=${orderNumber}"
                        style="display: block; width: 85%; max-width: 380px; padding: 15px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center; margin-bottom: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.12);">
-                      SUIVRE MA COMMANDE EN DIRECT →
+                      TRACK YOUR ORDER LIVE →
                     </a>
-                    <a href="https://wa.me/213772515448?text=${encodeURIComponent(`Bonjour, j'ai une question concernant ma commande #${orderNumber}`)}"
+                    <a href="https://wa.me/213772515448?text=${encodeURIComponent(`Hello, I have a question regarding my confirmed order #${orderNumber}`)}"
                        style="display: inline-block; padding: 10px 24px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px; border-radius: 6px; text-align: center;">
-                      💬 Conseillère Privée sur WhatsApp (+213 772 51 54 48)
+                      💬 VIP Concierge on WhatsApp (+213 772 51 54 48)
                     </a>
                   </td>
                 </tr>
@@ -323,18 +322,18 @@ export async function sendOrderConfirmationEmail(
                       <tr>
                         <td width="33%" style="padding: 0 6px;">
                           <div style="font-size: 14px; margin-bottom: 4px;">✦</div>
-                          <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">Confection Noble</div>
-                          <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">Tissus et coupes d&apos;exception</div>
+                          <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">Bespoke Tailoring</div>
+                          <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">Noble fabrics & fine finishes</div>
                         </td>
                         <td width="33%" style="padding: 0 6px; border-left: 1px solid #EADBCE; border-right: 1px solid #EADBCE;">
                           <div style="font-size: 14px; margin-bottom: 4px;">🚚</div>
-                          <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">58 Wilayas & Monde</div>
-                          <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">Livraison rapide et suivie</div>
+                          <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">58 Wilayas & Worldwide</div>
+                          <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">ZR Express tracked courier</div>
                         </td>
                         <td width="33%" style="padding: 0 6px;">
                           <div style="font-size: 14px; margin-bottom: 4px;">🤍</div>
-                          <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">Service Privilège</div>
-                          <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">À votre écoute 7j/7</div>
+                          <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">VIP Concierge</div>
+                          <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">At your service 7 days a week</div>
                         </td>
                       </tr>
                     </table>
@@ -345,13 +344,13 @@ export async function sendOrderConfirmationEmail(
                 <tr>
                   <td style="background-color: #FAF9F6; padding: 30px 30px; text-align: center;">
                     <p style="font-family: Georgia, serif; font-style: italic; color: #7A5C38; font-size: 13.5px; margin: 0 0 10px 0;">
-                      « La grâce et l&apos;élégance dans la modestie. »
+                      « Grace and elegance in modesty. »
                     </p>
                     <p style="color: #9E8C7A; font-size: 11.5px; line-height: 1.6; margin: 0 0 12px 0;">
-                      Une question ? Écrivez-nous directement à <a href="mailto:elhuyamcollection09@gmail.com" style="color: #8A6538; text-decoration: underline; font-weight: 600;">elhuyamcollection09@gmail.com</a>.
+                      If you have any questions, reply directly to this email or reach us at <a href="mailto:elhuyamcollection09@gmail.com" style="color: #8A6538; text-decoration: underline; font-weight: 600;">elhuyamcollection09@gmail.com</a>.
                     </p>
                     <p style="color: #B8A99A; font-size: 10.5px; margin: 0;">
-                      © ${new Date().getFullYear()} EL HUYAAM. Tous droits réservés.
+                      © ${new Date().getFullYear()} EL HUYAAM. All rights reserved.
                     </p>
                   </td>
                 </tr>
@@ -366,7 +365,7 @@ export async function sendOrderConfirmationEmail(
   });
 }
 
-// ─── 4. Order Shipped Email (Haute Couture Luxury) ────────────────────────────
+// ─── 4. Order Shipped Email (English - Handed Over with Tracking Number) ───────
 export async function sendOrderShippedEmail(
   email: string,
   name: string,
@@ -415,11 +414,11 @@ export async function sendOrderShippedEmail(
 
   await sendEmail({
     to: email,
-    subject: `Votre colis est en route ! 🚚 #${orderNumber} ✦ EL HUYAAM`,
+    subject: `Your Parcel is on Its Way! 🚚 #${orderNumber} ✦ EL HUYAAM`,
     html: `
       <!DOCTYPE html>
-      <html lang="fr">
-      <head><meta charset="utf-8"><title>Votre commande est en route — EL HUYAAM</title></head>
+      <html lang="en">
+      <head><meta charset="utf-8"><title>Your Order is on Its Way — EL HUYAAM</title></head>
       <body style="margin: 0; padding: 0; background-color: #F7F5F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F7F5F0; padding: 40px 10px;">
           <tr>
@@ -435,7 +434,7 @@ export async function sendOrderShippedEmail(
                 <tr>
                   <td align="center" style="padding: 40px 30px 15px 30px; text-align: center;">
                     <h1 style="font-family: Georgia, 'Playfair Display', serif; font-size: 32px; letter-spacing: 7px; color: #141414; text-transform: uppercase; margin: 0; font-weight: 700;">EL HUYAAM</h1>
-                    <p style="font-size: 10.5px; letter-spacing: 4px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">HAUTE COUTURE MODESTE</p>
+                    <p style="font-size: 10.5px; letter-spacing: 4px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">MODEST HAUTE COUTURE</p>
                     <div style="margin: 18px auto 0 auto; color: #C5A880; font-size: 13px;">✦ ✦ ✦</div>
                   </td>
                 </tr>
@@ -444,11 +443,11 @@ export async function sendOrderShippedEmail(
                 <tr>
                   <td style="padding: 15px 40px 20px 40px; text-align: center;">
                     <div style="display: inline-block; background: #EEF8F1; border: 1px solid #C4E8CD; color: #236E39; font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; padding: 7px 18px; border-radius: 24px; margin-bottom: 20px;">
-                      🚚 COLIS EXPÉDIÉ & REMIS AU LIVREUR
+                      🚚 PARCEL DISPATCHED & IN TRANSIT
                     </div>
-                    <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 23px; margin: 0 0 14px 0; font-weight: normal;">Chère ${name},</h2>
+                    <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 23px; margin: 0 0 14px 0; font-weight: normal;">Dear ${name},</h2>
                     <p style="color: #6B5744; font-size: 14.5px; line-height: 1.85; margin: 0;">
-                      Excellente nouvelle ! Votre précieux colis a été soigneusement emballé et confié à notre transporteur partenaire (<strong>ZR Express</strong>). Il est en cours d&apos;acheminement vers votre adresse.
+                      Wonderful news! Your order has been carefully packaged and handed over to our trusted courier partner (<strong>ZR Express</strong>). It is now actively in transit to your delivery address.
                     </p>
                   </td>
                 </tr>
@@ -460,13 +459,13 @@ export async function sendOrderShippedEmail(
                       <tr>
                         <td align="center">
                           <p style="font-size: 11px; color: #8A6538; text-transform: uppercase; font-weight: 800; letter-spacing: 2px; margin: 0 0 6px 0;">
-                            NUMÉRO DE SUIVI DU COLIS
+                            OFFICIAL TRACKING NUMBER
                           </p>
                           <p style="font-family: monospace; font-size: 20px; font-weight: 800; color: #141414; letter-spacing: 2px; margin: 0 0 8px 0;">
                             ${trackingNumber}
                           </p>
                           <p style="font-size: 11.5px; color: #7A5C38; margin: 0;">
-                            Transporteur : <strong>ZR Express</strong> • Livraison suivie à domicile / bureau
+                            Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Express Delivery
                           </p>
                         </td>
                       </tr>
@@ -477,13 +476,13 @@ export async function sendOrderShippedEmail(
                 <!-- Product Items Table -->
                 <tr>
                   <td style="padding: 0 40px 20px 40px;">
-                    <p style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #9A7A52; text-transform: uppercase; margin: 0 0 10px 0;">RÉCAPITULATIF DE LA COMMANDE #${orderNumber}</p>
+                    <p style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #9A7A52; text-transform: uppercase; margin: 0 0 10px 0;">ORDER SUMMARY #${orderNumber}</p>
                     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
                       <thead>
                         <tr>
-                          <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CRÉATION</th>
-                          <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTÉ</th>
-                          <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRIX</th>
+                          <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CREATION</th>
+                          <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTY</th>
+                          <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRICE</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -499,7 +498,7 @@ export async function sendOrderShippedEmail(
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 16px 24px;">
                       <tr>
                         <td align="left" style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-                          MONTANT TOTAL À RÉGLER
+                          TOTAL AMOUNT DUE
                         </td>
                         <td align="right" style="font-family: -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #141414;">
                           ${formattedTotal}
@@ -514,11 +513,11 @@ export async function sendOrderShippedEmail(
                   <td align="center" style="padding: 0 40px 35px 40px;">
                     <a href="${appUrl}/orders/track?orderNumber=${orderNumber}&phone=${trackingNumber}"
                        style="display: block; width: 85%; max-width: 380px; padding: 15px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center; margin-bottom: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.12);">
-                      SUIVRE MON COLIS EN DIRECT →
+                      TRACK YOUR SHIPMENT LIVE →
                     </a>
-                    <a href="https://wa.me/213772515448?text=${encodeURIComponent(`Bonjour, je souhaite des nouvelles de mon colis #${orderNumber} (${trackingNumber})`)}"
+                    <a href="https://wa.me/213772515448?text=${encodeURIComponent(`Hello, I would like an update on my shipment #${orderNumber} (${trackingNumber})`)}"
                        style="display: inline-block; padding: 10px 24px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px; border-radius: 6px; text-align: center;">
-                      💬 Contacter le Service Client sur WhatsApp
+                      💬 Contact Customer Support on WhatsApp
                     </a>
                   </td>
                 </tr>
@@ -527,13 +526,13 @@ export async function sendOrderShippedEmail(
                 <tr>
                   <td style="background-color: #FAF9F6; border-top: 1px solid #EBE4D8; padding: 30px 30px; text-align: center;">
                     <p style="font-family: Georgia, serif; font-style: italic; color: #7A5C38; font-size: 13.5px; margin: 0 0 10px 0;">
-                      « La grâce et l&apos;élégance dans la modestie. »
+                      « Grace and elegance in modesty. »
                     </p>
                     <p style="color: #9E8C7A; font-size: 11.5px; line-height: 1.6; margin: 0 0 12px 0;">
-                      Si vous avez la moindre question, répondez directement à cet e-mail ou écrivez à <a href="mailto:elhuyamcollection09@gmail.com" style="color: #8A6538; text-decoration: underline; font-weight: 600;">elhuyamcollection09@gmail.com</a>.
+                      If you have any questions, reply directly to this email or reach us at <a href="mailto:elhuyamcollection09@gmail.com" style="color: #8A6538; text-decoration: underline; font-weight: 600;">elhuyamcollection09@gmail.com</a>.
                     </p>
                     <p style="color: #B8A99A; font-size: 10.5px; margin: 0;">
-                      © ${new Date().getFullYear()} EL HUYAAM. Tous droits réservés.
+                      © ${new Date().getFullYear()} EL HUYAAM. All rights reserved.
                     </p>
                   </td>
                 </tr>
