@@ -346,7 +346,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
             onClick={() => setIsEmailModalOpen(true)}
           >
             <Mail className="w-4 h-4 text-indigo-600" />
-            📧 Aperçu de l&apos;E-mail Client (Confirmation & Expédition)
+            📧 Aperçu & Envoi Direct de l&apos;E-mail Client
           </Button>
         </div>
 
