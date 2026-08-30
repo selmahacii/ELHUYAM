@@ -22,7 +22,7 @@ export async function generateStaticParams() {
     where: { archived: false },
     select: { slug: true },
   });
-  return products.map((p) => ({ slug: p.slug }));
+  return products.map((p: { slug: string }) => ({ slug: p.slug }));
 }
 
 type Props = { params: Promise<{ slug: string }> };
