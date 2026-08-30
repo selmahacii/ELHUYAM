@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-hot-toast";
-import { AlertTriangle, Truck } from "lucide-react";
+import { AlertTriangle, Truck, Trash2, Loader2 } from "lucide-react";
 import EditOrderDialog from "./edit-order-dialog";
 
 const ORDER_STATUSES = [
@@ -46,6 +46,30 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
   const [saving, setSaving] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [transmitting, setTransmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  async function handleDeleteOrder() {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.error || "Échec de la suppression de la commande");
+        return;
+      }
+      toast.success("Commande supprimée définitivement avec succès");
+      setShowDeleteModal(false);
+      router.push("/admin/orders");
+      router.refresh();
+    } catch {
+      toast.error("Erreur de connexion serveur");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   const paymentStatuses = role === "CONFIRMATRICE" && paymentStatus !== "PAID"
     ? ALL_PAYMENT_STATUSES.filter((s) => s.value !== "PAID")
@@ -293,7 +317,73 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
             )}
           </div>
         )}
+
+        {/* Danger Zone: Permanent deletion */}
+        <div className="pt-4 mt-4 border-t border-red-100">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-red-200 text-red-650 hover:bg-red-50 hover:text-red-700 hover:border-red-300 flex items-center justify-center gap-2 transition-all font-semibold text-xs py-2"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            <Trash2 className="w-4 h-4 text-red-500" />
+            Supprimer définitivement la commande
+          </Button>
+        </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white border border-red-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-red-600">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-zinc-900">Suppression Définitive</h3>
+                <p className="text-xs text-zinc-500">Cette action est irréversible</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-zinc-600 leading-relaxed">
+              Êtes-vous sûr de vouloir supprimer définitivement la commande <strong className="text-zinc-900 font-mono font-bold">{order.id}</strong> ?
+              Tous les articles, l&apos;historique de statut et les informations associées seront effacés de la base de données.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="text-xs font-semibold"
+              >
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDeleteOrder}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Suppression...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Supprimer définitivement</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
+

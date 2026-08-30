@@ -268,3 +268,41 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return errorResponse("Failed to update order.", 500);
   }
 }
+
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  try {
+    const session = await auth();
+    const role = session?.user?.role;
+    if (role !== "ADMIN" && role !== "CONFIRMATRICE") {
+      return errorResponse("Non autorisé", 401);
+    }
+
+    const { id } = await params;
+
+    const existingOrder = await db.order.findFirst({
+      where: {
+        OR: [{ id }, { orderNumber: id }],
+      },
+      select: { id: true, orderNumber: true },
+    });
+
+    if (!existingOrder) {
+      return errorResponse("Commande introuvable", 404);
+    }
+
+    await db.order.delete({
+      where: { id: existingOrder.id },
+    });
+
+    revalidateTag("orders", "default");
+
+    return NextResponse.json({
+      success: true,
+      message: `Commande ${existingOrder.orderNumber} supprimée définitivement avec succès`,
+    });
+  } catch (err: any) {
+    console.error("[DELETE_ORDER_ERROR]", err);
+    return errorResponse(err?.message || "Échec de la suppression de la commande", 500);
+  }
+}
+

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Package, User, Phone, MapPin, Truck, Loader2, Mail } from "lucide-react";
+import { Eye, Package, User, Phone, MapPin, Truck, Loader2, Mail, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { formatDate, formatPrice, cn } from "@/lib/utils";
 import { getThumbnail } from "@/lib/cloudinary";
@@ -66,6 +66,30 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [activeEmailTab, setActiveEmailTab] = useState<"confirmation" | "shipped">("shipped");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  async function handleDeleteOrder() {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.error || "Échec de la suppression de la commande");
+        return;
+      }
+      toast.success("Commande supprimée définitivement");
+      setShowDeleteModal(false);
+      setIsModalOpen(false);
+      router.refresh();
+    } catch {
+      toast.error("Erreur de connexion serveur");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   async function handleTransmitZR() {
     setTransmitting(true);
@@ -391,15 +415,28 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
 
         {/* Modal Footer */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between sticky bottom-0 z-10">
-          <div className="text-sm font-bold text-slate-900">
-            Total: <span className="font-mono text-slate-900">{formatPrice(order.totalAmount, order.isInternational ? "EUR" : "DZD")}</span>
-          </div>
-          <Link
-            href={`/admin/orders/${order.id}`}
-            className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteModal(true);
+            }}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 border border-red-200 cursor-pointer"
           >
-            Gérer la commande complète →
-          </Link>
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Supprimer</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="text-sm font-bold text-slate-900">
+              Total: <span className="font-mono text-slate-900">{formatPrice(order.totalAmount, order.isInternational ? "EUR" : "DZD")}</span>
+            </div>
+            <Link
+              href={`/admin/orders/${order.id}`}
+              className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm"
+            >
+              Gérer la commande complète →
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -525,18 +562,85 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
             <option value="REFUNDED">↩ Retourné</option>
           </select>
 
-          <Link
-            href={`/admin/orders/${order.id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded-lg flex items-center gap-1"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            Voir Fiche
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteModal(true);
+              }}
+              className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+              title="Supprimer la commande"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+            <Link
+              href={`/admin/orders/${order.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded-lg flex items-center gap-1"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Voir Fiche
+            </Link>
+          </div>
         </div>
 
         {isModalOpen && renderModal()}
         {isEmailModalOpen && renderEmailModal()}
+
+        {/* Delete Confirmation Modal for Mobile */}
+        {showDeleteModal && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 cursor-default text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white border border-red-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3 text-red-600">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-zinc-900">Suppression Définitive</h3>
+                  <p className="text-xs text-zinc-500">Cette action est irréversible</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-zinc-600 leading-relaxed">
+                Êtes-vous sûr de vouloir supprimer définitivement la commande <strong className="text-zinc-900 font-mono font-bold">{order.orderNumber}</strong> ({resolvedName}) ?
+                Tous les articles et l&apos;historique de cette commande seront supprimés de la base de données.
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-xs font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteOrder}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Suppression...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Supprimer définitivement</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -982,14 +1086,27 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
 
       {/* 7. Action Button */}
       <td className="px-4 py-3 text-right">
-        <Link
-          href={`/admin/orders/${order.id}`}
-          onClick={(e) => e.stopPropagation()}
-          className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all inline-flex border border-transparent hover:border-slate-200 shadow-xs"
-          title="View order details"
-        >
-          <Eye className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center justify-end gap-1">
+          <Link
+            href={`/admin/orders/${order.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all inline-flex border border-transparent hover:border-slate-200 shadow-xs"
+            title="View order details"
+          >
+            <Eye className="w-4 h-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteModal(true);
+            }}
+            className="p-2 text-red-400 hover:text-red-650 hover:bg-red-50 rounded-xl transition-all inline-flex border border-transparent hover:border-red-200 shadow-xs cursor-pointer"
+            title="Supprimer définitivement la commande"
+          >
+            <Trash2 className="w-4 h-4 text-red-500" />
+          </button>
+        </div>
       </td>
 
       {/* Modal Cell */}
@@ -1003,6 +1120,62 @@ export default function OrderRow({ order, role, isMobileView }: OrderRowProps) {
       {isEmailModalOpen && (
         <td className="p-0 border-none w-0 h-0 absolute overflow-hidden">
           {renderEmailModal()}
+        </td>
+      )}
+
+      {/* Delete Confirmation Modal Cell */}
+      {showDeleteModal && (
+        <td className="p-0 border-none w-0 h-0 absolute overflow-hidden">
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 cursor-default text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-white border border-red-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3 text-red-600">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-zinc-900">Suppression Définitive</h3>
+                  <p className="text-xs text-zinc-500">Cette action est irréversible</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-zinc-600 leading-relaxed">
+                Êtes-vous sûr de vouloir supprimer définitivement la commande <strong className="text-zinc-900 font-mono font-bold">{order.orderNumber}</strong> ({resolvedName}) ?
+                Tous les articles et l&apos;historique de cette commande seront supprimés de la base de données.
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-xs font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteOrder}
+                  disabled={isDeleting}
+                  className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Suppression...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Supprimer définitivement</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </td>
       )}
     </tr>

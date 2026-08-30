@@ -153,3 +153,42 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return errorResponse(err?.message || "Échec de la mise à jour de la commande", 500);
   }
 }
+
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  try {
+    const session = await auth();
+    const role = session?.user?.role;
+    if (role !== "ADMIN" && role !== "CONFIRMATRICE") {
+      return errorResponse("Non autorisé", 401);
+    }
+
+    const { id } = await params;
+
+    const existingOrder = await db.order.findUnique({
+      where: { id },
+      select: { id: true, orderNumber: true },
+    });
+
+    if (!existingOrder) {
+      return errorResponse("Commande introuvable", 404);
+    }
+
+    // Permanent hard deletion (cascade deletes order items and status history)
+    await db.order.delete({
+      where: { id },
+    });
+
+    try {
+      revalidatePath("/admin/orders");
+      revalidatePath("/admin");
+    } catch {}
+
+    return successResponse({
+      message: `Commande ${existingOrder.orderNumber} supprimée définitivement avec succès`,
+    });
+  } catch (err: any) {
+    console.error("[ADMIN_DELETE_ORDER_ERROR]", err);
+    return errorResponse(err?.message || "Échec de la suppression définitive de la commande", 500);
+  }
+}
+
