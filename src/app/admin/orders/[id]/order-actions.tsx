@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-hot-toast";
-import { AlertTriangle, Truck, Trash2, Loader2 } from "lucide-react";
+import { AlertTriangle, Truck, Trash2, Loader2, Mail } from "lucide-react";
 import EditOrderDialog from "./edit-order-dialog";
+import EmailPreviewModal from "@/components/admin/email-preview-modal";
 
 const ORDER_STATUSES = [
   { value: "PENDING",          label: "Pending" },
@@ -30,10 +31,27 @@ const DESTRUCTIVE_STATUSES = ["CANCELLED", "REFUNDED"];
 
 interface Order {
   id: string;
+  orderNumber: string;
   status: string;
   paymentStatus: string;
+  totalAmount?: number;
+  isInternational?: boolean;
   trackingNumber?: string | null;
   carrier?: string | null;
+  shippingFirstName?: string | null;
+  shippingLastName?: string | null;
+  shippingPhone?: string | null;
+  user?: {
+    email?: string | null;
+    name?: string | null;
+  } | null;
+  items?: Array<{
+    productTitle: string;
+    quantity: number;
+    price: number;
+    size?: string | null;
+    color?: string | null;
+  }>;
 }
 
 export default function OrderActions({ order, role }: { order: Order; role?: string }) {
@@ -48,6 +66,7 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
   const [transmitting, setTransmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   async function handleDeleteOrder() {
     setIsDeleting(true);
@@ -318,8 +337,21 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
           </div>
         )}
 
+        {/* Email Template Preview Button */}
+        <div className="pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 hover:border-indigo-300 flex items-center justify-center gap-2 transition-all font-semibold text-xs py-2 bg-indigo-50/40"
+            onClick={() => setIsEmailModalOpen(true)}
+          >
+            <Mail className="w-4 h-4 text-indigo-600" />
+            📧 Aperçu de l&apos;E-mail Client (Confirmation & Expédition)
+          </Button>
+        </div>
+
         {/* Danger Zone: Permanent deletion */}
-        <div className="pt-4 mt-4 border-t border-red-100">
+        <div className="pt-3 mt-3 border-t border-red-100">
           <Button
             type="button"
             variant="outline"
@@ -331,6 +363,33 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
           </Button>
         </div>
       </div>
+
+      {/* Email Template Preview Modal */}
+      {isEmailModalOpen && (
+        <EmailPreviewModal
+          order={{
+            id: order.id,
+            orderNumber: order.orderNumber,
+            totalAmount: order.totalAmount ?? 0,
+            isInternational: order.isInternational,
+            trackingNumber: tracking || order.trackingNumber,
+            shippingFirstName: order.shippingFirstName,
+            shippingLastName: order.shippingLastName,
+            shippingPhone: order.shippingPhone,
+            user: order.user,
+            items: (order.items || []).map((i) => ({
+              productTitle: i.productTitle,
+              quantity: i.quantity,
+              price: i.price,
+              size: i.size,
+              color: i.color,
+            })),
+          }}
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          defaultTab={status === "CONFIRMED" || status === "PENDING" ? "confirmation" : "shipped"}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
