@@ -15,8 +15,8 @@ import { getThumbnail } from "@/lib/cloudinary";
 
 export const metadata: Metadata = { title: "EL HUYAM" };
 
-// Categories change rarely — cache the slug -> {id, subCategories} lookup so
-// browsing a category doesn't cost an extra DB round-trip on every request.
+// ── 1. Category cache (300s TTL) ─────────────────────────────────────────────
+// Caches slug -> { id, name, subCategories } for subcategory lookups
 const getCategoryBySlug = unstable_cache(
   async (slug: string) =>
     db.category.findUnique({
@@ -25,6 +25,18 @@ const getCategoryBySlug = unstable_cache(
     }),
   ["shop-category-by-slug"],
   { revalidate: 300, tags: ["categories"] }
+);
+
+// ── 2. Main categories cache (3600s TTL) ──────────────────────────────────────
+// Caches top-level categories for filter sidebar & header
+const getMainCategories = unstable_cache(
+  async () =>
+    db.category.findMany({
+      where: { parentId: null },
+      orderBy: { sortOrder: "asc" },
+    }),
+  ["shop-main-categories"],
+  { revalidate: 3600, tags: ["categories"] }
 );
 
 interface ShopPageProps {
@@ -42,69 +54,164 @@ interface ShopPageProps {
   }>;
 }
 
+interface NormalizedShopParams {
+  category: string;
+  search: string;
+  minPrice: string;
+  maxPrice: string;
+  featured: string;
+  bestseller: string;
+  newArrival: string;
+  sale: string;
+  sortBy: string;
+  page: number;
+}
+
+// ── 3. Canonical Parameter Normalizer ─────────────────────────────────────────
+// Sanitizes and normalizes all incoming URL query parameters into a deterministic form
+function normalizeShopParams(raw: Awaited<ShopPageProps["searchParams"]>): NormalizedShopParams {
+  const category = typeof raw.category === "string" ? raw.category.trim().toLowerCase() : "";
+  const search = typeof raw.search === "string" ? raw.search.trim().slice(0, 100) : "";
+  const minPrice = raw.minPrice && !isNaN(Number(raw.minPrice)) && Number(raw.minPrice) >= 0
+    ? String(Math.floor(Number(raw.minPrice)))
+    : "";
+  const maxPrice = raw.maxPrice && !isNaN(Number(raw.maxPrice)) && Number(raw.maxPrice) >= 0
+    ? String(Math.floor(Number(raw.maxPrice)))
+    : "";
+  const featured = raw.featured === "true" ? "true" : "";
+  const bestseller = raw.bestseller === "true" ? "true" : "";
+  const newArrival = raw.newArrival === "true" ? "true" : "";
+  const sale = raw.sale === "true" ? "true" : "";
+  const allowedSorts = ["price-asc", "price-desc", "rating", "createdAt"];
+  const sortBy = typeof raw.sortBy === "string" && allowedSorts.includes(raw.sortBy)
+    ? raw.sortBy
+    : "createdAt";
+  const page = Math.max(1, Math.min(Number(raw.page ?? 1) || 1, 500));
+
+  return {
+    category,
+    search,
+    minPrice,
+    maxPrice,
+    featured,
+    bestseller,
+    newArrival,
+    sale,
+    sortBy,
+    page,
+  };
+}
+
+// Deterministic canonical key builder to prevent cache collisions
+function getCanonicalKey(p: NormalizedShopParams): string {
+  return `cat:${p.category}|q:${p.search}|min:${p.minPrice}|max:${p.maxPrice}|feat:${p.featured}|bs:${p.bestseller}|new:${p.newArrival}|sale:${p.sale}|sort:${p.sortBy}|p:${p.page}`;
+}
+
+// ── 4. Public Product Query Cache (60s TTL) ───────────────────────────────────
+// Caches the results of public database queries strictly per canonical parameters.
+// Does NOT touch or cache any user session, cookies, cart, or private data.
+const getCachedProducts = unstable_cache(
+  async (canonicalKey: string, params: NormalizedShopParams) => {
+    const {
+      category,
+      search,
+      minPrice,
+      maxPrice,
+      featured,
+      bestseller,
+      newArrival,
+      sale,
+      sortBy,
+      page,
+    } = params;
+
+    const limit = 24;
+    const skip = (page - 1) * limit;
+
+    let categoryIds: string[] = [];
+    if (category) {
+      const activeCat = await getCategoryBySlug(category);
+      if (activeCat) {
+        categoryIds = [activeCat.id, ...activeCat.subCategories.map((c: any) => c.id)];
+      }
+    }
+
+    const where = {
+      archived: false,
+      ...(category ? { categoryId: { in: categoryIds } } : {}),
+      ...(search ? {
+        OR: [
+          { title: { contains: search } },
+          { description: { contains: search } },
+        ],
+      } : {}),
+      ...(featured === "true" ? { featured: true } : {}),
+      ...(bestseller === "true" ? { bestseller: true } : {}),
+      ...(newArrival === "true" ? { newArrival: true } : {}),
+      ...(sale === "true" ? { discountPrice: { not: null } } : {}),
+      ...(minPrice || maxPrice ? {
+        price: {
+          ...(minPrice ? { gte: Number(minPrice) } : {}),
+          ...(maxPrice ? { lte: Number(maxPrice) } : {}),
+        },
+      } : {}),
+    };
+
+    const orderBy =
+      sortBy === "price-asc"  ? { price: "asc" as const } :
+      sortBy === "price-desc" ? { price: "desc" as const } :
+      sortBy === "rating"     ? { avgRating: "desc" as const } :
+      { createdAt: "desc" as const };
+
+    const [products, total] = await Promise.all([
+      db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
+      db.product.count({ where }),
+    ]);
+
+    return { products, total };
+  },
+  ["shop-products-grid-v1"],
+  { revalidate: 60, tags: ["products"] }
+);
+
 async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPageProps["searchParams"]> }) {
+  const normalizedParams = normalizeShopParams(searchParams);
+  const canonicalKey = getCanonicalKey(normalizedParams);
+
   const {
-    category, search, minPrice, maxPrice,
-    featured, bestseller, newArrival, sale, sortBy = "createdAt",
-  } = searchParams;
+    category,
+    search,
+    minPrice,
+    maxPrice,
+    featured,
+    bestseller,
+    newArrival,
+    sale,
+    sortBy,
+    page,
+  } = normalizedParams;
 
-  const page = Math.max(1, Math.min(Number(searchParams.page ?? 1), 500));
   const limit = 24;
-  const skip = (page - 1) * limit;
-  // Sanitise search — prevent abuse with very long strings
-  const safeSearch = search?.slice(0, 100);
 
-  // Resolve active category and all its subcategories
-  let categoryIds: string[] = [];
+  // Resolve active category and all its subcategories (cached via getCategoryBySlug)
   let subCategories: any[] = [];
   let categoryName = "";
-  
+
   if (category) {
     const activeCat = await getCategoryBySlug(category);
-
     if (activeCat) {
-      categoryIds = [activeCat.id, ...activeCat.subCategories.map((c: any) => c.id)];
       subCategories = activeCat.subCategories;
       categoryName = activeCat.name;
     }
   }
 
-  const where = {
-    archived: false,
-    ...(category ? { categoryId: { in: categoryIds } } : {}),
-    ...(safeSearch ? {
-      OR: [
-        { title: { contains: safeSearch } },
-        { description: { contains: safeSearch } },
-      ],
-    } : {}),
-    ...(featured === "true" ? { featured: true } : {}),
-    ...(bestseller === "true" ? { bestseller: true } : {}),
-    ...(newArrival === "true" ? { newArrival: true } : {}),
-    ...(sale === "true" ? { discountPrice: { not: null } } : {}),
-    ...(minPrice || maxPrice ? {
-      price: {
-        ...(minPrice ? { gte: Number(minPrice) } : {}),
-        ...(maxPrice ? { lte: Number(maxPrice) } : {}),
-      },
-    } : {}),
-  };
-
-  const orderBy =
-    sortBy === "price-asc"  ? { price: "asc" as const } :
-    sortBy === "price-desc" ? { price: "desc" as const } :
-    sortBy === "rating"     ? { avgRating: "desc" as const } :
-    { createdAt: "desc" as const };
-
-  const [products, total, t, locale] = await Promise.all([
-    db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
-    db.product.count({ where }),
+  const [{ products, total }, t, locale] = await Promise.all([
+    getCachedProducts(canonicalKey, normalizedParams),
     getTranslations("shop"),
     getLocale(),
   ]);
 
   const isAr = locale === "ar";
-
   const totalPages = Math.ceil(total / limit);
 
   const preservedParams = [
@@ -241,18 +348,16 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPagePro
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const params = await searchParams;
   const [categories, t, locale] = await Promise.all([
-    db.category.findMany({
-      where: { parentId: null },
-      orderBy: { sortOrder: "asc" },
-    }),
+    getMainCategories(),
     getTranslations("shop"),
     getLocale(),
   ]);
 
   const isAr = locale === "ar";
+  const normalizedCat = typeof params.category === "string" ? params.category.trim().toLowerCase() : "";
 
-  const categoryName = params.category
-    ? categories.find((c: (typeof categories)[number]) => c.slug === params.category)?.name
+  const categoryName = normalizedCat
+    ? categories.find((c: (typeof categories)[number]) => c.slug.toLowerCase() === normalizedCat)?.name
     : null;
 
   const pageTitle =
