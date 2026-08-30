@@ -18,11 +18,17 @@ export const metadata: Metadata = { title: "EL HUYAM" };
 // ── 1. Category cache (300s TTL) ─────────────────────────────────────────────
 // Caches slug -> { id, name, subCategories } for subcategory lookups
 const getCategoryBySlug = unstable_cache(
-  async (slug: string) =>
-    db.category.findUnique({
-      where: { slug },
-      include: { subCategories: { orderBy: { sortOrder: "asc" } } },
-    }),
+  async (slug: string) => {
+    try {
+      return await db.category.findUnique({
+        where: { slug },
+        include: { subCategories: { orderBy: { sortOrder: "asc" } } },
+      });
+    } catch (err) {
+      console.error("[shop/getCategoryBySlug] DB Error:", err);
+      return null;
+    }
+  },
   ["shop-category-by-slug"],
   { revalidate: 300, tags: ["categories"] }
 );
@@ -30,11 +36,17 @@ const getCategoryBySlug = unstable_cache(
 // ── 2. Main categories cache (3600s TTL) ──────────────────────────────────────
 // Caches top-level categories for filter sidebar & header
 const getMainCategories = unstable_cache(
-  async () =>
-    db.category.findMany({
-      where: { parentId: null },
-      orderBy: { sortOrder: "asc" },
-    }),
+  async () => {
+    try {
+      return await db.category.findMany({
+        where: { parentId: null },
+        orderBy: { sortOrder: "asc" },
+      });
+    } catch (err) {
+      console.error("[shop/getMainCategories] DB Error:", err);
+      return [];
+    }
+  },
   ["shop-main-categories"],
   { revalidate: 3600, tags: ["categories"] }
 );
@@ -163,12 +175,16 @@ const getCachedProducts = unstable_cache(
       sortBy === "rating"     ? { avgRating: "desc" as const } :
       { createdAt: "desc" as const };
 
-    const [products, total] = await Promise.all([
-      db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
-      db.product.count({ where }),
-    ]);
-
-    return { products, total };
+    try {
+      const [products, total] = await Promise.all([
+        db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
+        db.product.count({ where }),
+      ]);
+      return { products, total };
+    } catch (err) {
+      console.error("[shop/getCachedProducts] DB Error:", err);
+      return { products: [], total: 0 };
+    }
   },
   ["shop-products-grid-v1"],
   { revalidate: 60, tags: ["products"] }
