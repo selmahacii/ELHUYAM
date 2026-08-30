@@ -338,7 +338,7 @@ export default function Navbar() {
                   <Search className="w-5 h-5" />
                 </button>
 
-                {session ? (
+                {mounted && session ? (
                   <Link
                     href={(session?.user as any)?.role === "ADMIN" ? "/admin" : "/account"}
                     className={cn("p-2 transition-colors hidden lg:block", textClass)}
@@ -569,7 +569,7 @@ export default function Navbar() {
                   </button>
                 </div>
               )}
-              {session ? (
+              {mounted && session ? (
                 <Link href={(session?.user as any)?.role === "ADMIN" ? "/admin" : "/account"} className="block">
                   <Button variant="luxury" size="sm" className="w-full rounded-2xl py-3.5">
                     {(session?.user as any)?.role === "ADMIN" ? t("adminDashboard") : t("account")}

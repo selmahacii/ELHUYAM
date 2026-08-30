@@ -96,7 +96,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const isInternationalEnabled = await getInternationalOrdersEnabled();
 
   return (
-    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className="scroll-smooth">
+    <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className="scroll-smooth" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -147,6 +147,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
       </head>
       <body
+        suppressHydrationWarning
         className={cn(
           "min-h-screen bg-warm-white text-brand-900 antialiased selection:bg-brand-200 selection:text-brand-900",
           cormorant.variable,
