@@ -79,119 +79,218 @@ export default function EmailPreviewModal({
 
       return `
         <tr>
-          <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520;">
-            <div style="font-weight: 600; font-size: 14px;">${item.productTitle}</div>
-            ${variantDetails ? `<div style="font-size: 12px; color: #8C7355; margin-top: 2px;">${variantDetails}</div>` : ""}
+          <td style="padding: 16px 0; border-bottom: 1px solid #EBE4D8; vertical-align: middle;">
+            <div style="font-family: Georgia, serif; font-size: 14.5px; font-weight: bold; color: #141414;">${item.productTitle}</div>
+            ${variantDetails ? `<div style="display: inline-block; font-size: 11px; color: #7A5C38; background: #FAF5EE; border: 1px solid #EADBCE; padding: 2px 8px; border-radius: 4px; margin-top: 5px; font-weight: 500;">${variantDetails}</div>` : ""}
           </td>
-          <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520; text-align: center; font-weight: 600;">${item.quantity}</td>
-          <td style="padding: 12px 0; border-bottom: 1px solid #E8D5B7; color: #4A3520; text-align: right; font-weight: 600;">${formattedPrice}</td>
+          <td align="center" style="padding: 16px 0; border-bottom: 1px solid #EBE4D8; vertical-align: middle;">
+            <span style="font-family: -apple-system, sans-serif; font-weight: 700; font-size: 12px; background: #F3EFE9; color: #3D2F24; padding: 4px 10px; border-radius: 20px;">x${item.quantity}</span>
+          </td>
+          <td align="right" style="padding: 16px 0; border-bottom: 1px solid #EBE4D8; vertical-align: middle; font-family: -apple-system, sans-serif; font-size: 14px; font-weight: 700; color: #141414;">
+            ${formattedPrice}
+          </td>
         </tr>
       `;
     })
     .join("");
 
   const confirmationHtml = `
-    <div style="font-family: Georgia, 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: #FAF9F6; padding: 40px; border: 1px solid #E8D5B7; font-size: 14px; color: #333333; line-height: 1.6;">
-      <h1 style="font-size: 28px; letter-spacing: 4px; color: #1A1A1A; text-align: center; text-transform: uppercase; margin: 0 0 10px 0;">EL HUYAAM</h1>
-      <hr style="border: none; border-top: 1px solid #E8D5B7; margin: 20px 0;" />
-      <h2 style="color: #4A3520; text-align: center; font-size: 20px; margin: 0 0 15px 0;">Order Confirmed ✦</h2>
-      <p style="color: #7A5C38; line-height: 1.8; text-align: center;">Dear ${customerName}, thank you for your order. We will begin preparing it with care.</p>
-      
-      <div style="background: rgba(232, 213, 183, 0.15); border: 1px dashed #E8D5B7; padding: 12px; margin: 20px 0; text-align: center; border-radius: 6px;">
-        <p style="color: #9A7A52; font-size: 12px; letter-spacing: 2px; font-weight: bold; margin: 0; text-transform: uppercase;">
-          ORDER: <span style="color: #1A1A1A; font-family: monospace; font-size: 14px;">${order.orderNumber}</span>
-        </p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F7F5F0; padding: 30px 10px;">
+      <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 16px; border: 1px solid #EBE4D8; overflow: hidden; box-shadow: 0 4px 25px rgba(0,0,0,0.04);">
+        
+        <!-- Top Ribbon -->
+        <div style="background: linear-gradient(90deg, #141414 0%, #C5A880 50%, #141414 100%); height: 5px;"></div>
+
+        <!-- Header -->
+        <div style="padding: 35px 30px 15px 30px; text-align: center;">
+          <h1 style="font-family: Georgia, 'Playfair Display', serif; font-size: 30px; letter-spacing: 6px; color: #141414; text-transform: uppercase; margin: 0; font-weight: 700;">EL HUYAAM</h1>
+          <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">HAUTE COUTURE MODESTE</p>
+          <div style="margin: 16px auto 0 auto; color: #C5A880; font-size: 13px;">✦ ✦ ✦</div>
+        </div>
+
+        <!-- Greeting -->
+        <div style="padding: 15px 35px 25px 35px; text-align: center;">
+          <div style="display: inline-block; background: #FAF5EE; border: 1px solid #E3D5C1; color: #8A6538; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; margin-bottom: 18px;">
+            ✦ COMMANDE CONFIRMÉE ✦
+          </div>
+          <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Chère ${customerName},</h2>
+          <p style="color: #6B5744; font-size: 14px; line-height: 1.8; margin: 0;">
+            Nous avons le grand plaisir de vous confirmer la bonne réception de votre commande. 
+            Nos artisans préparent dès à présent vos créations avec tout le soin, la délicatesse et le savoir-faire de la maison <strong>EL HUYAAM</strong>.
+          </p>
+        </div>
+
+        <!-- Order Ref Card -->
+        <div style="padding: 0 35px 20px 35px;">
+          <div style="background: #FDFBF7; border: 1px dashed #E2D3BE; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 11px; color: #8C7355; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">
+              RÉFÉRENCE : <span style="font-family: monospace; font-size: 13.5px; color: #141414; font-weight: bold;">#${order.orderNumber}</span>
+            </div>
+            <div style="font-size: 11px; color: #357A38; font-weight: 700; text-transform: uppercase;">
+              ✓ EN PRÉPARATION
+            </div>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div style="padding: 0 35px 20px 35px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CRÉATION</th>
+                <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTÉ</th>
+                <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRIX</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Total Box -->
+        <div style="padding: 0 35px 25px 35px;">
+          <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
+              MONTANT TOTAL
+            </div>
+            <div style="font-size: 18px; font-weight: 800; color: #141414;">
+              ${formattedTotal}
+            </div>
+          </div>
+        </div>
+
+        <!-- CTAs -->
+        <div style="padding: 0 35px 30px 35px; text-align: center;">
+          <a href="https://www.elhuyam.com/account/orders/${order.orderNumber}"
+             style="display: block; width: 85%; max-width: 360px; margin: 0 auto 10px auto; padding: 14px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 11.5px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center;">
+            SUIVRE MA COMMANDE EN DIRECT →
+          </a>
+          <a href="https://wa.me/213772515448"
+             style="display: inline-block; padding: 9px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11px; font-weight: 700; border-radius: 6px; text-align: center;">
+            💬 Conseillère Privée sur WhatsApp (+213 772 51 54 48)
+          </a>
+        </div>
+
+        <!-- Reassurance -->
+        <div style="background-color: #FDFBF7; border-top: 1px solid #EBE4D8; border-bottom: 1px solid #EBE4D8; padding: 18px 20px; display: flex; justify-content: space-around; text-align: center;">
+          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">✦ Confection Noble</div>
+          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🚚 58 Wilayas & Monde</div>
+          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🤍 Service Privilège</div>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #FAF9F6; padding: 25px 30px; text-align: center;">
+          <p style="font-family: Georgia, serif; font-style: italic; color: #7A5C38; font-size: 13px; margin: 0 0 8px 0;">
+            « La grâce et l&apos;élégance dans la modestie. »
+          </p>
+          <p style="color: #A39281; font-size: 10.5px; margin: 0;">
+            © ${new Date().getFullYear()} EL HUYAAM. Tous droits réservés.
+          </p>
+        </div>
+
       </div>
-
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 24px; border-collapse: collapse;">
-        <thead>
-          <tr>
-            <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: left; font-size: 12px; letter-spacing: 1px;">PRODUCT</th>
-            <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: center; font-size: 12px; letter-spacing: 1px;">QTY</th>
-            <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: right; font-size: 12px; letter-spacing: 1px;">PRICE</th>
-          </tr>
-        </thead>
-        <tbody>${itemsHtml}</tbody>
-        <tfoot>
-          <tr>
-            <td colspan="2" style="padding-top: 16px; font-weight: bold; color: #1A1A1A; font-size: 15px;">TOTAL AMOUNT</td>
-            <td style="padding-top: 16px; font-weight: bold; color: #1A1A1A; text-align: right; font-size: 16px;">${formattedTotal}</td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <div style="text-align: center; margin-top: 35px;">
-        <a href="https://www.elhuyam.com/account/orders/${order.orderNumber}"
-           style="display: inline-block; padding: 14px 32px; background: #1A1A1A; color: #FAF9F6;
-                  text-decoration: none; letter-spacing: 2px; font-size: 13px; font-weight: bold; border-radius: 4px;">
-          TRACK ORDER
-        </a>
-      </div>
-
-      <p style="margin-top: 40px; color: #B8A99A; font-size: 12px; text-align: center;">
-        Thank you for choosing EL HUYAAM.<br />
-        © ${new Date().getFullYear()} EL HUYAM. All rights reserved.
-      </p>
     </div>
   `;
 
   const shippedHtml = `
-    <div style="font-family: Georgia, 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: #FAF9F6; padding: 40px; border: 1px solid #E8D5B7; font-size: 14px; color: #333333; line-height: 1.6;">
-      <h1 style="font-size: 28px; letter-spacing: 4px; color: #1A1A1A; text-align: center; text-transform: uppercase; margin: 0 0 10px 0;">EL HUYAAM</h1>
-      <hr style="border: none; border-top: 1px solid #E8D5B7; margin: 20px 0;" />
-      <h2 style="color: #4A3520; text-align: center; font-size: 22px; margin: 0 0 15px 0;">Your Order is with the Courier! 🚚</h2>
-      <p style="color: #7A5C38; line-height: 1.8; text-align: center; font-size: 14px;">
-        Dear ${customerName}, we are pleased to inform you that your package has been successfully handed over to the delivery company.
-      </p>
-      
-      <div style="background: rgba(232, 213, 183, 0.18); border: 1px dashed #E8D5B7; padding: 16px; margin: 25px 0; text-align: center; border-radius: 6px;">
-        <p style="color: #4A3520; font-size: 12px; font-weight: bold; text-transform: uppercase; margin: 0 0 6px 0; letter-spacing: 1px;">Tracking Number</p>
-        <p style="color: #1A1A1A; font-family: monospace; font-size: 18px; font-weight: bold; margin: 0; letter-spacing: 1px;">${trackingToUse}</p>
-      </div>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F7F5F0; padding: 30px 10px;">
+      <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 16px; border: 1px solid #EBE4D8; overflow: hidden; box-shadow: 0 4px 25px rgba(0,0,0,0.04);">
+        
+        <!-- Top Ribbon -->
+        <div style="background: linear-gradient(90deg, #141414 0%, #C5A880 50%, #141414 100%); height: 5px;"></div>
 
-      <p style="color: #9A7A52; font-size: 13px; letter-spacing: 2px; font-weight: bold; margin-top: 30px; text-transform: uppercase;">ORDER SUMMARY: ${order.orderNumber}</p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 15px; border-collapse: collapse;">
-        <thead>
-          <tr>
-            <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: left; font-size: 12px; letter-spacing: 1px;">PRODUCT</th>
-            <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: center; font-size: 12px; letter-spacing: 1px;">QTY</th>
-            <th style="padding: 8px 0; border-bottom: 2px solid #1A1A1A; color: #1A1A1A; text-align: right; font-size: 12px; letter-spacing: 1px;">PRICE</th>
-          </tr>
-        </thead>
-        <tbody>${itemsHtml}</tbody>
-        <tfoot>
-          <tr>
-            <td colspan="2" style="padding-top: 16px; font-weight: bold; color: #1A1A1A; font-size: 15px;">TOTAL AMOUNT</td>
-            <td style="padding-top: 16px; font-weight: bold; color: #1A1A1A; text-align: right; font-size: 16px;">${formattedTotal}</td>
-          </tr>
-        </tfoot>
-      </table>
+        <!-- Header -->
+        <div style="padding: 35px 30px 15px 30px; text-align: center;">
+          <h1 style="font-family: Georgia, 'Playfair Display', serif; font-size: 30px; letter-spacing: 6px; color: #141414; text-transform: uppercase; margin: 0; font-weight: 700;">EL HUYAAM</h1>
+          <p style="font-size: 10px; letter-spacing: 3.5px; color: #9A7A52; text-transform: uppercase; margin: 6px 0 0 0; font-weight: 600;">HAUTE COUTURE MODESTE</p>
+          <div style="margin: 16px auto 0 auto; color: #C5A880; font-size: 13px;">✦ ✦ ✦</div>
+        </div>
 
-      <div style="text-align: center; margin-top: 35px;">
-        <a href="https://www.elhuyam.com/orders/track?orderNumber=${order.orderNumber}&phone=${trackingToUse}"
-           style="display: inline-block; padding: 14px 32px; background: #1A1A1A; color: #FAF9F6;
-                  text-decoration: none; letter-spacing: 2px; font-size: 13px; font-weight: bold; margin-bottom: 14px; border-radius: 4px;">
-          TRACK YOUR SHIPMENT
-        </a>
-        <br />
-        <a href="https://wa.me/213772515448"
-           style="display: inline-block; padding: 12px 28px; background: #25D366; color: #FFFFFF;
-                  text-decoration: none; letter-spacing: 1px; font-size: 13px; font-weight: bold; border-radius: 6px;">
-          💬 CHAT ON WHATSAPP (+213 772 51 54 48)
-        </a>
+        <!-- Status -->
+        <div style="padding: 15px 35px 20px 35px; text-align: center;">
+          <div style="display: inline-block; background: #EEF8F1; border: 1px solid #C4E8CD; color: #236E39; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; margin-bottom: 18px;">
+            🚚 COLIS EXPÉDIÉ & REMIS AU LIVREUR
+          </div>
+          <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Chère ${customerName},</h2>
+          <p style="color: #6B5744; font-size: 14px; line-height: 1.8; margin: 0;">
+            Excellente nouvelle ! Votre précieux colis a été soigneusement emballé et confié à notre transporteur partenaire (<strong>ZR Express</strong>). Il est en cours d&apos;acheminement vers votre adresse.
+          </p>
+        </div>
+
+        <!-- Tracking Highlight Box -->
+        <div style="padding: 0 35px 25px 35px;">
+          <div style="background: #FAF7F2; border: 1.5px dashed #C5A880; border-radius: 12px; padding: 18px 20px; text-align: center;">
+            <p style="font-size: 10.5px; color: #8A6538; text-transform: uppercase; font-weight: 800; letter-spacing: 2px; margin: 0 0 5px 0;">
+              NUMÉRO DE SUIVI DU COLIS
+            </p>
+            <p style="font-family: monospace; font-size: 19px; font-weight: 800; color: #141414; letter-spacing: 2px; margin: 0 0 6px 0;">
+              ${trackingToUse}
+            </p>
+            <p style="font-size: 11px; color: #7A5C38; margin: 0;">
+              Transporteur : <strong>ZR Express</strong> • Suivi en temps réel
+            </p>
+          </div>
+        </div>
+
+        <!-- Items Table -->
+        <div style="padding: 0 35px 20px 35px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th align="left" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">CRÉATION</th>
+                <th align="center" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">QTÉ</th>
+                <th align="right" style="padding: 10px 0; border-bottom: 2px solid #141414; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #141414; text-transform: uppercase;">PRIX</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Total Box -->
+        <div style="padding: 0 35px 25px 35px;">
+          <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-family: Georgia, serif; font-size: 13px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1px;">
+              MONTANT TOTAL À RÉGLER
+            </div>
+            <div style="font-size: 17px; font-weight: 800; color: #141414;">
+              ${formattedTotal}
+            </div>
+          </div>
+        </div>
+
+        <!-- CTAs -->
+        <div style="padding: 0 35px 30px 35px; text-align: center;">
+          <a href="https://www.elhuyam.com/orders/track?orderNumber=${order.orderNumber}&phone=${trackingToUse}"
+             style="display: block; width: 85%; max-width: 360px; margin: 0 auto 10px auto; padding: 14px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 11.5px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center;">
+            SUIVRE MON COLIS EN DIRECT →
+          </a>
+          <a href="https://wa.me/213772515448"
+             style="display: inline-block; padding: 9px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11px; font-weight: 700; border-radius: 6px; text-align: center;">
+            💬 Contacter le Service Client sur WhatsApp
+          </a>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #FAF9F6; padding: 25px 30px; text-align: center;">
+          <p style="font-family: Georgia, serif; font-style: italic; color: #7A5C38; font-size: 13px; margin: 0 0 8px 0;">
+            « La grâce et l&apos;élégance dans la modestie. »
+          </p>
+          <p style="color: #A39281; font-size: 10.5px; margin: 0;">
+            © ${new Date().getFullYear()} EL HUYAAM. Tous droits réservés.
+          </p>
+        </div>
+
       </div>
-      
-      <p style="margin-top: 40px; color: #B8A99A; font-size: 12px; text-align: center;">
-        Thank you for choosing elegance and modesty.<br />
-        If you have any questions, reply directly to this email or contact us at <a href="mailto:elhuyamcollection09@gmail.com" style="color: #9A7A52; text-decoration: underline;">elhuyamcollection09@gmail.com</a>.
-      </p>
     </div>
   `;
 
   const activeSubject =
     activeTab === "confirmation"
-      ? `Order Confirmed — ${order.orderNumber}`
-      : `Your order has been handed over to the shipping company — ${order.orderNumber}`;
+      ? `Commande Confirmée #${order.orderNumber} ✦ EL HUYAAM`
+      : `Votre colis est en route ! 🚚 #${order.orderNumber} ✦ EL HUYAAM`;
 
   const currentHtml = activeTab === "confirmation" ? confirmationHtml : shippedHtml;
 
@@ -222,7 +321,7 @@ export default function EmailPreviewModal({
             </div>
             <div>
               <h3 className="font-display text-base font-bold text-slate-900 flex items-center gap-2">
-                Aperçu de l&apos;E-mail Client
+                Aperçu de l&apos;E-mail Client (Haute Couture)
               </h3>
               <p className="text-xs text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
                 <span>Destinataire :</span>
