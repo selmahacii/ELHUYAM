@@ -1,14 +1,28 @@
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT ?? 587),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+function getTransporter() {
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT ?? 587);
+  const user = process.env.SMTP_USER || "elhuyamcollection09@gmail.com";
+  const pass = process.env.SMTP_PASS?.trim();
+
+  if (!pass) {
+    console.warn(
+      "[email] Warning: SMTP_PASS is not defined in environment variables. Email sending cannot proceed."
+    );
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+}
 
 interface EmailOptions {
   to: string;
@@ -17,9 +31,16 @@ interface EmailOptions {
 }
 
 async function sendEmail({ to, subject, html }: EmailOptions) {
+  const transporter = getTransporter();
+  if (!transporter) {
+    return;
+  }
+
+  const fromEmail = process.env.SMTP_USER || "elhuyamcollection09@gmail.com";
+
   await transporter.sendMail({
-    from: '"EL HUYAAM" <elhuyamcollection09@gmail.com>',
-    replyTo: "elhuyamcollection09@gmail.com",
+    from: `"EL HUYAAM" <${fromEmail}>`,
+    replyTo: fromEmail,
     to,
     subject,
     html,
