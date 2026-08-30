@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-hot-toast";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/account";
@@ -49,7 +49,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
-
 
   return (
     <div className="min-h-screen bg-warm-white flex">
@@ -121,7 +120,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-
           <p className="text-center text-sm text-black/70 mt-8">
             Don&apos;t have an account?{" "}
             <Link href="/auth/register" className="text-black hover:text-black/70 font-bold transition-colors uppercase tracking-widest text-xs">
@@ -131,5 +129,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

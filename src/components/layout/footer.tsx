@@ -2,27 +2,43 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Instagram } from "lucide-react";
+import { unstable_cache } from "next/cache";
+
+const getFooterData = unstable_cache(
+  async () => {
+    const [
+      categories,
+      addressSetting,
+      emailSetting,
+      phoneSetting,
+      contactTitleSetting
+    ] = await Promise.all([
+      db.category.findMany({
+        where: { parentId: null },
+        orderBy: { sortOrder: "asc" },
+        select: { name: true, slug: true },
+      }),
+      db.setting.findUnique({ where: { key: "footer_address" } }),
+      db.setting.findUnique({ where: { key: "footer_email" } }),
+      db.setting.findUnique({ where: { key: "footer_phone" } }),
+      db.setting.findUnique({ where: { key: "footer_contact_title" } }),
+    ]);
+    return { categories, addressSetting, emailSetting, phoneSetting, contactTitleSetting };
+  },
+  ["footer-data"],
+  { revalidate: 3600, tags: ["footer"] }
+);
 
 export default async function Footer() {
   const t = await getTranslations("footer");
 
-  const [
+  const {
     categories,
     addressSetting,
     emailSetting,
     phoneSetting,
     contactTitleSetting
-  ] = await Promise.all([
-    db.category.findMany({
-      where: { parentId: null },
-      orderBy: { sortOrder: "asc" },
-      select: { name: true, slug: true },
-    }),
-    db.setting.findUnique({ where: { key: "footer_address" } }),
-    db.setting.findUnique({ where: { key: "footer_email" } }),
-    db.setting.findUnique({ where: { key: "footer_phone" } }),
-    db.setting.findUnique({ where: { key: "footer_contact_title" } }),
-  ]);
+  } = await getFooterData();
 
   const locale = await getLocale();
   let footerAddress = addressSetting?.value || "Algeria";
