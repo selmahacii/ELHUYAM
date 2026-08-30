@@ -228,7 +228,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             price: i.price ?? 0,
             size: i.size || null,
             color: i.color || null,
-          }))
+          })),
+          order.shippingFee,
+          order.subtotal,
+          order.discount
         ).catch((err) => console.error("[email/confirmed/patch]", err));
       }
     }
@@ -256,7 +259,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             price: i.price,
             size: i.size || null,
             color: i.color || null,
-          }))
+          })),
+          order.shippingFee,
+          order.subtotal,
+          order.discount
         ).catch((err) => console.error("[email/shipped/patch]", err));
       }
     }

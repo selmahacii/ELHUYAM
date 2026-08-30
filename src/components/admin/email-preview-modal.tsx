@@ -16,6 +16,9 @@ export interface EmailPreviewOrder {
   id: string;
   orderNumber: string;
   totalAmount: number;
+  subtotal?: number;
+  shippingFee?: number;
+  discount?: number;
   isInternational?: boolean;
   trackingNumber?: string | null;
   shippingFirstName?: string | null;
@@ -64,6 +67,31 @@ export default function EmailPreviewModal({
   })
     .format(order.totalAmount)
     .replace(/[\u00a0\u202f]/g, " ");
+
+  const shippingFeeNum = order.shippingFee ?? 0;
+  const formattedShippingFee = shippingFeeNum > 0
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(shippingFeeNum).replace(/[\u00a0\u202f]/g, " ")
+    : "Free Delivery";
+
+  const formattedSubtotal = order.subtotal !== undefined
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(order.subtotal).replace(/[\u00a0\u202f]/g, " ")
+    : null;
+
+  const formattedDiscount = order.discount && order.discount > 0
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(order.discount).replace(/[\u00a0\u202f]/g, " ")
+    : null;
 
   const trackingToUse = order.trackingNumber || "ZR-XXXXXXXXXX";
 
@@ -149,14 +177,32 @@ export default function EmailPreviewModal({
           </table>
         </div>
 
-        <!-- Total Box -->
+        <!-- Total Box with Delivery Breakdown -->
         <div style="padding: 0 35px 25px 35px;">
-          <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-              TOTAL AMOUNT
+          <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
+            ${formattedSubtotal ? `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
+                <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal</span>
+                <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedSubtotal}</span>
+              </div>
+            ` : ""}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: ${formattedDiscount ? "8px" : "12px"};">
+              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (ZR Express)</span>
+              <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedShippingFee}</span>
             </div>
-            <div style="font-size: 18px; font-weight: 800; color: #141414;">
-              ${formattedTotal}
+            ${formattedDiscount ? `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px;">
+                <span style="font-size: 12.5px; color: #236E39; font-weight: 600;">Discount / Coupon</span>
+                <span style="font-size: 13.5px; font-weight: 700; color: #236E39;">-${formattedDiscount}</span>
+              </div>
+            ` : ""}
+            <div style="border-top: 1px solid #EADBCE; padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
+                TOTAL AMOUNT DUE
+              </div>
+              <div style="font-size: 18px; font-weight: 800; color: #141414;">
+                ${formattedTotal}
+              </div>
             </div>
           </div>
         </div>
@@ -250,14 +296,32 @@ export default function EmailPreviewModal({
           </table>
         </div>
 
-        <!-- Total Box -->
+        <!-- Total Box with Delivery Breakdown -->
         <div style="padding: 0 35px 25px 35px;">
-          <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-family: Georgia, serif; font-size: 13px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1px;">
-              TOTAL AMOUNT DUE
+          <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
+            ${formattedSubtotal ? `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
+                <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal</span>
+                <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedSubtotal}</span>
+              </div>
+            ` : ""}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: ${formattedDiscount ? "8px" : "12px"};">
+              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (ZR Express)</span>
+              <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedShippingFee}</span>
             </div>
-            <div style="font-size: 17px; font-weight: 800; color: #141414;">
-              ${formattedTotal}
+            ${formattedDiscount ? `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px;">
+                <span style="font-size: 12.5px; color: #236E39; font-weight: 600;">Discount / Coupon</span>
+                <span style="font-size: 13.5px; font-weight: 700; color: #236E39;">-${formattedDiscount}</span>
+              </div>
+            ` : ""}
+            <div style="border-top: 1px solid #EADBCE; padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-family: Georgia, serif; font-size: 13px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1px;">
+                TOTAL AMOUNT DUE
+              </div>
+              <div style="font-size: 17px; font-weight: 800; color: #141414;">
+                ${formattedTotal}
+              </div>
             </div>
           </div>
         </div>

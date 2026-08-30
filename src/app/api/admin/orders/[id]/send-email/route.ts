@@ -61,7 +61,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         trackingNumber,
         order.totalAmount,
         order.isInternational,
-        items
+        items,
+        order.shippingFee,
+        order.subtotal,
+        order.discount
       );
     } else {
       await sendOrderConfirmationEmail(
@@ -70,7 +73,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         order.orderNumber,
         order.totalAmount,
         order.isInternational,
-        items
+        items,
+        order.shippingFee,
+        order.subtotal,
+        order.discount
       );
     }
 

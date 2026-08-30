@@ -172,7 +172,10 @@ export async function sendOrderConfirmationEmail(
   orderNumber: string,
   totalAmount: number,
   isInternational: boolean,
-  items: { productTitle: string; quantity: number; price: number; size?: string | null; color?: string | null }[]
+  items: { productTitle: string; quantity: number; price: number; size?: string | null; color?: string | null }[],
+  shippingFee: number = 0,
+  subtotal?: number,
+  discount?: number
 ) {
   const currency = isInternational ? "EUR" : "DZD";
   const locale = isInternational ? "fr-FR" : "fr-DZ";
@@ -183,6 +186,30 @@ export async function sendOrderConfirmationEmail(
     currency: currency,
     minimumFractionDigits: 2,
   }).format(totalAmount).replace(/[\u00a0\u202f]/g, " ");
+
+  const formattedShippingFee = shippingFee > 0
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(shippingFee).replace(/[\u00a0\u202f]/g, " ")
+    : "Free Delivery";
+
+  const formattedSubtotal = subtotal !== undefined
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(subtotal).replace(/[\u00a0\u202f]/g, " ")
+    : null;
+
+  const formattedDiscount = discount && discount > 0
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(discount).replace(/[\u00a0\u202f]/g, " ")
+    : null;
 
   const itemsHtml = items
     .map((item) => {
@@ -285,16 +312,50 @@ export async function sendOrderConfirmationEmail(
                   </td>
                 </tr>
 
-                <!-- Total Summary Highlight Box -->
+                <!-- Total Summary Highlight Box (with Delivery Fee) -->
                 <tr>
                   <td style="padding: 0 40px 30px 40px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 24px;">
+                      ${formattedSubtotal ? `
+                        <tr>
+                          <td align="left" style="padding-bottom: 8px; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
+                            Items Subtotal
+                          </td>
+                          <td align="right" style="padding-bottom: 8px; font-size: 13.5px; font-weight: 600; color: #141414;">
+                            ${formattedSubtotal}
+                          </td>
+                        </tr>
+                      ` : ""}
                       <tr>
-                        <td align="left" style="font-family: Georgia, serif; font-size: 14px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-                          TOTAL AMOUNT
+                        <td align="left" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
+                          Delivery Fee (ZR Express)
                         </td>
-                        <td align="right" style="font-family: -apple-system, sans-serif; font-size: 19px; font-weight: 800; color: #141414; letter-spacing: 0.5px;">
-                          ${formattedTotal}
+                        <td align="right" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 13.5px; font-weight: 600; color: #141414;">
+                          ${formattedShippingFee}
+                        </td>
+                      </tr>
+                      ${formattedDiscount ? `
+                        <tr>
+                          <td align="left" style="padding-bottom: 12px; font-size: 12.5px; color: #236E39; font-weight: 600;">
+                            Discount / Coupon
+                          </td>
+                          <td align="right" style="padding-bottom: 12px; font-size: 13.5px; font-weight: 700; color: #236E39;">
+                            -${formattedDiscount}
+                          </td>
+                        </tr>
+                      ` : ""}
+                      <tr>
+                        <td colspan="2" style="border-top: 1px solid #EADBCE; padding-top: 12px;">
+                          <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td align="left" style="font-family: Georgia, serif; font-size: 14px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
+                                TOTAL AMOUNT DUE
+                              </td>
+                              <td align="right" style="font-family: -apple-system, sans-serif; font-size: 19px; font-weight: 800; color: #141414; letter-spacing: 0.5px;">
+                                ${formattedTotal}
+                              </td>
+                            </tr>
+                          </table>
                         </td>
                       </tr>
                     </table>
@@ -373,7 +434,10 @@ export async function sendOrderShippedEmail(
   trackingNumber: string,
   totalAmount: number,
   isInternational: boolean,
-  items: { productTitle: string; quantity: number; price: number; size?: string | null; color?: string | null }[]
+  items: { productTitle: string; quantity: number; price: number; size?: string | null; color?: string | null }[],
+  shippingFee: number = 0,
+  subtotal?: number,
+  discount?: number
 ) {
   const currency = isInternational ? "EUR" : "DZD";
   const locale = isInternational ? "fr-FR" : "fr-DZ";
@@ -384,6 +448,30 @@ export async function sendOrderShippedEmail(
     currency: currency,
     minimumFractionDigits: 2,
   }).format(totalAmount).replace(/[\u00a0\u202f]/g, " ");
+
+  const formattedShippingFee = shippingFee > 0
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(shippingFee).replace(/[\u00a0\u202f]/g, " ")
+    : "Free Delivery";
+
+  const formattedSubtotal = subtotal !== undefined
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(subtotal).replace(/[\u00a0\u202f]/g, " ")
+    : null;
+
+  const formattedDiscount = discount && discount > 0
+    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(discount).replace(/[\u00a0\u202f]/g, " ")
+    : null;
 
   const itemsHtml = items
     .map((item) => {
@@ -492,16 +580,50 @@ export async function sendOrderShippedEmail(
                   </td>
                 </tr>
 
-                <!-- Total Amount Box -->
+                <!-- Total Summary Highlight Box (with Delivery Fee) -->
                 <tr>
                   <td style="padding: 0 40px 30px 40px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 16px 24px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 24px;">
+                      ${formattedSubtotal ? `
+                        <tr>
+                          <td align="left" style="padding-bottom: 8px; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
+                            Items Subtotal
+                          </td>
+                          <td align="right" style="padding-bottom: 8px; font-size: 13.5px; font-weight: 600; color: #141414;">
+                            ${formattedSubtotal}
+                          </td>
+                        </tr>
+                      ` : ""}
                       <tr>
-                        <td align="left" style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-                          TOTAL AMOUNT DUE
+                        <td align="left" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
+                          Delivery Fee (ZR Express)
                         </td>
-                        <td align="right" style="font-family: -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #141414;">
-                          ${formattedTotal}
+                        <td align="right" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 13.5px; font-weight: 600; color: #141414;">
+                          ${formattedShippingFee}
+                        </td>
+                      </tr>
+                      ${formattedDiscount ? `
+                        <tr>
+                          <td align="left" style="padding-bottom: 12px; font-size: 12.5px; color: #236E39; font-weight: 600;">
+                            Discount / Coupon
+                          </td>
+                          <td align="right" style="padding-bottom: 12px; font-size: 13.5px; font-weight: 700; color: #236E39;">
+                            -${formattedDiscount}
+                          </td>
+                        </tr>
+                      ` : ""}
+                      <tr>
+                        <td colspan="2" style="border-top: 1px solid #EADBCE; padding-top: 12px;">
+                          <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td align="left" style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
+                                TOTAL AMOUNT DUE
+                              </td>
+                              <td align="right" style="font-family: -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #141414;">
+                                ${formattedTotal}
+                              </td>
+                            </tr>
+                          </table>
                         </td>
                       </tr>
                     </table>
