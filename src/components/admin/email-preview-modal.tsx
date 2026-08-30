@@ -167,7 +167,7 @@ export default function EmailPreviewModal({
           </a>
           <a href="https://wa.me/213772515448"
              style="display: inline-block; padding: 9px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11px; font-weight: 700; border-radius: 6px; text-align: center;">
-            💬 VIP Concierge on WhatsApp (+213 772 51 54 48)
+            💬 WhatsApp: +213 772 51 54 48
           </a>
         </div>
 
@@ -175,7 +175,7 @@ export default function EmailPreviewModal({
         <div style="background-color: #FDFBF7; border-top: 1px solid #EBE4D8; border-bottom: 1px solid #EBE4D8; padding: 18px 20px; display: flex; justify-content: space-around; text-align: center;">
           <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">✦ Bespoke Tailoring</div>
           <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🚚 58 Wilayas & World</div>
-          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🤍 VIP Concierge</div>
+          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🤍 Dedicated Support</div>
         </div>
 
         <!-- Footer -->
@@ -268,7 +268,7 @@ export default function EmailPreviewModal({
           </a>
           <a href="https://wa.me/213772515448"
              style="display: inline-block; padding: 9px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11px; font-weight: 700; border-radius: 6px; text-align: center;">
-            💬 Contact Customer Support on WhatsApp
+            💬 WhatsApp: +213 772 51 54 48
           </a>
         </div>
 

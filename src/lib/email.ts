@@ -310,7 +310,7 @@ export async function sendOrderConfirmationEmail(
                     </a>
                     <a href="https://wa.me/213772515448?text=${encodeURIComponent(`Hello, I have a question regarding my confirmed order #${orderNumber}`)}"
                        style="display: inline-block; padding: 10px 24px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px; border-radius: 6px; text-align: center;">
-                      💬 VIP Concierge on WhatsApp (+213 772 51 54 48)
+                      💬 WhatsApp: +213 772 51 54 48
                     </a>
                   </td>
                 </tr>
@@ -332,7 +332,7 @@ export async function sendOrderConfirmationEmail(
                         </td>
                         <td width="33%" style="padding: 0 6px;">
                           <div style="font-size: 14px; margin-bottom: 4px;">🤍</div>
-                          <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">VIP Concierge</div>
+                          <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">Dedicated Support</div>
                           <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">At your service 7 days a week</div>
                         </td>
                       </tr>
@@ -517,7 +517,7 @@ export async function sendOrderShippedEmail(
                     </a>
                     <a href="https://wa.me/213772515448?text=${encodeURIComponent(`Hello, I would like an update on my shipment #${orderNumber} (${trackingNumber})`)}"
                        style="display: inline-block; padding: 10px 24px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px; border-radius: 6px; text-align: center;">
-                      💬 Contact Customer Support on WhatsApp
+                      💬 WhatsApp: +213 772 51 54 48
                     </a>
                   </td>
                 </tr>
