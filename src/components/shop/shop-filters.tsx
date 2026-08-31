@@ -95,25 +95,28 @@ export default function ShopFilters({ categories, onFilterChange }: ShopFiltersP
               {locale === "ar" ? "كل القطع" : "All Items"}
             </button>
           </li>
-          {categories.map((cat) => (
-            <li key={cat.id}>
-              <button
-                onClick={() => updateParam("category", activeCategory === cat.slug ? null : cat.slug)}
-                className={cn(
-                  "text-sm transition-all duration-200 flex items-center gap-2 w-full group",
-                  activeCategory === cat.slug
-                    ? "text-black font-semibold"
-                    : "text-black/60 hover:text-black"
-                )}
-              >
-                <span className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-colors",
-                  activeCategory === cat.slug ? "bg-soft-gold" : "bg-black/10 group-hover:bg-soft-gold"
-                )} />
-                {cat.name}
-              </button>
-            </li>
-          ))}
+          {categories.map((cat) => {
+            const isSelected = activeCategory?.toLowerCase() === cat.slug.toLowerCase();
+            return (
+              <li key={cat.id}>
+                <button
+                  onClick={() => updateParam("category", isSelected ? null : cat.slug)}
+                  className={cn(
+                    "text-sm transition-all duration-200 flex items-center gap-2 w-full group",
+                    isSelected
+                      ? "text-black font-semibold"
+                      : "text-black/60 hover:text-black"
+                  )}
+                >
+                  <span className={cn(
+                    "w-1.5 h-1.5 rounded-full transition-colors",
+                    isSelected ? "bg-soft-gold" : "bg-black/10 group-hover:bg-soft-gold"
+                  )} />
+                  {cat.name}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
 

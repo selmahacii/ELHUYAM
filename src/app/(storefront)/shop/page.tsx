@@ -16,20 +16,24 @@ import { getThumbnail } from "@/lib/cloudinary";
 export const metadata: Metadata = { title: "EL HUYAM" };
 
 // ── 1. Category cache (300s TTL) ─────────────────────────────────────────────
-// Caches slug -> { id, name, subCategories } for subcategory lookups
+// Robust case-insensitive slug and name lookup for categories & subcategories
 const getCategoryBySlug = unstable_cache(
   async (slug: string) => {
-    try {
-      return await db.category.findUnique({
-        where: { slug },
-        include: { subCategories: { orderBy: { sortOrder: "asc" } } },
-      });
-    } catch (err) {
-      console.error("[shop/getCategoryBySlug] DB Error:", err);
-      return null;
-    }
+    const clean = slug.trim();
+    return db.category.findFirst({
+      where: {
+        OR: [
+          { slug: { equals: clean, mode: "insensitive" } },
+          { slug: { equals: clean.replace(/-/g, " "), mode: "insensitive" } },
+          { slug: { equals: clean.replace(/\s+/g, "-"), mode: "insensitive" } },
+          { name: { equals: clean.replace(/-/g, " "), mode: "insensitive" } },
+          { name: { equals: clean, mode: "insensitive" } },
+        ],
+      },
+      include: { subCategories: { orderBy: { sortOrder: "asc" } } },
+    });
   },
-  ["shop-category-by-slug"],
+  ["shop-category-by-slug-v4"],
   { revalidate: 300, tags: ["categories"] }
 );
 
@@ -37,17 +41,12 @@ const getCategoryBySlug = unstable_cache(
 // Caches top-level categories for filter sidebar & header
 const getMainCategories = unstable_cache(
   async () => {
-    try {
-      return await db.category.findMany({
-        where: { parentId: null },
-        orderBy: { sortOrder: "asc" },
-      });
-    } catch (err) {
-      console.error("[shop/getMainCategories] DB Error:", err);
-      return [];
-    }
+    return db.category.findMany({
+      where: { parentId: null },
+      orderBy: { sortOrder: "asc" },
+    });
   },
-  ["shop-main-categories"],
+  ["shop-main-categories-v4"],
   { revalidate: 3600, tags: ["categories"] }
 );
 
@@ -144,49 +143,63 @@ const getCachedProducts = unstable_cache(
     if (category) {
       const activeCat = await getCategoryBySlug(category);
       if (activeCat) {
-        categoryIds = [activeCat.id, ...activeCat.subCategories.map((c: any) => c.id)];
+        categoryIds = [activeCat.id, ...(activeCat.subCategories || []).map((c: any) => c.id)];
       }
     }
 
-    const where = {
+    const where: any = {
       archived: false,
-      ...(category ? { categoryId: { in: categoryIds } } : {}),
-      ...(search ? {
-        OR: [
-          { title: { contains: search } },
-          { description: { contains: search } },
-        ],
-      } : {}),
+      ...(category
+        ? categoryIds.length > 0
+          ? { categoryId: { in: categoryIds } }
+          : {
+              category: {
+                OR: [
+                  { slug: { equals: category, mode: "insensitive" } },
+                  { slug: { equals: category.replace(/-/g, " "), mode: "insensitive" } },
+                  { slug: { equals: category.replace(/\s+/g, "-"), mode: "insensitive" } },
+                  { name: { equals: category.replace(/-/g, " "), mode: "insensitive" } },
+                  { name: { equals: category, mode: "insensitive" } },
+                ],
+              },
+            }
+        : {}),
+      ...(search
+        ? {
+            OR: [
+              { title: { contains: search, mode: "insensitive" } },
+              { description: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
       ...(featured === "true" ? { featured: true } : {}),
       ...(bestseller === "true" ? { bestseller: true } : {}),
       ...(newArrival === "true" ? { newArrival: true } : {}),
       ...(sale === "true" ? { discountPrice: { not: null } } : {}),
-      ...(minPrice || maxPrice ? {
-        price: {
-          ...(minPrice ? { gte: Number(minPrice) } : {}),
-          ...(maxPrice ? { lte: Number(maxPrice) } : {}),
-        },
-      } : {}),
+      ...(minPrice || maxPrice
+        ? {
+            price: {
+              ...(minPrice ? { gte: Number(minPrice) } : {}),
+              ...(maxPrice ? { lte: Number(maxPrice) } : {}),
+            },
+          }
+        : {}),
     };
 
-    const orderBy =
-      sortBy === "price-asc"  ? { price: "asc" as const } :
-      sortBy === "price-desc" ? { price: "desc" as const } :
-      sortBy === "rating"     ? { avgRating: "desc" as const } :
-      { createdAt: "desc" as const };
+    const orderBy: any =
+      sortBy === "price-asc"  ? { price: "asc" } :
+      sortBy === "price-desc" ? { price: "desc" } :
+      sortBy === "rating"     ? { avgRating: "desc" } :
+      { createdAt: "desc" };
 
-    try {
-      const [products, total] = await Promise.all([
-        db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
-        db.product.count({ where }),
-      ]);
-      return { products, total };
-    } catch (err) {
-      console.error("[shop/getCachedProducts] DB Error:", err);
-      return { products: [], total: 0 };
-    }
+    const [products, total] = await Promise.all([
+      db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
+      db.product.count({ where }),
+    ]);
+
+    return { products, total };
   },
-  ["shop-products-grid-v1"],
+  ["shop-products-grid-v4"],
   { revalidate: 60, tags: ["products"] }
 );
 
@@ -216,7 +229,7 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPagePro
   if (category) {
     const activeCat = await getCategoryBySlug(category);
     if (activeCat) {
-      subCategories = activeCat.subCategories;
+      subCategories = activeCat.subCategories || [];
       categoryName = activeCat.name;
     }
   }
@@ -256,7 +269,7 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPagePro
             </p>
           </div>
           <div className="flex items-center gap-6 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-brand-200">
-            {subCategories.map((sub) => (
+            {subCategories.map((sub: any) => (
               <Link
                 key={sub.id}
                 href={`/shop?category=${sub.slug}`}
@@ -373,7 +386,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const normalizedCat = typeof params.category === "string" ? params.category.trim().toLowerCase() : "";
 
   const categoryName = normalizedCat
-    ? categories.find((c: (typeof categories)[number]) => c.slug.toLowerCase() === normalizedCat)?.name
+    ? categories.find(
+        (c: (typeof categories)[number]) =>
+          c.slug.toLowerCase() === normalizedCat ||
+          c.slug.toLowerCase().replace(/\s+/g, "-") === normalizedCat ||
+          c.slug.toLowerCase().replace(/-/g, " ") === normalizedCat ||
+          c.name.toLowerCase() === normalizedCat.replace(/-/g, " ")
+      )?.name
     : null;
 
   const pageTitle =
