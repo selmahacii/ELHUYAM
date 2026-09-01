@@ -18,10 +18,10 @@ export const metadata: Metadata = { title: "EL HUYAM" };
 // ── 1. Category cache (300s TTL) ─────────────────────────────────────────────
 // Robust case-insensitive slug and name lookup for categories & subcategories with auto-retry
 const getCategoryBySlug = unstable_cache(
-  async (slug: string) => {
+  async (slug: string): Promise<any> => {
     const clean = slug.trim();
-    return withDbRetry(() =>
-      db.category.findFirst({
+    return withDbRetry<any>(async () => {
+      return db.category.findFirst({
         where: {
           OR: [
             { slug: { equals: clean, mode: "insensitive" } },
@@ -32,8 +32,8 @@ const getCategoryBySlug = unstable_cache(
           ],
         },
         include: { subCategories: { orderBy: { sortOrder: "asc" } } },
-      })
-    );
+      });
+    });
   },
   ["shop-category-by-slug-v5"],
   { revalidate: 300, tags: ["categories"] }
@@ -42,13 +42,13 @@ const getCategoryBySlug = unstable_cache(
 // ── 2. Main categories cache (3600s TTL) ──────────────────────────────────────
 // Caches top-level categories for filter sidebar & header with auto-retry
 const getMainCategories = unstable_cache(
-  async () => {
-    return withDbRetry(() =>
-      db.category.findMany({
+  async (): Promise<any[]> => {
+    return withDbRetry<any[]>(async () => {
+      return db.category.findMany({
         where: { parentId: null },
         orderBy: { sortOrder: "asc" },
-      })
-    );
+      });
+    });
   },
   ["shop-main-categories-v5"],
   { revalidate: 3600, tags: ["categories"] }
@@ -126,7 +126,7 @@ function getCanonicalKey(p: NormalizedShopParams): string {
 // Caches the results of public database queries strictly per canonical parameters.
 // Does NOT touch or cache any user session, cookies, cart, or private data.
 const getCachedProducts = unstable_cache(
-  async (canonicalKey: string, params: NormalizedShopParams) => {
+  async (canonicalKey: string, params: NormalizedShopParams): Promise<{ products: any[]; total: number }> => {
     const {
       category,
       search,
@@ -145,8 +145,8 @@ const getCachedProducts = unstable_cache(
 
     let categoryIds: string[] = [];
     if (category) {
-      const activeCat = await getCategoryBySlug(category);
-      if (activeCat) {
+      const activeCat: any = await getCategoryBySlug(category);
+      if (activeCat && activeCat.id) {
         categoryIds = [activeCat.id, ...(activeCat.subCategories || []).map((c: any) => c.id)];
       }
     }
@@ -196,7 +196,7 @@ const getCachedProducts = unstable_cache(
       sortBy === "rating"     ? { avgRating: "desc" } :
       { createdAt: "desc" };
 
-    return withDbRetry(async () => {
+    return withDbRetry<{ products: any[]; total: number }>(async () => {
       const [products, total] = await Promise.all([
         db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
         db.product.count({ where }),
@@ -232,7 +232,7 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPagePro
   let categoryName = "";
 
   if (category) {
-    const activeCat = await getCategoryBySlug(category);
+    const activeCat: any = await getCategoryBySlug(category);
     if (activeCat) {
       subCategories = activeCat.subCategories || [];
       categoryName = activeCat.name;
