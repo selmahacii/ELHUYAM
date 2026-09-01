@@ -8,9 +8,44 @@ export const db: any =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
-// Toujours mettre en cache le client sur globalThis, y compris en production :
-// sur cPanel/Passenger, les processus Node sont recyclés fréquemment, et sans ce
-// cache chaque nouveau processus recrée un PrismaClient qui ouvre de nouvelles
-// connexions MySQL sans jamais fermer les anciennes -> saturation progressive
-// des connexions et erreurs 500 intermittentes.
 globalForPrisma.prisma = db;
+
+/**
+ * Resilient Database Query Wrapper
+ * Automatically retries transient connection drops, pooler timeouts (P1001, P1008, P2024),
+ * and cold-start socket resets from Supabase PgBouncer.
+ */
+export async function withDbRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 2,
+  delayMs = 250
+): Promise<T> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const isTransient =
+        error?.code === "P1001" ||
+        error?.code === "P1008" ||
+        error?.code === "P1017" ||
+        error?.code === "P2024" ||
+        error?.message?.includes("Can't reach database") ||
+        error?.message?.includes("connection closed") ||
+        error?.message?.includes("Connection terminated") ||
+        error?.message?.includes("ECONNRESET") ||
+        error?.message?.includes("timeout");
+
+      if (isTransient && attempt <= maxRetries) {
+        console.warn(
+          `[withDbRetry] Attempt ${attempt} hit transient pooler issue (${error.code || error.message}). Retrying in ${delayMs * attempt}ms...`
+        );
+        await new Promise((r) => setTimeout(r, delayMs * attempt));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}

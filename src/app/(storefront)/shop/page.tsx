@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { unstable_cache } from "next/cache";
-import { db } from "@/lib/db";
+import { db, withDbRetry } from "@/lib/db";
 import ProductCard from "@/components/shop/product-card";
 import ShopFilters from "@/components/shop/shop-filters";
 import MobileFilters from "@/components/shop/mobile-filters";
@@ -16,37 +16,41 @@ import { getThumbnail } from "@/lib/cloudinary";
 export const metadata: Metadata = { title: "EL HUYAM" };
 
 // ── 1. Category cache (300s TTL) ─────────────────────────────────────────────
-// Robust case-insensitive slug and name lookup for categories & subcategories
+// Robust case-insensitive slug and name lookup for categories & subcategories with auto-retry
 const getCategoryBySlug = unstable_cache(
   async (slug: string) => {
     const clean = slug.trim();
-    return db.category.findFirst({
-      where: {
-        OR: [
-          { slug: { equals: clean, mode: "insensitive" } },
-          { slug: { equals: clean.replace(/-/g, " "), mode: "insensitive" } },
-          { slug: { equals: clean.replace(/\s+/g, "-"), mode: "insensitive" } },
-          { name: { equals: clean.replace(/-/g, " "), mode: "insensitive" } },
-          { name: { equals: clean, mode: "insensitive" } },
-        ],
-      },
-      include: { subCategories: { orderBy: { sortOrder: "asc" } } },
-    });
+    return withDbRetry(() =>
+      db.category.findFirst({
+        where: {
+          OR: [
+            { slug: { equals: clean, mode: "insensitive" } },
+            { slug: { equals: clean.replace(/-/g, " "), mode: "insensitive" } },
+            { slug: { equals: clean.replace(/\s+/g, "-"), mode: "insensitive" } },
+            { name: { equals: clean.replace(/-/g, " "), mode: "insensitive" } },
+            { name: { equals: clean, mode: "insensitive" } },
+          ],
+        },
+        include: { subCategories: { orderBy: { sortOrder: "asc" } } },
+      })
+    );
   },
-  ["shop-category-by-slug-v4"],
+  ["shop-category-by-slug-v5"],
   { revalidate: 300, tags: ["categories"] }
 );
 
 // ── 2. Main categories cache (3600s TTL) ──────────────────────────────────────
-// Caches top-level categories for filter sidebar & header
+// Caches top-level categories for filter sidebar & header with auto-retry
 const getMainCategories = unstable_cache(
   async () => {
-    return db.category.findMany({
-      where: { parentId: null },
-      orderBy: { sortOrder: "asc" },
-    });
+    return withDbRetry(() =>
+      db.category.findMany({
+        where: { parentId: null },
+        orderBy: { sortOrder: "asc" },
+      })
+    );
   },
-  ["shop-main-categories-v4"],
+  ["shop-main-categories-v5"],
   { revalidate: 3600, tags: ["categories"] }
 );
 
@@ -192,14 +196,15 @@ const getCachedProducts = unstable_cache(
       sortBy === "rating"     ? { avgRating: "desc" } :
       { createdAt: "desc" };
 
-    const [products, total] = await Promise.all([
-      db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
-      db.product.count({ where }),
-    ]);
-
-    return { products, total };
+    return withDbRetry(async () => {
+      const [products, total] = await Promise.all([
+        db.product.findMany({ where, include: { category: true }, orderBy, skip, take: limit }),
+        db.product.count({ where }),
+      ]);
+      return { products, total };
+    });
   },
-  ["shop-products-grid-v4"],
+  ["shop-products-grid-v5"],
   { revalidate: 60, tags: ["products"] }
 );
 
