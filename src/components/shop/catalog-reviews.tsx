@@ -50,11 +50,19 @@ function StarRating({
   );
 }
 
-export default function CatalogReviews() {
-  const [reviews, setReviews] = useState<PublicReview[]>([]);
-  const [total, setTotal] = useState(0);
+export interface CatalogReviewsProps {
+  initialReviews?: PublicReview[];
+  initialTotal?: number;
+}
+
+export default function CatalogReviews({
+  initialReviews = [],
+  initialTotal = 0,
+}: CatalogReviewsProps) {
+  const [reviews, setReviews] = useState<PublicReview[]>(initialReviews);
+  const [total, setTotal] = useState<number>(initialTotal);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -79,8 +87,6 @@ export default function CatalogReviews() {
       setLoadingMore(false);
     }
   }, []);
-
-  useEffect(() => { fetchReviews(1); }, [fetchReviews]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

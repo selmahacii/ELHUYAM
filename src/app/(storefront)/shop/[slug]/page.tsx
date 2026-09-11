@@ -8,7 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { getOptimizedImageUrl } from "@/lib/utils";
 import { getProductImage } from "@/lib/cloudinary";
 
-export const revalidate = 300;
+export const revalidate = 86400;
 
 // ── generateStaticParams ──────────────────────────────────────────────────────
 // Pre-render every published product at build time so the first visitor hits

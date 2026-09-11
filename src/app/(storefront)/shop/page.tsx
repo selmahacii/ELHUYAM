@@ -54,6 +54,38 @@ const getMainCategories = unstable_cache(
   { revalidate: 3600, tags: ["categories"] }
 );
 
+// ── 3. Initial public reviews cache (3600s TTL) ──────────────────────────────
+const getInitialPublicReviews = unstable_cache(
+  async () => {
+    return withDbRetry(async () => {
+      const [reviews, total] = await Promise.all([
+        db.publicReview.findMany({
+          where: { status: "APPROVED" },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+          select: {
+            id: true,
+            name: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+          },
+        }),
+        db.publicReview.count({ where: { status: "APPROVED" } }),
+      ]);
+      return {
+        reviews: reviews.map((r: { id: string; name: string | null; rating: number; comment: string; createdAt: Date }) => ({
+          ...r,
+          createdAt: r.createdAt.toISOString(),
+        })),
+        total,
+      };
+    });
+  },
+  ["shop-initial-public-reviews-v1"],
+  { revalidate: 3600, tags: ["reviews"] }
+);
+
 interface ShopPageProps {
   searchParams: Promise<{
     category?: string;
@@ -205,7 +237,7 @@ const getCachedProducts = unstable_cache(
     });
   },
   ["shop-products-grid-v5"],
-  { revalidate: 60, tags: ["products"] }
+  { revalidate: 3600, tags: ["products"] }
 );
 
 async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPageProps["searchParams"]> }) {
@@ -381,10 +413,11 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<ShopPagePro
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const params = await searchParams;
-  const [categories, t, locale] = await Promise.all([
+  const [categories, t, locale, { reviews: initialReviews, total: initialReviewTotal }] = await Promise.all([
     getMainCategories(),
     getTranslations("shop"),
     getLocale(),
+    getInitialPublicReviews(),
   ]);
 
   const isAr = locale === "ar";
@@ -482,7 +515,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </div>
       </div>
 
-      <CatalogReviews />
+      <CatalogReviews initialReviews={initialReviews} initialTotal={initialReviewTotal} />
     </div>
   );
 }

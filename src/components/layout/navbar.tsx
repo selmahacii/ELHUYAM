@@ -13,7 +13,11 @@ import LanguageSwitcher from "@/components/language-switcher";
 import { useTranslations, useLocale } from "next-intl";
 import { useRegion } from "@/providers/region-provider";
 
-type Category = { id: string; name: string; slug: string; parentId: string | null };
+export type Category = { id: string; name: string; slug: string; parentId: string | null };
+
+interface NavbarProps {
+  initialCategories?: Category[];
+}
 
 const categoryTranslations: Record<string, string> = {
   // English / French names
@@ -85,7 +89,7 @@ const fallbackCategories: Category[] = [
   { id: "sleeves", name: "Sleeves", slug: "sleeves", parentId: "accessories" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ initialCategories }: NavbarProps = {}) {
   const t = useTranslations("nav");
   const tCommon = useTranslations("common");
   const locale = useLocale();
@@ -94,7 +98,9 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(
+    initialCategories && initialCategories.length > 0 ? initialCategories : []
+  );
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [mobileCollectionsOpen, setMobileCollectionsOpen] = useState(false);
@@ -123,13 +129,6 @@ export default function Navbar() {
     { label: t("collections"), href: "/categories", hasDropdown: true, icon: Sparkles },
     { label: t("newArrivals"), href: "/shop?newArrival=true", hasDropdown: false, icon: Sparkles },
   ];
-
-  useEffect(() => {
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then((json) => { if (json.success && Array.isArray(json.data)) setCategories(json.data); })
-      .catch(() => {});
-  }, []);
 
   const categoriesList = categories.length > 0 ? categories : fallbackCategories;
   const mainCategories = categoriesList.filter((c) => !c.parentId);
