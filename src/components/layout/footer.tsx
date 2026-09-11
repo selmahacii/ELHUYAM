@@ -37,7 +37,7 @@ const getFooterData = unstable_cache(
     }
   },
   ["footer-data"],
-  { revalidate: 3600, tags: ["footer"] }
+  { revalidate: 86400, tags: ["footer"] }
 );
 
 export default async function Footer() {

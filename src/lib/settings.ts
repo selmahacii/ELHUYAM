@@ -16,7 +16,7 @@ const getCachedSetting = unstable_cache(
     }
   },
   ["international_orders_enabled"],
-  { revalidate: 300, tags: ["settings"] }
+  { revalidate: 86400, tags: ["settings"] }
 );
 
 export async function getInternationalOrdersEnabled(): Promise<boolean> {

@@ -20,7 +20,7 @@ const getNavbarCategories = unstable_cache(
     });
   },
   ["navbar-categories-v1"],
-  { revalidate: 3600, tags: ["categories"] }
+  { revalidate: 86400, tags: ["categories"] }
 );
 
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
