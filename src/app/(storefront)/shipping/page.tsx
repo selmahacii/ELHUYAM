@@ -4,78 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Search, MapPin, CheckCircle, HelpCircle, Truck } from "lucide-react";
 
-interface ShippingFee {
-  code: string;
-  name: string;
-  domicile: number;
-  stopdesk: number;
-}
-
-const SHIPPING_FEES: ShippingFee[] = [
-  { code: "01", name: "Adrar", domicile: 1400, stopdesk: 970 },
-  { code: "02", name: "Chlef", domicile: 750, stopdesk: 520 },
-  { code: "03", name: "Laghouat", domicile: 950, stopdesk: 670 },
-  { code: "04", name: "Oum El Bouaghi", domicile: 800, stopdesk: 520 },
-  { code: "05", name: "Batna", domicile: 800, stopdesk: 520 },
-  { code: "06", name: "Bejaia", domicile: 800, stopdesk: 520 },
-  { code: "07", name: "Biskra", domicile: 950, stopdesk: 670 },
-  { code: "08", name: "Bechar", domicile: 1100, stopdesk: 720 },
-  { code: "09", name: "Blida", domicile: 400, stopdesk: 370 },
-  { code: "10", name: "Bouira", domicile: 750, stopdesk: 520 },
-  { code: "11", name: "Tamanrasset", domicile: 1600, stopdesk: 1120 },
-  { code: "12", name: "Tebessa", domicile: 850, stopdesk: 520 },
-  { code: "13", name: "Tlemcen", domicile: 850, stopdesk: 570 },
-  { code: "14", name: "Tiaret", domicile: 800, stopdesk: 520 },
-  { code: "15", name: "Tizi Ouzou", domicile: 750, stopdesk: 520 },
-  { code: "16", name: "Alger", domicile: 500, stopdesk: 420 },
-  { code: "17", name: "Djelfa", domicile: 950, stopdesk: 670 },
-  { code: "18", name: "Jijel", domicile: 800, stopdesk: 520 },
-  { code: "19", name: "Sétif", domicile: 750, stopdesk: 520 },
-  { code: "20", name: "Saida", domicile: 800, stopdesk: 570 },
-  { code: "21", name: "Skikda", domicile: 800, stopdesk: 520 },
-  { code: "22", name: "Sidi Bel Abbès", domicile: 800, stopdesk: 520 },
-  { code: "23", name: "Annaba", domicile: 800, stopdesk: 520 },
-  { code: "24", name: "Guelma", domicile: 800, stopdesk: 520 },
-  { code: "25", name: "Constantine", domicile: 800, stopdesk: 520 },
-  { code: "26", name: "Medea", domicile: 750, stopdesk: 520 },
-  { code: "27", name: "Mostaganem", domicile: 800, stopdesk: 520 },
-  { code: "28", name: "M'Sila", domicile: 850, stopdesk: 570 },
-  { code: "29", name: "Mascara", domicile: 800, stopdesk: 520 },
-  { code: "30", name: "Ouargla", domicile: 950, stopdesk: 670 },
-  { code: "31", name: "Oran", domicile: 800, stopdesk: 520 },
-  { code: "32", name: "El Bayadh", domicile: 1100, stopdesk: 670 },
-  { code: "33", name: "Illizi", domicile: 0, stopdesk: 0 },
-  { code: "34", name: "Bordj Bou Arreridj", domicile: 750, stopdesk: 520 },
-  { code: "35", name: "Boumerdes", domicile: 750, stopdesk: 520 },
-  { code: "36", name: "El Tarf", domicile: 800, stopdesk: 520 },
-  { code: "37", name: "Tindouf", domicile: 0, stopdesk: 0 },
-  { code: "38", name: "Tissemsilt", domicile: 800, stopdesk: 520 },
-  { code: "39", name: "El Oued", domicile: 950, stopdesk: 670 },
-  { code: "40", name: "Khenchela", domicile: 800, stopdesk: 520 },
-  { code: "41", name: "Souk Ahras", domicile: 800, stopdesk: 520 },
-  { code: "42", name: "Tipaza", domicile: 750, stopdesk: 520 },
-  { code: "43", name: "Mila", domicile: 800, stopdesk: 520 },
-  { code: "44", name: "Ain Defla", domicile: 750, stopdesk: 520 },
-  { code: "45", name: "Naama", domicile: 1100, stopdesk: 670 },
-  { code: "46", name: "Ain Temouchent", domicile: 800, stopdesk: 520 },
-  { code: "47", name: "Ghardaia", domicile: 950, stopdesk: 670 },
-  { code: "48", name: "Relizane", domicile: 800, stopdesk: 520 },
-  { code: "49", name: "Timimoun", domicile: 1400, stopdesk: 0 },
-  { code: "50", name: "Bordj Badji Mokhtar", domicile: 0, stopdesk: 0 },
-  { code: "51", name: "Ouled Djellal", domicile: 950, stopdesk: 670 },
-  { code: "52", name: "Béni Abbès", domicile: 1000, stopdesk: 970 },
-  { code: "53", name: "In Salah", domicile: 1600, stopdesk: 0 },
-  { code: "54", name: "In Guezzam", domicile: 1600, stopdesk: 0 },
-  { code: "55", name: "Touggourt", domicile: 950, stopdesk: 670 },
-  { code: "56", name: "Djanet", domicile: 0, stopdesk: 0 },
-  { code: "57", name: "M'Ghair", domicile: 950, stopdesk: 0 },
-  { code: "58", name: "Meniaa", domicile: 1000, stopdesk: 0 }
-];
+import { WILAYAS } from "@/lib/wilayas";
 
 export default function ShippingPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredFees = SHIPPING_FEES.filter((fee) =>
+  const filteredFees = WILAYAS.filter((fee) =>
     fee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     fee.code.includes(searchQuery)
   );
@@ -83,8 +17,8 @@ export default function ShippingPage() {
   function formatFee(amount: number) {
     if (amount === 0) {
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-100">
-          Free
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-neutral-100 text-neutral-600 border border-neutral-200">
+          Non disponible
         </span>
       );
     }

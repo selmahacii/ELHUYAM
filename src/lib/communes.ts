@@ -7,7 +7,7 @@ export const COMMUNES: Record<string, string[]> = {
   "06": ["Béjaïa", "Akbou", "Amizour", "Sidi Aïch", "Kherrata", "El Kseur", "Tazmalt"],
   "07": ["Biskra", "Tolga", "Ouled Djellal", "Sidi Okba", "El Kantara", "M'Chouneche"],
   "08": ["Béchar", "Abadla", "Kenadsa", "Béni Abbès", "Taghit", "Lahmar"],
-  "09": ["Blida", "Boufarik", "Ouled Yaïch", "Beni Mered", "Chebli", "El Affroun", "Larbaa", "Meftah", "Mouzaïa", "Bougara"],
+  "09": ["Blida", "Boufarik", "Ouled Yaïch", "Beni Mered", "Chebli", "El Affroun", "Larbaa", "Meftah", "Mouzaïa", "Bougara", "Chréa", "Chiffa", "Beni Tamou", "Guerrouaou", "Djebabra", "Benkhelil", "Bouinan", "Ouled Slama", "Soumaa", "Oued El Alleug", "Hammam Melouane", "Ain Romana", "Bouarfa", "Oued Djer", "Souhane"],
   "10": ["Bouira", "Lakhdaria", "Sour El Ghozlane", "Aïn Bessem", "M'Chedallah", "Bechloul"],
   "11": ["Tamanrasset", "In Salah", "In Ghar", "Abalessa", "In Amguel"],
   "12": ["Tébessa", "Bir El Ater", "Cheria", "Ouenza", "El Aouinet", "Negrine"],

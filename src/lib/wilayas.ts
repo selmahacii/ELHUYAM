@@ -15,7 +15,7 @@ export const WILAYAS: Wilaya[] = [
   { code: "06", name: "Béjaïa", nameAr: "بجاية", domicile: 800, stopdesk: 520 },
   { code: "07", name: "Biskra", nameAr: "بسكرة", domicile: 950, stopdesk: 670 },
   { code: "08", name: "Béchar", nameAr: "بشار", domicile: 1100, stopdesk: 720 },
-  { code: "09", name: "Blida", nameAr: "البليدة", domicile: 400, stopdesk: 370 },
+  { code: "09", name: "Blida", nameAr: "البليدة", domicile: 500, stopdesk: 370 },
   { code: "10", name: "Bouira", nameAr: "البويرة", domicile: 750, stopdesk: 520 },
   { code: "11", name: "Tamanrasset", nameAr: "تمنراست", domicile: 1600, stopdesk: 1120 },
   { code: "12", name: "Tébessa", nameAr: "تبسة", domicile: 850, stopdesk: 520 },
@@ -55,21 +55,21 @@ export const WILAYAS: Wilaya[] = [
   { code: "46", name: "Aïn Témouchent", nameAr: "عين تموشنت", domicile: 800, stopdesk: 520 },
   { code: "47", name: "Ghardaïa", nameAr: "غرداية", domicile: 950, stopdesk: 670 },
   { code: "48", name: "Relizane", nameAr: "غليزان", domicile: 800, stopdesk: 520 },
-  { code: "49", name: "Timimoun", nameAr: "تميمون", domicile: 1400, stopdesk: 0 },
+  { code: "49", name: "Timimoun", nameAr: "تميمون", domicile: 1400, stopdesk: 970 },
   { code: "50", name: "Bordj Badji Mokhtar", nameAr: "برج باجي مختار", domicile: 0, stopdesk: 0 },
   { code: "51", name: "Ouled Djellal", nameAr: "أولاد جلال", domicile: 950, stopdesk: 670 },
-  { code: "52", name: "Béni Abbès", nameAr: "بني عباس", domicile: 1000, stopdesk: 970 },
-  { code: "53", name: "In Salah", nameAr: "عين صالح", domicile: 1600, stopdesk: 0 },
+  { code: "52", name: "Béni Abbès", nameAr: "بني عباس", domicile: 1200, stopdesk: 970 },
+  { code: "53", name: "In Salah", nameAr: "عين صالح", domicile: 1600, stopdesk: 1120 },
   { code: "54", name: "In Guezzam", nameAr: "عين قزام", domicile: 1600, stopdesk: 0 },
   { code: "55", name: "Touggourt", nameAr: "تقرت", domicile: 950, stopdesk: 670 },
   { code: "56", name: "Djanet", nameAr: "جانت", domicile: 0, stopdesk: 0 },
   { code: "57", name: "El M'Ghair", nameAr: "المغير", domicile: 950, stopdesk: 0 },
-  { code: "58", name: "El Meniaa", nameAr: "المنيعة", domicile: 1000, stopdesk: 0 },
+  { code: "58", name: "El Meniaa", nameAr: "المنيعة", domicile: 1000, stopdesk: 670 }
 ];
 
 export function getShippingCost(wilayaCode: string, deliveryType: "DOMICILE" | "STOPDESK", subtotal: number): number {
   const wilaya = WILAYAS.find((w) => w.code === wilayaCode);
-  if (!wilaya) return deliveryType === "STOPDESK" ? 300 : 500;
+  if (!wilaya) return deliveryType === "STOPDESK" ? 370 : 500;
   return deliveryType === "STOPDESK" ? wilaya.stopdesk : wilaya.domicile;
 }
 
