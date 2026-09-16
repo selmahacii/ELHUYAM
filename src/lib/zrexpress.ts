@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { BUREAUX } from "@/lib/bureaux";
 import { getWilayaByCode } from "@/lib/wilayas";
+import { ZR_WILAYA_TERRITORIES, normalizeZRSearchedText } from "@/lib/zr-territories";
 
 const ZR_BASE = "https://api.zrexpress.app";
 const ZR_VERSION = "1";
@@ -116,7 +117,7 @@ async function zrFetch<T>(
         ...defaultHeaders,
         ...(options.headers as Record<string, string> | undefined),
       },
-      next: { revalidate: 0 },
+      cache: "no-store",
     });
 
     const text = await res.text();
@@ -415,34 +416,6 @@ export async function zrSearchHubs(
   });
 }
 
-function extractTerritoryPair(items: any[]): { cityTerritoryId: string; districtTerritoryId: string } | null {
-  if (!Array.isArray(items) || items.length === 0) return null;
-
-  // 1. Preference 1: District item with explicit cityTerritoryId that differs from its own ID
-  for (const item of items) {
-    const cityId = item.cityTerritoryId || item.parentTerritoryId || item.parentId || item.cityId;
-    const distId = item.id || item.districtTerritoryId;
-    if (cityId && distId && cityId !== distId) {
-      return { cityTerritoryId: cityId, districtTerritoryId: distId };
-    }
-  }
-
-  // 2. Preference 2: A parent city item and a child district item
-  const cityItem = items.find((i) => !i.cityTerritoryId || i.cityTerritoryId === i.id || i.type === "city" || i.isCity);
-  const districtItem = items.find((i) => i.id && i.id !== cityItem?.id);
-
-  if (cityItem?.id && districtItem?.id && cityItem.id !== districtItem.id) {
-    return { cityTerritoryId: cityItem.id, districtTerritoryId: districtItem.id };
-  }
-
-  // 3. Preference 3: If 2 distinct items exist
-  if (items.length >= 2 && items[0]?.id && items[1]?.id && items[0].id !== items[1].id) {
-    return { cityTerritoryId: items[0].id, districtTerritoryId: items[1].id };
-  }
-
-  return null;
-}
-
 const territoryCache = new Map<string, { cityTerritoryId: string; districtTerritoryId: string }>();
 
 export async function resolveZRTerritoryIds(
@@ -457,39 +430,65 @@ export async function resolveZRTerritoryIds(
     return territoryCache.get(cacheKey)!;
   }
 
-  const candidatesSet = new Set<string>();
+  // 1. Look up exact Wilaya Entry from verified ZR dictionary
+  const wilayaEntry =
+    ZR_WILAYA_TERRITORIES[wilayaCode] ||
+    Object.values(ZR_WILAYA_TERRITORIES).find(
+      (v) =>
+        v.name.toLowerCase() === (wilayaName || "").toLowerCase() ||
+        v.normName.toLowerCase() === normalizeZRSearchedText(wilayaName || "").toLowerCase() ||
+        (v.nameAr && v.nameAr === wilayaName)
+    );
 
+  // If wilaya entry not found or not deliverable, safe fallback to Alger
+  if (!wilayaEntry || !wilayaEntry.zrWilayaId) {
+    const fallback = {
+      cityTerritoryId: "d134c182-7dac-4655-9d9b-bbdb62aa2ec4", // Alger Wilaya ID
+      districtTerritoryId: "8c97a133-681b-4da4-8466-2f6110557fa2", // Alger Centre Commune ID
+    };
+    territoryCache.set(cacheKey, fallback);
+    return fallback;
+  }
+
+  const wilayaTerritoryId = wilayaEntry.zrWilayaId;
+  const defaultCommuneTerritoryId = wilayaEntry.zrDefaultCommuneId || wilayaTerritoryId;
+
+  // 2. Extract candidate commune search terms from city and street
+  const candidatesSet = new Set<string>();
   const cleanWord = (s: string) =>
-    s
+    normalizeZRSearchedText(s)
       .replace(/hub|bureau|مكتب|–|-|\d+/gi, " ")
       .trim();
-
-  if (street && street.trim()) {
-    const cleanSt = cleanWord(street);
-    if (cleanSt.length >= 3) candidatesSet.add(cleanSt);
-  }
 
   if (city && city.trim()) {
     const cleanCi = cleanWord(city);
     if (cleanCi.length >= 3) candidatesSet.add(cleanCi);
   }
-
-  if (wilayaName && wilayaName.trim()) {
-    candidatesSet.add(wilayaName.trim());
+  if (street && street.trim()) {
+    const cleanSt = cleanWord(street);
+    if (cleanSt.length >= 3) candidatesSet.add(cleanSt);
   }
 
-  // Filter out numeric strings so numbers like "16" don't match Adrar or random territories
   const candidates = Array.from(candidatesSet).filter((c) => !/^\d+$/.test(c));
 
-  // Try each candidate query
+  // 3. Search ZR Express for commune belonging to THIS specific wilaya
   for (const query of candidates) {
     try {
       const res = await zrSearchTerritories(settings, query);
-      if (res.ok && Array.isArray(res.data?.items)) {
-        const pair = extractTerritoryPair(res.data.items);
-        if (pair) {
-          territoryCache.set(cacheKey, pair);
-          return pair;
+      const rawItems = res.data?.items || (Array.isArray(res.data) ? res.data : []);
+      if (res.ok && Array.isArray(rawItems)) {
+        const match = rawItems.find(
+          (i: any) =>
+            i.level === "commune" &&
+            (i.parentId === wilayaTerritoryId || i.cityTerritoryId === wilayaTerritoryId)
+        );
+        if (match?.id) {
+          const result = {
+            cityTerritoryId: wilayaTerritoryId,
+            districtTerritoryId: match.id,
+          };
+          territoryCache.set(cacheKey, result);
+          return result;
         }
       }
     } catch {
@@ -497,38 +496,13 @@ export async function resolveZRTerritoryIds(
     }
   }
 
-  // Fallback to searching Wilaya Name directly (e.g. "Alger")
-  if (wilayaName) {
-    try {
-      const res = await zrSearchTerritories(settings, wilayaName.trim());
-      if (res.ok && Array.isArray(res.data?.items)) {
-        const pair = extractTerritoryPair(res.data.items);
-        if (pair) {
-          territoryCache.set(cacheKey, pair);
-          return pair;
-        }
-      }
-    } catch {}
-  }
-
-  // Ultimate fallback to Alger
-  try {
-    const res = await zrSearchTerritories(settings, "Alger");
-    if (res.ok && Array.isArray(res.data?.items)) {
-      const pair = extractTerritoryPair(res.data.items);
-      if (pair) {
-        territoryCache.set(cacheKey, pair);
-        return pair;
-      }
-    }
-  } catch {}
-
-  const fallback = {
-    cityTerritoryId: "53c9e062-9c4e-4c77-8b71-55eabf887f83",
-    districtTerritoryId: "8d0b6cd9-7712-47d2-9ea4-460246494c32",
+  // 4. Guaranteed Wilaya Default (NEVER sends to another wilaya!)
+  const result = {
+    cityTerritoryId: wilayaTerritoryId,
+    districtTerritoryId: defaultCommuneTerritoryId,
   };
-  territoryCache.set(cacheKey, fallback);
-  return fallback;
+  territoryCache.set(cacheKey, result);
+  return result;
 }
 
 export async function zrGetAllHubs(
@@ -545,57 +519,72 @@ const hubCache = new Map<string, string>();
 
 export async function resolveZRHubId(
   settings: ZRSettings,
-  wilayaName: string,
-  wilayaCode: string,
+  param1: string,
+  param2?: string,
   city?: string | null,
   street?: string | null
 ): Promise<string | null> {
-  const cacheKey = `${wilayaCode}_${wilayaName}_${city ?? ""}_${street ?? ""}`;
+  let wilayaName = "";
+  let wilayaCode = "";
+  let rawCity = city || "";
+  let rawStreet = street || "";
+
+  if (param2 && /^\d{2}$/.test(param2)) {
+    wilayaName = param1;
+    wilayaCode = param2;
+  } else {
+    rawStreet = param1 || "";
+    wilayaName = param2 || "";
+  }
+
+  const cacheKey = `${wilayaCode}_${wilayaName}_${rawCity}_${rawStreet}`;
   if (hubCache.has(cacheKey)) {
     return hubCache.get(cacheKey)!;
   }
 
-  // 1. Try to match bureau from local database
-  const fullSearchStr = `${street ?? ""} ${city ?? ""}`;
-  const localBureau = BUREAUX.find(
-    (b) => fullSearchStr.toLowerCase().includes(b.name.toLowerCase()) || (street && street.toLowerCase().includes((b.commune || b.city).toLowerCase()))
-  );
+  const rawFull = `${rawStreet} ${rawCity} ${wilayaName}`.toLowerCase();
 
-  const targetCommune = localBureau?.commune || city || "";
-  const targetWilayaName = localBureau ? getWilayaByCode(localBureau.wilayaCode)?.name || wilayaName : wilayaName;
-  const targetWilayaCode = localBureau?.wilayaCode || wilayaCode;
+  // 1. Match local bureau entry
+  const matchedBureau = BUREAUX.find(
+    (b) =>
+      b.isHub &&
+      (rawFull.includes(b.name.toLowerCase()) ||
+        (b.nameAr && rawFull.includes(b.nameAr)) ||
+        (b.city && rawFull.includes(b.city.toLowerCase())) ||
+        (b.commune && rawFull.includes(b.commune.toLowerCase())))
+  ) || BUREAUX.find((b) => b.isHub && b.wilayaCode === wilayaCode);
 
-  const candidateQueries = [
-    targetCommune,
-    street ? street.replace(/hub|bureau|مكتب|\d+/gi, "").trim() : "",
-    targetWilayaName,
-  ].filter((c) => c && c.length >= 3 && !/^\d+$/.test(c));
+  const targetSearch = matchedBureau
+    ? normalizeZRSearchedText(matchedBureau.name.replace(/Hub\s+/i, "").replace(/\s+\d+\s+مكتب\s+\S+/i, ""))
+    : normalizeZRSearchedText(rawCity || wilayaName);
 
-  // Helper to check if a hub item is a valid pickup point
+  const targetWilayaCode = matchedBureau?.wilayaCode || wilayaCode;
+
   const isPickupHub = (h: any) =>
     h.isPickupPoint !== false &&
     h.isPickup !== false &&
     h.pickup !== false &&
     !String(h.type || h.hubType || "").toLowerCase().includes("tri");
 
-  // 2. Search ZR Express hubs with specific candidate queries
-  for (const query of candidateQueries) {
+  // 2. Search ZR Express hubs by target keyword
+  if (targetSearch) {
     try {
-      const res = await zrSearchHubs(settings, query);
+      const res = await zrSearchHubs(settings, targetSearch);
       const rawItems = res.data?.items || (Array.isArray(res.data) ? res.data : []);
       if (res.ok && Array.isArray(rawItems) && rawItems.length > 0) {
         const pickupItems = rawItems.filter(isPickupHub);
         const itemsToSearch = pickupItems.length > 0 ? pickupItems : rawItems;
 
-        const bestHub = itemsToSearch.find((h: any) => {
-          const hName = (h.name || h.hubName || h.address || "").toLowerCase();
-          const hCode = String(h.wilayaCode || h.code || "");
-          return (
-            hName.includes(query.toLowerCase()) ||
-            hCode === targetWilayaCode ||
-            (targetWilayaName && hName.includes(targetWilayaName.toLowerCase()))
-          );
-        }) || itemsToSearch[0];
+        const bestHub =
+          itemsToSearch.find((h: any) => {
+            const hName = normalizeZRSearchedText(h.name || h.hubName || h.address?.street || "").toLowerCase();
+            const hCity = normalizeZRSearchedText(h.address?.city || h.address?.district || "").toLowerCase();
+            return (
+              hName.includes(targetSearch.toLowerCase()) ||
+              hCity.includes(targetSearch.toLowerCase()) ||
+              (matchedBureau && hName.includes(normalizeZRSearchedText(matchedBureau.city).toLowerCase()))
+            );
+          }) || itemsToSearch[0];
 
         const foundId = bestHub?.id || bestHub?.hubId;
         if (foundId) {
@@ -606,7 +595,7 @@ export async function resolveZRHubId(
     } catch {}
   }
 
-  // 3. Fetch all hubs for tenant and strictly filter by Wilaya Code or Wilaya Name
+  // 3. Fallback: Search all tenant hubs
   try {
     const allRes = await zrGetAllHubs(settings);
     const rawItems = allRes.data?.items || (Array.isArray(allRes.data) ? allRes.data : []);
@@ -615,12 +604,12 @@ export async function resolveZRHubId(
       const itemsToSearch = pickupItems.length > 0 ? pickupItems : rawItems;
 
       const matched = itemsToSearch.find((item: any) => {
-        const name = (item.name || item.hubName || item.city || "").toLowerCase();
+        const name = normalizeZRSearchedText(item.name || item.hubName || item.city || "").toLowerCase();
         const code = String(item.wilayaCode || item.code || "");
         return (
-          code === targetWilayaCode ||
-          (targetWilayaName && name.includes(targetWilayaName.toLowerCase())) ||
-          (targetCommune && name.includes(targetCommune.toLowerCase()))
+          (targetWilayaCode && code === targetWilayaCode) ||
+          (matchedBureau && name.includes(normalizeZRSearchedText(matchedBureau.city).toLowerCase())) ||
+          (targetSearch && name.includes(targetSearch.toLowerCase()))
         );
       });
 

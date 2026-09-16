@@ -162,7 +162,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // Pickup-point (stop desk) parcels require a top-level hubId.
       let hubId: string | undefined;
       if (zrDeliveryType === "pickup-point") {
-        hubId = (await resolveZRHubId(settings, existingOrder.shippingStreet ?? "", wilayaName)) ?? undefined;
+        hubId = (await resolveZRHubId(
+          settings,
+          wilayaName,
+          wilayaCode,
+          existingOrder.shippingCity,
+          existingOrder.shippingStreet
+        )) ?? undefined;
       }
 
       const payload = {
