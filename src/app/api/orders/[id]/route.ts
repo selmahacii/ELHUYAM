@@ -237,7 +237,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           })),
           order.shippingFee,
           order.subtotal,
-          order.discount
+          order.discount,
+          {
+            firstName: order.shippingFirstName,
+            lastName: order.shippingLastName,
+            phone: order.shippingPhone,
+            street: order.shippingStreet,
+            city: order.shippingCity,
+            state: order.shippingState,
+            wilayaCode: order.wilayaCode,
+            deliveryType: order.deliveryType,
+          }
         ).catch((err) => console.error("[email/confirmed/patch]", err));
       }
     }
@@ -268,7 +278,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           })),
           order.shippingFee,
           order.subtotal,
-          order.discount
+          order.discount,
+          {
+            firstName: order.shippingFirstName,
+            lastName: order.shippingLastName,
+            phone: order.shippingPhone,
+            street: order.shippingStreet,
+            city: order.shippingCity,
+            state: order.shippingState,
+            wilayaCode: order.wilayaCode,
+            deliveryType: order.deliveryType,
+          }
         ).catch((err) => console.error("[email/shipped/patch]", err));
       }
     }

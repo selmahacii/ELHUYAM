@@ -196,7 +196,22 @@ export async function POST(req: NextRequest, { params }: Props) {
           productTitle: i.productTitle,
           quantity: i.quantity,
           price: i.price,
-        }))
+          size: i.size || null,
+          color: i.color || null,
+        })),
+        order.shippingFee,
+        order.subtotal,
+        order.discount,
+        {
+          firstName: order.shippingFirstName,
+          lastName: order.shippingLastName,
+          phone: order.shippingPhone,
+          street: order.shippingStreet,
+          city: order.shippingCity,
+          state: order.shippingState,
+          wilayaCode: order.wilayaCode,
+          deliveryType: order.deliveryType,
+        }
       ).catch((err) => console.error("[email/shipped/ship-zr]", err));
     }
 

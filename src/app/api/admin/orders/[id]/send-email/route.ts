@@ -52,6 +52,17 @@ export async function POST(req: NextRequest, { params }: Params) {
       color: i.color || null,
     }));
 
+    const shippingDetails = {
+      firstName: order.shippingFirstName,
+      lastName: order.shippingLastName,
+      phone: order.shippingPhone,
+      street: order.shippingStreet,
+      city: order.shippingCity,
+      state: order.shippingState,
+      wilayaCode: order.wilayaCode,
+      deliveryType: order.deliveryType,
+    };
+
     if (type === "shipped") {
       const trackingNumber = order.trackingNumber || "ZR-PENDING";
       await sendOrderShippedEmail(
@@ -64,7 +75,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         items,
         order.shippingFee,
         order.subtotal,
-        order.discount
+        order.discount,
+        shippingDetails
       );
     } else {
       await sendOrderConfirmationEmail(
@@ -76,7 +88,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         items,
         order.shippingFee,
         order.subtotal,
-        order.discount
+        order.discount,
+        shippingDetails
       );
     }
 

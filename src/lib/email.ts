@@ -165,7 +165,116 @@ export async function sendPasswordResetEmail(name: string, email: string, token:
   });
 }
 
-// ─── 3. Order Confirmation Email (English - Confirmed & Dispatched) ───────────
+// ─── Types ───────────────────────────────────────────────────────────────────
+export interface OrderEmailShippingDetails {
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  street?: string | null;
+  city?: string | null;
+  state?: string | null;
+  wilayaCode?: string | null;
+  postalCode?: string | null;
+  deliveryType?: "DOMICILE" | "STOPDESK" | string | null;
+  carrier?: string | null;
+}
+
+function formatMoney(amount: number, isInternational: boolean): string {
+  const currency = isInternational ? "EUR" : "DZD";
+  const locale = isInternational ? "fr-FR" : "fr-DZ";
+  return new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+    style: "currency",
+    currency: currency,
+    minimumFractionDigits: 2,
+  }).format(amount).replace(/[\u00a0\u202f]/g, " ");
+}
+
+function renderDeliveryDetailsTable(
+  shippingDetails: OrderEmailShippingDetails | undefined,
+  fallbackName: string
+): string {
+  if (!shippingDetails) return "";
+
+  const recipientName =
+    `${shippingDetails.firstName ?? ""} ${shippingDetails.lastName ?? ""}`.trim() ||
+    fallbackName;
+  const phone = shippingDetails.phone?.trim();
+  const wilaya = shippingDetails.state?.trim() || "";
+  const wilayaCode = shippingDetails.wilayaCode?.trim() || "";
+  const commune = shippingDetails.city?.trim() || "";
+  const street = shippingDetails.street?.trim() || "";
+  const isStopdesk =
+    shippingDetails.deliveryType === "STOPDESK" ||
+    /stop\s*desk|hub|bureau|مكتب/i.test(street);
+
+  const destinationParts = [
+    wilaya ? (wilayaCode ? `${wilaya} (${wilayaCode})` : wilaya) : "",
+    commune && commune.toLowerCase() !== wilaya.toLowerCase() ? commune : "",
+  ].filter(Boolean).join(" • ");
+
+  return `
+    <!-- Delivery Information Card -->
+    <tr>
+      <td style="padding: 0 40px 25px 40px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 22px;">
+          <tr>
+            <td colspan="2" style="padding-bottom: 12px; border-bottom: 1px solid #EADBCE;">
+              <span style="font-family: Georgia, serif; font-size: 12.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
+                📍 DELIVERY INFORMATION / DÉTAILS DE LIVRAISON
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0 6px 0; font-size: 12px; color: #8A6538; font-weight: 600; vertical-align: top;">
+              Delivery Method:
+            </td>
+            <td align="right" style="padding: 10px 0 6px 0; font-size: 12.5px; color: #141414; font-weight: 700;">
+              ${isStopdesk ? "🏢 Stop Desk (Pickup Bureau ZR Express)" : "🏠 Home Delivery (Livraison à domicile)"}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; font-size: 12px; color: #8A6538; font-weight: 600; vertical-align: top;">
+              Recipient:
+            </td>
+            <td align="right" style="padding: 5px 0; font-size: 12.5px; color: #141414; font-weight: 600;">
+              ${recipientName}${phone ? ` • <span style="font-family: monospace; font-weight: bold;">${phone}</span>` : ""}
+            </td>
+          </tr>
+          ${destinationParts ? `
+            <tr>
+              <td style="padding: 5px 0; font-size: 12px; color: #8A6538; font-weight: 600; vertical-align: top;">
+                Destination:
+              </td>
+              <td align="right" style="padding: 5px 0; font-size: 12.5px; color: #141414; font-weight: 600;">
+                ${destinationParts}
+              </td>
+            </tr>
+          ` : ""}
+          ${street ? `
+            <tr>
+              <td style="padding: 5px 0 6px 0; font-size: 12px; color: #8A6538; font-weight: 600; vertical-align: top;">
+                ${isStopdesk ? "Pickup Bureau / Hub:" : "Address / Adresse:"}
+              </td>
+              <td align="right" style="padding: 5px 0 6px 0; font-size: 12.5px; color: #141414; font-weight: 600; line-height: 1.4; max-width: 320px;">
+                ${street}
+              </td>
+            </tr>
+          ` : ""}
+          <tr>
+            <td style="padding: 8px 0 0 0; font-size: 12px; color: #8A6538; font-weight: 600; border-top: 1px dashed #EADBCE; vertical-align: middle;">
+              Courier Service:
+            </td>
+            <td align="right" style="padding: 8px 0 0 0; font-size: 12px; color: #236E39; font-weight: 700; border-top: 1px dashed #EADBCE;">
+              🚚 ZR Express (Tracked Express Courier)
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `;
+}
+
+// ─── 3. Order Confirmation Email (English Luxury) ─────────────────────────────
 export async function sendOrderConfirmationEmail(
   email: string,
   name: string,
@@ -175,50 +284,31 @@ export async function sendOrderConfirmationEmail(
   items: { productTitle: string; quantity: number; price: number; size?: string | null; color?: string | null }[],
   shippingFee: number = 0,
   subtotal?: number,
-  discount?: number
+  discount?: number,
+  shippingDetails?: OrderEmailShippingDetails
 ) {
-  const currency = isInternational ? "EUR" : "DZD";
-  const locale = isInternational ? "fr-FR" : "fr-DZ";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.elhuyam.com";
 
-  const formattedTotal = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-    style: "currency",
-    currency: currency,
-    minimumFractionDigits: 2,
-  }).format(totalAmount).replace(/[\u00a0\u202f]/g, " ");
+  const itemsSum = items.reduce((acc, item) => acc + (Number(item.price || 0) * (Number(item.quantity) || 1)), 0);
+  const resolvedSubtotal = (subtotal !== undefined && subtotal !== null && subtotal > 0) ? subtotal : itemsSum;
 
-  const formattedShippingFee = shippingFee > 0
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(shippingFee).replace(/[\u00a0\u202f]/g, " ")
-    : "Free Delivery";
+  let resolvedShippingFee = shippingFee;
+  if (resolvedShippingFee === undefined || resolvedShippingFee === null || (resolvedShippingFee === 0 && totalAmount > resolvedSubtotal)) {
+    resolvedShippingFee = Math.max(0, Math.round((totalAmount - resolvedSubtotal + (discount || 0)) * 100) / 100);
+  }
 
-  const formattedSubtotal = subtotal !== undefined
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(subtotal).replace(/[\u00a0\u202f]/g, " ")
-    : null;
+  const formattedSubtotal = formatMoney(resolvedSubtotal, isInternational);
+  const formattedShippingFee = resolvedShippingFee > 0
+    ? formatMoney(resolvedShippingFee, isInternational)
+    : (isInternational ? "Free Delivery (€0.00)" : "Free Delivery (0,00 DA)");
 
-  const formattedDiscount = discount && discount > 0
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(discount).replace(/[\u00a0\u202f]/g, " ")
-    : null;
+  const formattedDiscount = (discount && discount > 0) ? formatMoney(discount, isInternational) : null;
+  const formattedTotal = formatMoney(totalAmount, isInternational);
 
   const itemsHtml = items
     .map((item) => {
-      const formattedPrice = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(item.price).replace(/[\u00a0\u202f]/g, " ");
-
+      const linePrice = Number(item.price || 0) * (Number(item.quantity) || 1);
+      const formattedPrice = formatMoney(linePrice, isInternational);
       const variantDetails = [item.color, item.size].filter(Boolean).join(" • ");
 
       return `
@@ -238,13 +328,15 @@ export async function sendOrderConfirmationEmail(
     })
     .join("");
 
+  const deliveryDetailsHtml = renderDeliveryDetailsTable(shippingDetails, name);
+
   await sendEmail({
     to: email,
-    subject: `Order Confirmed & Dispatched #${orderNumber} ✦ EL HUYAAM`,
+    subject: `Order Confirmed #${orderNumber} ✦ EL HUYAAM`,
     html: `
       <!DOCTYPE html>
       <html lang="en">
-      <head><meta charset="utf-8"><title>Order Confirmed & Dispatched — EL HUYAAM</title></head>
+      <head><meta charset="utf-8"><title>Order Confirmed — EL HUYAAM</title></head>
       <body style="margin: 0; padding: 0; background-color: #F7F5F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F7F5F0; padding: 40px 10px;">
           <tr>
@@ -269,16 +361,16 @@ export async function sendOrderConfirmationEmail(
                 <tr>
                   <td style="padding: 15px 40px 25px 40px; text-align: center;">
                     <div style="display: inline-block; background: #FAF5EE; border: 1px solid #E3D5C1; color: #8A6538; font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; padding: 7px 18px; border-radius: 24px; margin-bottom: 20px;">
-                      ✦ ORDER CONFIRMED & DISPATCHED ✦
+                      ✦ ORDER CONFIRMED ✦
                     </div>
                     <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 23px; margin: 0 0 14px 0; font-weight: normal;">Dear ${name},</h2>
                     <p style="color: #6B5744; font-size: 14.5px; line-height: 1.85; margin: 0;">
-                      We are delighted to confirm that your order <strong>#${orderNumber}</strong> has been officially confirmed and handed over to our shipping partner (<strong>ZR Express</strong>). Your bespoke pieces are now on their way to you with the utmost care and refinement.
+                      Thank you for your order. We are delighted to confirm that order <strong>#${orderNumber}</strong> has been successfully received and confirmed. Our atelier is now preparing your bespoke creation with the utmost care, dedication, and elegance.
                     </p>
                   </td>
                 </tr>
 
-                <!-- Order Reference & Courier Card -->
+                <!-- Order Reference Card -->
                 <tr>
                   <td style="padding: 0 40px 25px 40px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: #FDFBF7; border: 1px dashed #E2D3BE; border-radius: 12px; padding: 16px 20px;">
@@ -287,7 +379,7 @@ export async function sendOrderConfirmationEmail(
                           ORDER NUMBER: <span style="font-family: monospace; font-size: 14px; color: #141414; font-weight: bold; letter-spacing: 1px;">#${orderNumber}</span>
                         </td>
                         <td align="right" style="font-size: 11px; color: #236E39; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                          ✓ HANDED OVER TO COURIER
+                          ✓ CONFIRMED & IN PREPARATION
                         </td>
                       </tr>
                     </table>
@@ -312,23 +404,21 @@ export async function sendOrderConfirmationEmail(
                   </td>
                 </tr>
 
-                <!-- Total Summary Highlight Box (with Delivery Fee) -->
+                <!-- Total Summary Breakdown Box -->
                 <tr>
-                  <td style="padding: 0 40px 30px 40px;">
+                  <td style="padding: 0 40px 25px 40px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 24px;">
-                      ${formattedSubtotal ? `
-                        <tr>
-                          <td align="left" style="padding-bottom: 8px; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
-                            Items Subtotal
-                          </td>
-                          <td align="right" style="padding-bottom: 8px; font-size: 13.5px; font-weight: 600; color: #141414;">
-                            ${formattedSubtotal}
-                          </td>
-                        </tr>
-                      ` : ""}
+                      <tr>
+                        <td align="left" style="padding-bottom: 8px; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
+                          Items Subtotal (Sous-total articles)
+                        </td>
+                        <td align="right" style="padding-bottom: 8px; font-size: 13.5px; font-weight: 600; color: #141414;">
+                          ${formattedSubtotal}
+                        </td>
+                      </tr>
                       <tr>
                         <td align="left" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
-                          Delivery Fee (ZR Express)
+                          Delivery Fee (Frais de livraison ZR Express)
                         </td>
                         <td align="right" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 13.5px; font-weight: 600; color: #141414;">
                           ${formattedShippingFee}
@@ -337,7 +427,7 @@ export async function sendOrderConfirmationEmail(
                       ${formattedDiscount ? `
                         <tr>
                           <td align="left" style="padding-bottom: 12px; font-size: 12.5px; color: #236E39; font-weight: 600;">
-                            Discount / Coupon
+                            Discount / Coupon (Remise)
                           </td>
                           <td align="right" style="padding-bottom: 12px; font-size: 13.5px; font-weight: 700; color: #236E39;">
                             -${formattedDiscount}
@@ -349,7 +439,7 @@ export async function sendOrderConfirmationEmail(
                           <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                               <td align="left" style="font-family: Georgia, serif; font-size: 14px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-                                TOTAL AMOUNT DUE
+                                TOTAL AMOUNT DUE (TOTAL À PAYER)
                               </td>
                               <td align="right" style="font-family: -apple-system, sans-serif; font-size: 19px; font-weight: 800; color: #141414; letter-spacing: 0.5px;">
                                 ${formattedTotal}
@@ -362,9 +452,12 @@ export async function sendOrderConfirmationEmail(
                   </td>
                 </tr>
 
+                <!-- Delivery Details Section -->
+                ${deliveryDetailsHtml}
+
                 <!-- Dual Action CTAs -->
                 <tr>
-                  <td align="center" style="padding: 0 40px 35px 40px;">
+                  <td align="center" style="padding: 10px 40px 35px 40px;">
                     <a href="${appUrl}/orders/track?orderNumber=${orderNumber}"
                        style="display: block; width: 85%; max-width: 380px; padding: 15px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center; margin-bottom: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.12);">
                       TRACK YOUR ORDER LIVE →
@@ -426,7 +519,7 @@ export async function sendOrderConfirmationEmail(
   });
 }
 
-// ─── 4. Order Shipped Email (English - Handed Over with Tracking Number) ───────
+// ─── 4. Order Shipped Email (English Luxury - Parcel In Transit) ──────────────
 export async function sendOrderShippedEmail(
   email: string,
   name: string,
@@ -437,50 +530,31 @@ export async function sendOrderShippedEmail(
   items: { productTitle: string; quantity: number; price: number; size?: string | null; color?: string | null }[],
   shippingFee: number = 0,
   subtotal?: number,
-  discount?: number
+  discount?: number,
+  shippingDetails?: OrderEmailShippingDetails
 ) {
-  const currency = isInternational ? "EUR" : "DZD";
-  const locale = isInternational ? "fr-FR" : "fr-DZ";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.elhuyam.com";
 
-  const formattedTotal = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-    style: "currency",
-    currency: currency,
-    minimumFractionDigits: 2,
-  }).format(totalAmount).replace(/[\u00a0\u202f]/g, " ");
+  const itemsSum = items.reduce((acc, item) => acc + (Number(item.price || 0) * (Number(item.quantity) || 1)), 0);
+  const resolvedSubtotal = (subtotal !== undefined && subtotal !== null && subtotal > 0) ? subtotal : itemsSum;
 
-  const formattedShippingFee = shippingFee > 0
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(shippingFee).replace(/[\u00a0\u202f]/g, " ")
-    : "Free Delivery";
+  let resolvedShippingFee = shippingFee;
+  if (resolvedShippingFee === undefined || resolvedShippingFee === null || (resolvedShippingFee === 0 && totalAmount > resolvedSubtotal)) {
+    resolvedShippingFee = Math.max(0, Math.round((totalAmount - resolvedSubtotal + (discount || 0)) * 100) / 100);
+  }
 
-  const formattedSubtotal = subtotal !== undefined
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(subtotal).replace(/[\u00a0\u202f]/g, " ")
-    : null;
+  const formattedSubtotal = formatMoney(resolvedSubtotal, isInternational);
+  const formattedShippingFee = resolvedShippingFee > 0
+    ? formatMoney(resolvedShippingFee, isInternational)
+    : (isInternational ? "Free Delivery (€0.00)" : "Free Delivery (0,00 DA)");
 
-  const formattedDiscount = discount && discount > 0
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(discount).replace(/[\u00a0\u202f]/g, " ")
-    : null;
+  const formattedDiscount = (discount && discount > 0) ? formatMoney(discount, isInternational) : null;
+  const formattedTotal = formatMoney(totalAmount, isInternational);
 
   const itemsHtml = items
     .map((item) => {
-      const formattedPrice = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(item.price).replace(/[\u00a0\u202f]/g, " ");
-
+      const linePrice = Number(item.price || 0) * (Number(item.quantity) || 1);
+      const formattedPrice = formatMoney(linePrice, isInternational);
       const variantDetails = [item.color, item.size].filter(Boolean).join(" • ");
 
       return `
@@ -500,13 +574,15 @@ export async function sendOrderShippedEmail(
     })
     .join("");
 
+  const deliveryDetailsHtml = renderDeliveryDetailsTable(shippingDetails, name);
+
   await sendEmail({
     to: email,
     subject: `Your Parcel is on Its Way! 🚚 #${orderNumber} ✦ EL HUYAAM`,
     html: `
       <!DOCTYPE html>
       <html lang="en">
-      <head><meta charset="utf-8"><title>Your Order is on Its Way — EL HUYAAM</title></head>
+      <head><meta charset="utf-8"><title>Your Parcel is on Its Way — EL HUYAAM</title></head>
       <body style="margin: 0; padding: 0; background-color: #F7F5F0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F7F5F0; padding: 40px 10px;">
           <tr>
@@ -535,7 +611,7 @@ export async function sendOrderShippedEmail(
                     </div>
                     <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 23px; margin: 0 0 14px 0; font-weight: normal;">Dear ${name},</h2>
                     <p style="color: #6B5744; font-size: 14.5px; line-height: 1.85; margin: 0;">
-                      Wonderful news! Your order has been carefully packaged and handed over to our trusted courier partner (<strong>ZR Express</strong>). It is now actively in transit to your delivery address.
+                      Wonderful news! Your order <strong>#${orderNumber}</strong> has been carefully packaged and handed over to our delivery partner (<strong>ZR Express</strong>). Your bespoke creation is now actively in transit to your destination.
                     </p>
                   </td>
                 </tr>
@@ -553,7 +629,7 @@ export async function sendOrderShippedEmail(
                             ${trackingNumber}
                           </p>
                           <p style="font-size: 11.5px; color: #7A5C38; margin: 0;">
-                            Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Express Delivery
+                            Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Tracked Express Delivery
                           </p>
                         </td>
                       </tr>
@@ -580,23 +656,21 @@ export async function sendOrderShippedEmail(
                   </td>
                 </tr>
 
-                <!-- Total Summary Highlight Box (with Delivery Fee) -->
+                <!-- Total Summary Breakdown Box -->
                 <tr>
-                  <td style="padding: 0 40px 30px 40px;">
+                  <td style="padding: 0 40px 25px 40px;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 24px;">
-                      ${formattedSubtotal ? `
-                        <tr>
-                          <td align="left" style="padding-bottom: 8px; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
-                            Items Subtotal
-                          </td>
-                          <td align="right" style="padding-bottom: 8px; font-size: 13.5px; font-weight: 600; color: #141414;">
-                            ${formattedSubtotal}
-                          </td>
-                        </tr>
-                      ` : ""}
+                      <tr>
+                        <td align="left" style="padding-bottom: 8px; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
+                          Items Subtotal (Sous-total articles)
+                        </td>
+                        <td align="right" style="padding-bottom: 8px; font-size: 13.5px; font-weight: 600; color: #141414;">
+                          ${formattedSubtotal}
+                        </td>
+                      </tr>
                       <tr>
                         <td align="left" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
-                          Delivery Fee (ZR Express)
+                          Delivery Fee (Frais de livraison ZR Express)
                         </td>
                         <td align="right" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 13.5px; font-weight: 600; color: #141414;">
                           ${formattedShippingFee}
@@ -605,7 +679,7 @@ export async function sendOrderShippedEmail(
                       ${formattedDiscount ? `
                         <tr>
                           <td align="left" style="padding-bottom: 12px; font-size: 12.5px; color: #236E39; font-weight: 600;">
-                            Discount / Coupon
+                            Discount / Coupon (Remise)
                           </td>
                           <td align="right" style="padding-bottom: 12px; font-size: 13.5px; font-weight: 700; color: #236E39;">
                             -${formattedDiscount}
@@ -617,7 +691,7 @@ export async function sendOrderShippedEmail(
                           <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                               <td align="left" style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-                                TOTAL AMOUNT DUE
+                                TOTAL AMOUNT DUE (TOTAL À PAYER)
                               </td>
                               <td align="right" style="font-family: -apple-system, sans-serif; font-size: 18px; font-weight: 800; color: #141414;">
                                 ${formattedTotal}
@@ -630,10 +704,13 @@ export async function sendOrderShippedEmail(
                   </td>
                 </tr>
 
+                <!-- Delivery Details Section -->
+                ${deliveryDetailsHtml}
+
                 <!-- Dual Action CTAs -->
                 <tr>
-                  <td align="center" style="padding: 0 40px 35px 40px;">
-                    <a href="${appUrl}/orders/track?orderNumber=${orderNumber}&phone=${trackingNumber}"
+                  <td align="center" style="padding: 10px 40px 35px 40px;">
+                    <a href="${appUrl}/orders/track?orderNumber=${orderNumber}"
                        style="display: block; width: 85%; max-width: 380px; padding: 15px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center; margin-bottom: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.12);">
                       TRACK YOUR SHIPMENT LIVE →
                     </a>

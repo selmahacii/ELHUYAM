@@ -374,14 +374,34 @@ export async function POST(req: NextRequest) {
       select: { name: true, email: true },
     });
     if (customer?.email) {
+      const customerName = `${order.shippingFirstName ?? ""} ${order.shippingLastName ?? ""}`.trim() || customer.name || "Client";
       sendOrderConfirmationEmail(
         customer.email,
-        customer.name ?? "Client",
+        customerName,
         order.orderNumber,
         order.totalAmount,
         order.isInternational,
-        order.items.map((i: any) => ({ productTitle: i.productTitle, quantity: i.quantity, price: i.price }))
-      ).catch(() => null);
+        order.items.map((i: any) => ({
+          productTitle: i.productTitle,
+          quantity: i.quantity,
+          price: i.price,
+          size: i.size || null,
+          color: i.color || null,
+        })),
+        order.shippingFee,
+        order.subtotal,
+        order.discount,
+        {
+          firstName: order.shippingFirstName,
+          lastName: order.shippingLastName,
+          phone: order.shippingPhone,
+          street: order.shippingStreet,
+          city: order.shippingCity,
+          state: order.shippingState,
+          wilayaCode: order.wilayaCode,
+          deliveryType: order.deliveryType,
+        }
+      ).catch((err) => console.error("[email/orders/POST]", err));
     }
 
     const response = successResponse(order, 201);

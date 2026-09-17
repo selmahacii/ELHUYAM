@@ -110,7 +110,22 @@ export async function POST(req: NextRequest) {
               productTitle: i.productTitle,
               quantity: i.quantity,
               price: i.price,
-            }))
+              size: i.size || null,
+              color: i.color || null,
+            })),
+            updatedOrder.shippingFee,
+            updatedOrder.subtotal,
+            updatedOrder.discount,
+            {
+              firstName: updatedOrder.shippingFirstName,
+              lastName: updatedOrder.shippingLastName,
+              phone: updatedOrder.shippingPhone,
+              street: updatedOrder.shippingStreet,
+              city: updatedOrder.shippingCity,
+              state: updatedOrder.shippingState,
+              wilayaCode: updatedOrder.wilayaCode,
+              deliveryType: updatedOrder.deliveryType,
+            }
           ).catch((err) => console.error("[email/shipped/webhook]", err));
         }
       }

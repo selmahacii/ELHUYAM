@@ -24,6 +24,11 @@ export interface EmailPreviewOrder {
   shippingFirstName?: string | null;
   shippingLastName?: string | null;
   shippingPhone?: string | null;
+  shippingStreet?: string | null;
+  shippingCity?: string | null;
+  shippingState?: string | null;
+  wilayaCode?: string | null;
+  deliveryType?: string | null;
   user?: {
     email?: string | null;
     name?: string | null;
@@ -36,6 +41,16 @@ interface EmailPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTab?: "confirmation" | "shipped";
+}
+
+function formatMoney(amount: number, isInternational: boolean): string {
+  const currency = isInternational ? "EUR" : "DZD";
+  const locale = isInternational ? "fr-FR" : "fr-DZ";
+  return new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
+    style: "currency",
+    currency: currency,
+    minimumFractionDigits: 2,
+  }).format(amount).replace(/[\u00a0\u202f]/g, " ");
 }
 
 export default function EmailPreviewModal({
@@ -57,54 +72,44 @@ export default function EmailPreviewModal({
     order.user?.name ||
     "Customer";
 
-  const currency = order.isInternational ? "EUR" : "DZD";
-  const locale = order.isInternational ? "fr-FR" : "fr-DZ";
+  const isInternational = !!order.isInternational;
 
-  const formattedTotal = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-    style: "currency",
-    currency: currency,
-    minimumFractionDigits: 2,
-  })
-    .format(order.totalAmount)
-    .replace(/[\u00a0\u202f]/g, " ");
+  const itemsSum = order.items.reduce((acc, item) => acc + (Number(item.price || 0) * (Number(item.quantity) || 1)), 0);
+  const resolvedSubtotal = (order.subtotal !== undefined && order.subtotal !== null && order.subtotal > 0) ? order.subtotal : itemsSum;
 
-  const shippingFeeNum = order.shippingFee ?? 0;
-  const formattedShippingFee = shippingFeeNum > 0
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(shippingFeeNum).replace(/[\u00a0\u202f]/g, " ")
-    : "Free Delivery";
+  let resolvedShippingFee = order.shippingFee;
+  if (resolvedShippingFee === undefined || resolvedShippingFee === null || (resolvedShippingFee === 0 && order.totalAmount > resolvedSubtotal)) {
+    resolvedShippingFee = Math.max(0, Math.round((order.totalAmount - resolvedSubtotal + (order.discount || 0)) * 100) / 100);
+  }
 
-  const formattedSubtotal = order.subtotal !== undefined
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(order.subtotal).replace(/[\u00a0\u202f]/g, " ")
-    : null;
+  const formattedSubtotal = formatMoney(resolvedSubtotal, isInternational);
+  const formattedShippingFee = resolvedShippingFee > 0
+    ? formatMoney(resolvedShippingFee, isInternational)
+    : (isInternational ? "Free Delivery (€0.00)" : "Free Delivery (0,00 DA)");
 
-  const formattedDiscount = order.discount && order.discount > 0
-    ? new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      }).format(order.discount).replace(/[\u00a0\u202f]/g, " ")
-    : null;
+  const formattedDiscount = (order.discount && order.discount > 0) ? formatMoney(order.discount, isInternational) : null;
+  const formattedTotal = formatMoney(order.totalAmount, isInternational);
 
   const trackingToUse = order.trackingNumber || "ZR-XXXXXXXXXX";
 
+  const recipientPhone = order.shippingPhone?.trim();
+  const wilaya = order.shippingState?.trim() || "";
+  const wilayaCode = order.wilayaCode?.trim() || "";
+  const commune = order.shippingCity?.trim() || "";
+  const street = order.shippingStreet?.trim() || "";
+  const isStopdesk =
+    order.deliveryType === "STOPDESK" ||
+    /stop\s*desk|hub|bureau|مكتب/i.test(street);
+
+  const destinationParts = [
+    wilaya ? (wilayaCode ? `${wilaya} (${wilayaCode})` : wilaya) : "",
+    commune && commune.toLowerCase() !== wilaya.toLowerCase() ? commune : "",
+  ].filter(Boolean).join(" • ");
+
   const itemsHtml = order.items
     .map((item) => {
-      const formattedPrice = new Intl.NumberFormat(locale === "fr-FR" ? "en-US" : "fr-DZ", {
-        style: "currency",
-        currency: currency,
-        minimumFractionDigits: 2,
-      })
-        .format(item.price ?? 0)
-        .replace(/[\u00a0\u202f]/g, " ");
-
+      const linePrice = Number(item.price || 0) * (Number(item.quantity) || 1);
+      const formattedPrice = formatMoney(linePrice, isInternational);
       const variantDetails = [item.color, item.size].filter(Boolean).join(" • ");
 
       return `
@@ -124,6 +129,45 @@ export default function EmailPreviewModal({
     })
     .join("");
 
+  const deliveryDetailsHtml = `
+    <!-- Delivery Details Card -->
+    <div style="padding: 0 35px 25px 35px;">
+      <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
+        <div style="padding-bottom: 10px; border-bottom: 1px solid #EADBCE; font-family: Georgia, serif; font-size: 12.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
+          📍 DELIVERY INFORMATION / DÉTAILS DE LIVRAISON
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 6px 0;">
+          <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Delivery Method:</span>
+          <span style="font-size: 12.5px; color: #141414; font-weight: 700;">
+            ${isStopdesk ? "🏢 Stop Desk (Pickup Bureau ZR Express)" : "🏠 Home Delivery (Livraison à domicile)"}
+          </span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0;">
+          <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Recipient:</span>
+          <span style="font-size: 12.5px; color: #141414; font-weight: 600;">
+            ${customerName}${recipientPhone ? ` • <strong style="font-family: monospace;">${recipientPhone}</strong>` : ""}
+          </span>
+        </div>
+        ${destinationParts ? `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0;">
+            <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Destination:</span>
+            <span style="font-size: 12.5px; color: #141414; font-weight: 600;">${destinationParts}</span>
+          </div>
+        ` : ""}
+        ${street ? `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 0 6px 0;">
+            <span style="font-size: 12px; color: #8A6538; font-weight: 600;">${isStopdesk ? "Pickup Bureau / Hub:" : "Address / Adresse:"}</span>
+            <span style="font-size: 12.5px; color: #141414; font-weight: 600; text-align: right; max-width: 320px; line-height: 1.4;">${street}</span>
+          </div>
+        ` : ""}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0 0 0; border-top: 1px dashed #EADBCE;">
+          <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Courier Service:</span>
+          <span style="font-size: 12px; color: #236E39; font-weight: 700;">🚚 ZR Express (Tracked Express Courier)</span>
+        </div>
+      </div>
+    </div>
+  `;
+
   const confirmationHtml = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F7F5F0; padding: 30px 10px;">
       <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 16px; border: 1px solid #EBE4D8; overflow: hidden; box-shadow: 0 4px 25px rgba(0,0,0,0.04);">
@@ -141,11 +185,11 @@ export default function EmailPreviewModal({
         <!-- Greeting -->
         <div style="padding: 15px 35px 25px 35px; text-align: center;">
           <div style="display: inline-block; background: #FAF5EE; border: 1px solid #E3D5C1; color: #8A6538; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; margin-bottom: 18px;">
-            ✦ ORDER CONFIRMED & DISPATCHED ✦
+            ✦ ORDER CONFIRMED ✦
           </div>
           <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Dear ${customerName},</h2>
           <p style="color: #6B5744; font-size: 14px; line-height: 1.8; margin: 0;">
-            We are delighted to confirm that your order <strong>#${order.orderNumber}</strong> has been officially confirmed and handed over to our delivery partner (<strong>ZR Express</strong>). Your bespoke pieces are now on their way to you with the utmost care and refinement.
+            Thank you for your order. We are delighted to confirm that order <strong>#${order.orderNumber}</strong> has been successfully received and confirmed. Our atelier is now preparing your bespoke creation with the utmost care, dedication, and elegance.
           </p>
         </div>
 
@@ -156,7 +200,7 @@ export default function EmailPreviewModal({
               ORDER NUMBER: <span style="font-family: monospace; font-size: 13.5px; color: #141414; font-weight: bold;">#${order.orderNumber}</span>
             </div>
             <div style="font-size: 11px; color: #236E39; font-weight: 700; text-transform: uppercase;">
-              ✓ HANDED OVER TO COURIER
+              ✓ CONFIRMED & IN PREPARATION
             </div>
           </div>
         </div>
@@ -180,19 +224,17 @@ export default function EmailPreviewModal({
         <!-- Total Box with Delivery Breakdown -->
         <div style="padding: 0 35px 25px 35px;">
           <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
-            ${formattedSubtotal ? `
-              <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
-                <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal</span>
-                <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedSubtotal}</span>
-              </div>
-            ` : ""}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
+              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal (Sous-total)</span>
+              <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedSubtotal}</span>
+            </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: ${formattedDiscount ? "8px" : "12px"};">
-              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (ZR Express)</span>
+              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (Frais de livraison)</span>
               <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedShippingFee}</span>
             </div>
             ${formattedDiscount ? `
               <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px;">
-                <span style="font-size: 12.5px; color: #236E39; font-weight: 600;">Discount / Coupon</span>
+                <span style="font-size: 12.5px; color: #236E39; font-weight: 600;">Discount / Coupon (Remise)</span>
                 <span style="font-size: 13.5px; font-weight: 700; color: #236E39;">-${formattedDiscount}</span>
               </div>
             ` : ""}
@@ -206,6 +248,9 @@ export default function EmailPreviewModal({
             </div>
           </div>
         </div>
+
+        <!-- Delivery Details Section -->
+        ${deliveryDetailsHtml}
 
         <!-- CTAs -->
         <div style="padding: 0 35px 30px 35px; text-align: center;">
@@ -261,7 +306,7 @@ export default function EmailPreviewModal({
           </div>
           <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Dear ${customerName},</h2>
           <p style="color: #6B5744; font-size: 14px; line-height: 1.8; margin: 0;">
-            Wonderful news! Your order has been carefully packaged and handed over to our trusted courier partner (<strong>ZR Express</strong>). It is now actively in transit to your delivery address.
+            Wonderful news! Your order <strong>#${order.orderNumber}</strong> has been carefully packaged and handed over to our delivery partner (<strong>ZR Express</strong>). Your bespoke creation is now actively in transit to your destination.
           </p>
         </div>
 
@@ -275,7 +320,7 @@ export default function EmailPreviewModal({
               ${trackingToUse}
             </p>
             <p style="font-size: 11px; color: #7A5C38; margin: 0;">
-              Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Express Delivery
+              Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Tracked Express Delivery
             </p>
           </div>
         </div>
@@ -299,19 +344,17 @@ export default function EmailPreviewModal({
         <!-- Total Box with Delivery Breakdown -->
         <div style="padding: 0 35px 25px 35px;">
           <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
-            ${formattedSubtotal ? `
-              <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
-                <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal</span>
-                <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedSubtotal}</span>
-              </div>
-            ` : ""}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
+              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal (Sous-total)</span>
+              <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedSubtotal}</span>
+            </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: ${formattedDiscount ? "8px" : "12px"};">
-              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (ZR Express)</span>
+              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (Frais de livraison)</span>
               <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedShippingFee}</span>
             </div>
             ${formattedDiscount ? `
               <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px;">
-                <span style="font-size: 12.5px; color: #236E39; font-weight: 600;">Discount / Coupon</span>
+                <span style="font-size: 12.5px; color: #236E39; font-weight: 600;">Discount / Coupon (Remise)</span>
                 <span style="font-size: 13.5px; font-weight: 700; color: #236E39;">-${formattedDiscount}</span>
               </div>
             ` : ""}
@@ -325,6 +368,9 @@ export default function EmailPreviewModal({
             </div>
           </div>
         </div>
+
+        <!-- Delivery Details Section -->
+        ${deliveryDetailsHtml}
 
         <!-- CTAs -->
         <div style="padding: 0 35px 30px 35px; text-align: center;">
@@ -354,7 +400,7 @@ export default function EmailPreviewModal({
 
   const activeSubject =
     activeTab === "confirmation"
-      ? `Order Confirmed & Dispatched #${order.orderNumber} ✦ EL HUYAAM`
+      ? `Order Confirmed #${order.orderNumber} ✦ EL HUYAAM`
       : `Your Parcel is on Its Way! 🚚 #${order.orderNumber} ✦ EL HUYAAM`;
 
   const currentHtml = activeTab === "confirmation" ? confirmationHtml : shippedHtml;

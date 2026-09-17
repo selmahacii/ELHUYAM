@@ -35,12 +35,20 @@ interface Order {
   status: string;
   paymentStatus: string;
   totalAmount?: number;
+  subtotal?: number;
+  shippingFee?: number;
+  discount?: number;
   isInternational?: boolean;
   trackingNumber?: string | null;
   carrier?: string | null;
   shippingFirstName?: string | null;
   shippingLastName?: string | null;
   shippingPhone?: string | null;
+  shippingStreet?: string | null;
+  shippingCity?: string | null;
+  shippingState?: string | null;
+  wilayaCode?: string | null;
+  deliveryType?: string | null;
   user?: {
     email?: string | null;
     name?: string | null;
@@ -371,14 +379,19 @@ export default function OrderActions({ order, role }: { order: Order; role?: str
             id: order.id,
             orderNumber: order.orderNumber,
             totalAmount: order.totalAmount ?? 0,
-            subtotal: (order as any).subtotal,
-            shippingFee: (order as any).shippingFee,
-            discount: (order as any).discount,
+            subtotal: order.subtotal,
+            shippingFee: order.shippingFee,
+            discount: order.discount,
             isInternational: order.isInternational,
             trackingNumber: tracking || order.trackingNumber,
             shippingFirstName: order.shippingFirstName,
             shippingLastName: order.shippingLastName,
             shippingPhone: order.shippingPhone,
+            shippingStreet: order.shippingStreet,
+            shippingCity: order.shippingCity,
+            shippingState: order.shippingState,
+            wilayaCode: order.wilayaCode,
+            deliveryType: order.deliveryType,
             user: order.user,
             items: (order.items || []).map((i) => ({
               productTitle: i.productTitle,
