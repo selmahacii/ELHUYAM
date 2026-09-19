@@ -16,8 +16,12 @@ export default async function HeroSettingsPage() {
   const desktopSetting = await db.setting.findUnique({ where: { key: "hero_desktop_media" } });
   const mobileSetting = await db.setting.findUnique({ where: { key: "hero_mobile_media" } });
 
-  const initialDesktop = desktopSetting?.value || "/hero-mobile.png";
-  const initialMobile = mobileSetting?.value || "https://res.cloudinary.com/dzykepxqv/video/upload/q_auto,f_auto/v1785421463/el-huyaam/hero/hero-mobile.mov";
+  const initialDesktop = (desktopSetting?.value && !desktopSetting.value.includes("v1785421463"))
+    ? desktopSetting.value
+    : "/hero-mobile.png";
+  const initialMobile = (mobileSetting?.value && !mobileSetting.value.includes("v1785421463"))
+    ? mobileSetting.value
+    : "/hero.mp4";
 
   return (
     <div className="flex-1 space-y-6 p-8">

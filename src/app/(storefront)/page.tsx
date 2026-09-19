@@ -49,13 +49,11 @@ async function HeroSection() {
   const desktopSetting = await db.setting.findUnique({ where: { key: "hero_desktop_media" } });
   const mobileSetting = await db.setting.findUnique({ where: { key: "hero_mobile_media" } });
 
-  const desktopMedia = desktopSetting?.value || "/hero-mobile.png";
-  // Was "/IMG_2121.MOV" served straight from Vercel (23MB, every mobile
-  // homepage visit) — moved to Cloudinary with q_auto,f_auto so it's
-  // compressed/transcoded and served off Cloudinary's CDN instead of eating
-  // into Vercel's Fast Data Transfer quota.
-  const mobileMedia = mobileSetting?.value
-    || "https://res.cloudinary.com/dzykepxqv/video/upload/q_auto,f_auto/v1785421463/el-huyaam/hero/hero-mobile.mov";
+  const rawDesktop = desktopSetting?.value;
+  const rawMobile = mobileSetting?.value;
+
+  const desktopMedia = (rawDesktop && !rawDesktop.includes("v1785421463")) ? rawDesktop : "/hero-mobile.png";
+  const mobileMedia = (rawMobile && !rawMobile.includes("v1785421463")) ? rawMobile : "/hero.mp4";
 
   const isDesktopVideo = ["mp4", "mov", "webm", "ogg", "quicktime"].includes(
     desktopMedia.split("?")[0].split(".").pop()?.toLowerCase() || ""

@@ -17,9 +17,16 @@ export async function GET() {
     const desktopSetting = await db.setting.findUnique({ where: { key: "hero_desktop_media" } });
     const mobileSetting = await db.setting.findUnique({ where: { key: "hero_mobile_media" } });
 
+    const desktopMedia = (desktopSetting?.value && !desktopSetting.value.includes("v1785421463"))
+      ? desktopSetting.value
+      : "/hero-mobile.png";
+    const mobileMedia = (mobileSetting?.value && !mobileSetting.value.includes("v1785421463"))
+      ? mobileSetting.value
+      : "/hero.mp4";
+
     return successResponse({
-      desktopMedia: desktopSetting?.value || "/hero-mobile.png",
-      mobileMedia: mobileSetting?.value || "https://res.cloudinary.com/dzykepxqv/video/upload/q_auto,f_auto/v1785421463/el-huyaam/hero/hero-mobile.mov",
+      desktopMedia,
+      mobileMedia,
     });
   } catch {
     return errorResponse("Failed to load hero settings", 500);

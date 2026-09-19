@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { slugify } from "@/lib/utils";
 import { auth } from "@/auth";
+import { revalidateTag, revalidatePath } from "next/cache";
+import { deleteMultipleMedia } from "@/lib/cloudinary-server";
 
 const patchSchema = z.object({
   title: z.string().min(2).optional(),
@@ -95,21 +97,80 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     if (session?.user?.role !== "ADMIN") return errorResponse("Unauthorized", 401);
 
     const { id } = await params;
-    
-    // Vérifier si le produit est lié à des commandes existantes
-    const orderItemsCount = await db.orderItem.count({ where: { productId: id } });
-    
-    if (orderItemsCount > 0) {
-      // Soft-delete (archivage) pour préserver l'historique des commandes
-      await db.product.update({ where: { id }, data: { archived: true } });
-      return successResponse({ message: "Produit lié à des commandes : archivé avec succès." });
+
+    // 1. Fetch product with all relations to retrieve all images and videos
+    const product = await db.product.findUnique({
+      where: { id },
+      include: {
+        variants: true,
+        reviews: true,
+      },
+    });
+
+    if (!product) {
+      return errorResponse("Produit introuvable", 404);
     }
 
-    // Hard-delete s'il n'a jamais été commandé
-    await db.product.delete({ where: { id } });
-    return successResponse({ message: "Produit supprimé définitivement." });
+    // 2. Collect all media files to delete from Cloudinary / local storage
+    const mediaToDelete: string[] = [];
+
+    // Main product images
+    if (Array.isArray(product.images)) {
+      for (const img of product.images) {
+        if (typeof img === "string" && img.trim()) mediaToDelete.push(img.trim());
+      }
+    }
+
+    // Product videos
+    if (Array.isArray(product.videos)) {
+      for (const vid of product.videos) {
+        if (typeof vid === "string" && vid.trim()) mediaToDelete.push(vid.trim());
+      }
+    }
+
+    // Variant images
+    for (const variant of product.variants) {
+      if (variant.image && typeof variant.image === "string" && variant.image.trim()) {
+        mediaToDelete.push(variant.image.trim());
+      }
+    }
+
+    // 3. Delete media assets asynchronously
+    if (mediaToDelete.length > 0) {
+      deleteMultipleMedia(mediaToDelete).catch((err) =>
+        console.warn("[PRODUCT_DELETE] Error deleting media from Cloudinary:", err)
+      );
+    }
+
+    // 4. Cascade delete all DB relations in a single clean transaction
+    await db.$transaction([
+      db.cartItem.deleteMany({ where: { productId: id } }),
+      db.wishlistItem.deleteMany({ where: { productId: id } }),
+      db.review.deleteMany({ where: { productId: id } }),
+      db.productVariant.deleteMany({ where: { productId: id } }),
+      db.orderItem.deleteMany({ where: { productId: id } }),
+      db.product.delete({ where: { id } }),
+    ]);
+
+    // 5. Invalidate caches immediately
+    try {
+      revalidateTag("products", "default");
+      revalidateTag("categories", "default");
+      revalidatePath("/", "page");
+      revalidatePath("/shop", "page");
+      revalidatePath("/categories", "page");
+      if (product.slug) {
+        revalidatePath(`/shop/${product.slug}`, "page");
+      }
+    } catch (e) {
+      console.warn("[PRODUCT_DELETE] Revalidation notice:", e);
+    }
+
+    return successResponse({
+      message: "Produit, photos Cloudinary et toutes les données associées supprimés définitivement.",
+    });
   } catch (error) {
     console.error("[PRODUCT_DELETE_ERROR]", error);
-    return errorResponse("Échec de la suppression ou de l'archivage du produit.", 500);
+    return errorResponse("Échec de la suppression définitive du produit.", 500);
   }
 }
