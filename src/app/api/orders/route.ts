@@ -400,7 +400,8 @@ export async function POST(req: NextRequest) {
           state: order.shippingState,
           wilayaCode: order.wilayaCode,
           deliveryType: order.deliveryType,
-        }
+        },
+        order.createdAt
       ).catch((err) => console.error("[email/orders/POST]", err));
     }
 

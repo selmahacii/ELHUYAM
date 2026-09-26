@@ -272,18 +272,50 @@ function TrackingContent() {
               <div className="text-xs space-y-2.5 font-medium text-brand-750">
                 <div className="flex justify-between">
                   <span>{tDetail("subtotal")}</span>
-                  <span>{formatPrice(order.totalAmount - (order.shippingFee ?? 0), currency)}</span>
+                  <span>{formatPrice(order.isInternational ? order.totalAmount : (order.totalAmount - (order.shippingFee ?? 0)), currency)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>{tDetail("shipping")}</span>
-                  <span>{order.shippingFee === 0 ? tDetail("free") : formatPrice(order.shippingFee ?? 0, currency)}</span>
-                </div>
+                {!order.isInternational && (
+                  <div className="flex justify-between">
+                    <span>{tDetail("shipping")}</span>
+                    <span>{order.shippingFee === 0 ? tDetail("free") : formatPrice(order.shippingFee ?? 0, currency)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-black font-bold border-t border-brand-100 pt-2.5 text-sm">
-                  <span>{tDetail("total")}</span>
+                  <span>{order.isInternational ? (isAr ? "المجموع (المنتجات)" : "Total (Items)") : tDetail("total")}</span>
                   <span>{formatPrice(order.totalAmount, currency)}</span>
                 </div>
               </div>
             </div>
+
+            {/* International Concierge Contact */}
+            {order.isInternational && (
+              <div className="bg-brand-50/60 border border-brand-100 p-4 rounded-md space-y-2.5 text-xs text-brand-800">
+                <p className="font-bold uppercase tracking-wider text-[10px] text-brand-900">
+                  💬 {isAr ? "خدمة العملاء الدولية" : "International Client Concierge"}
+                </p>
+                <p className="text-[11px] leading-relaxed text-brand-700">
+                  {isAr
+                    ? "لأي استفسار بخصوص شحنتك الدولية أو التوصيل، يرجى التواصل معنا عبر واتساب أو البريد الإلكتروني."
+                    : "For inquiries regarding international delivery or bespoke assistance, contact us directly:"}
+                </p>
+                <div className="flex flex-col gap-2 pt-1">
+                  <a
+                    href={`https://wa.me/213772515448?text=${encodeURIComponent(`Bonjour, je vous contacte concernant ma commande ${order.orderNumber}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 text-[11px] transition-all"
+                  >
+                    <span>💬 WhatsApp: +213 772 51 54 48</span>
+                  </a>
+                  <a
+                    href={`mailto:elhuyamcollection09@gmail.com?subject=${encodeURIComponent(`Order #${order.orderNumber}`)}`}
+                    className="inline-flex items-center justify-center gap-1.5 bg-black hover:bg-neutral-800 text-white font-bold py-2 px-3 text-[11px] transition-all"
+                  >
+                    <span>✉️ elhuyamcollection09@gmail.com</span>
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

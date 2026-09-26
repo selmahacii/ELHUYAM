@@ -76,7 +76,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         order.shippingFee,
         order.subtotal,
         order.discount,
-        shippingDetails
+        shippingDetails,
+        order.createdAt
       );
     } else {
       await sendOrderConfirmationEmail(
@@ -89,7 +90,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         order.shippingFee,
         order.subtotal,
         order.discount,
-        shippingDetails
+        shippingDetails,
+        order.createdAt
       );
     }
 

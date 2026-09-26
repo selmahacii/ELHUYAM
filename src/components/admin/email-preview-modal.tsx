@@ -53,6 +53,26 @@ function formatMoney(amount: number, isInternational: boolean): string {
   }).format(amount).replace(/[\u00a0\u202f]/g, " ");
 }
 
+function formatOrderDate(date?: Date | string | null): { longDate: string; shortDate: string } {
+  const d = date ? new Date(date) : new Date();
+  const validDate = isNaN(d.getTime()) ? new Date() : d;
+
+  const day = validDate.getDate();
+  const monthsFr = [
+    "janvier", "février", "mars", "avril", "mai", "juin",
+    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+  ];
+  const monthName = monthsFr[validDate.getMonth()];
+  const year = validDate.getFullYear();
+  const longDate = `${day} ${monthName} ${year}`;
+
+  const dd = String(day).padStart(2, "0");
+  const mm = String(validDate.getMonth() + 1).padStart(2, "0");
+  const shortDate = `${dd}/${mm}/${year}`;
+
+  return { longDate, shortDate };
+}
+
 export default function EmailPreviewModal({
   order,
   isOpen,
@@ -77,18 +97,20 @@ export default function EmailPreviewModal({
   const itemsSum = order.items.reduce((acc, item) => acc + (Number(item.price || 0) * (Number(item.quantity) || 1)), 0);
   const resolvedSubtotal = (order.subtotal !== undefined && order.subtotal !== null && order.subtotal > 0) ? order.subtotal : itemsSum;
 
-  let resolvedShippingFee = order.shippingFee;
-  if (resolvedShippingFee === undefined || resolvedShippingFee === null || (resolvedShippingFee === 0 && order.totalAmount > resolvedSubtotal)) {
+  let resolvedShippingFee = order.shippingFee ?? 0;
+  if (!isInternational && (resolvedShippingFee === 0 && order.totalAmount > resolvedSubtotal)) {
     resolvedShippingFee = Math.max(0, Math.round((order.totalAmount - resolvedSubtotal + (order.discount || 0)) * 100) / 100);
   }
 
   const formattedSubtotal = formatMoney(resolvedSubtotal, isInternational);
   const formattedShippingFee = resolvedShippingFee > 0
     ? formatMoney(resolvedShippingFee, isInternational)
-    : (isInternational ? "Free Delivery (€0.00)" : "Free Delivery (0,00 DA)");
+    : "Free Delivery (0,00 DA)";
 
   const formattedDiscount = (order.discount && order.discount > 0) ? formatMoney(order.discount, isInternational) : null;
-  const formattedTotal = formatMoney(order.totalAmount, isInternational);
+  const formattedTotal = formatMoney(isInternational ? (resolvedSubtotal - (order.discount || 0)) : order.totalAmount, isInternational);
+
+  const { longDate, shortDate } = formatOrderDate((order as any).createdAt);
 
   const trackingToUse = order.trackingNumber || "ZR-XXXXXXXXXX";
 
@@ -97,14 +119,6 @@ export default function EmailPreviewModal({
   const wilayaCode = order.wilayaCode?.trim() || "";
   const commune = order.shippingCity?.trim() || "";
   const street = order.shippingStreet?.trim() || "";
-  const isStopdesk =
-    order.deliveryType === "STOPDESK" ||
-    /stop\s*desk|hub|bureau|مكتب/i.test(street);
-
-  const destinationParts = [
-    wilaya ? (wilayaCode ? `${wilaya} (${wilayaCode})` : wilaya) : "",
-    commune && commune.toLowerCase() !== wilaya.toLowerCase() ? commune : "",
-  ].filter(Boolean).join(" • ");
 
   const itemsHtml = order.items
     .map((item) => {
@@ -129,8 +143,37 @@ export default function EmailPreviewModal({
     })
     .join("");
 
-  const deliveryDetailsHtml = `
-    <!-- Delivery Details Card -->
+  const deliveryDetailsHtml = isInternational
+    ? `
+    <!-- International Delivery Details Card -->
+    <div style="padding: 0 35px 25px 35px;">
+      <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
+        <div style="padding-bottom: 10px; border-bottom: 1px solid #EADBCE; font-family: Georgia, serif; font-size: 12.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
+          📍 INTERNATIONAL DELIVERY ADDRESS / ADRESSE DE LIVRAISON
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 6px 0;">
+          <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Recipient / Destinataire:</span>
+          <span style="font-size: 12.5px; color: #141414; font-weight: 600;">
+            ${customerName}${recipientPhone ? ` • <strong style="font-family: monospace;">${recipientPhone}</strong>` : ""}
+          </span>
+        </div>
+        ${(commune || wilaya) ? `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0;">
+            <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Destination:</span>
+            <span style="font-size: 12.5px; color: #141414; font-weight: 600;">${[commune, wilaya].filter(Boolean).join(", ")}</span>
+          </div>
+        ` : ""}
+        ${street ? `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 0 6px 0;">
+            <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Address / Adresse:</span>
+            <span style="font-size: 12.5px; color: #141414; font-weight: 600; text-align: right; max-width: 320px; line-height: 1.4;">${street}</span>
+          </div>
+        ` : ""}
+      </div>
+    </div>
+  `
+    : `
+    <!-- National Delivery Details Card -->
     <div style="padding: 0 35px 25px 35px;">
       <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
         <div style="padding-bottom: 10px; border-bottom: 1px solid #EADBCE; font-family: Georgia, serif; font-size: 12.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
@@ -139,7 +182,7 @@ export default function EmailPreviewModal({
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 6px 0;">
           <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Delivery Method:</span>
           <span style="font-size: 12.5px; color: #141414; font-weight: 700;">
-            ${isStopdesk ? "🏢 Stop Desk (Pickup Bureau ZR Express)" : "🏠 Home Delivery (Livraison à domicile)"}
+            ${order.deliveryType === "STOPDESK" || /stop\s*desk|hub|bureau|مكتب/i.test(street) ? "🏢 Stop Desk (Pickup Bureau ZR Express)" : "🏠 Home Delivery (Livraison à domicile)"}
           </span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0;">
@@ -148,15 +191,15 @@ export default function EmailPreviewModal({
             ${customerName}${recipientPhone ? ` • <strong style="font-family: monospace;">${recipientPhone}</strong>` : ""}
           </span>
         </div>
-        ${destinationParts ? `
+        ${[wilaya ? (wilayaCode ? `${wilaya} (${wilayaCode})` : wilaya) : "", commune && commune.toLowerCase() !== wilaya.toLowerCase() ? commune : ""].filter(Boolean).join(" • ") ? `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0;">
             <span style="font-size: 12px; color: #8A6538; font-weight: 600;">Destination:</span>
-            <span style="font-size: 12.5px; color: #141414; font-weight: 600;">${destinationParts}</span>
+            <span style="font-size: 12.5px; color: #141414; font-weight: 600;">${[wilaya ? (wilayaCode ? `${wilaya} (${wilayaCode})` : wilaya) : "", commune && commune.toLowerCase() !== wilaya.toLowerCase() ? commune : ""].filter(Boolean).join(" • ")}</span>
           </div>
         ` : ""}
         ${street ? `
           <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 0 6px 0;">
-            <span style="font-size: 12px; color: #8A6538; font-weight: 600;">${isStopdesk ? "Pickup Bureau / Hub:" : "Address / Adresse:"}</span>
+            <span style="font-size: 12px; color: #8A6538; font-weight: 600;">${order.deliveryType === "STOPDESK" || /stop\s*desk|hub|bureau|مكتب/i.test(street) ? "Pickup Bureau / Hub:" : "Address / Adresse:"}</span>
             <span style="font-size: 12.5px; color: #141414; font-weight: 600; text-align: right; max-width: 320px; line-height: 1.4;">${street}</span>
           </div>
         ` : ""}
@@ -189,7 +232,11 @@ export default function EmailPreviewModal({
           </div>
           <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Dear ${customerName},</h2>
           <p style="color: #6B5744; font-size: 14px; line-height: 1.8; margin: 0;">
-            Thank you for your order. We are delighted to confirm that order <strong>#${order.orderNumber}</strong> has been successfully received and confirmed. Our atelier is now preparing your bespoke creation with the utmost care, dedication, and elegance.
+            ${
+              isInternational
+                ? `We are delighted to confirm that your international order <strong>#${order.orderNumber}</strong> was successfully confirmed on <strong>${longDate}</strong>. Our atelier is preparing your bespoke creation with noble craftsmanship and timeless refinement.`
+                : `Thank you for your order. We are delighted to confirm that order <strong>#${order.orderNumber}</strong> has been successfully received and confirmed on <strong>${longDate}</strong>. Our atelier is now preparing your bespoke creation with the utmost care, dedication, and elegance.`
+            }
           </p>
         </div>
 
@@ -200,7 +247,7 @@ export default function EmailPreviewModal({
               ORDER NUMBER: <span style="font-family: monospace; font-size: 13.5px; color: #141414; font-weight: bold;">#${order.orderNumber}</span>
             </div>
             <div style="font-size: 11px; color: #236E39; font-weight: 700; text-transform: uppercase;">
-              ✓ CONFIRMED & IN PREPARATION
+              ✓ CONFIRMED ON ${shortDate}
             </div>
           </div>
         </div>
@@ -225,13 +272,19 @@ export default function EmailPreviewModal({
         <div style="padding: 0 35px 25px 35px;">
           <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
-              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal (Sous-total)</span>
+              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal (Sous-total articles)</span>
               <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedSubtotal}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: ${formattedDiscount ? "8px" : "12px"};">
-              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (Frais de livraison)</span>
-              <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedShippingFee}</span>
-            </div>
+            ${
+              !isInternational
+                ? `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: ${formattedDiscount ? "8px" : "12px"};">
+                    <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (Frais de livraison)</span>
+                    <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedShippingFee}</span>
+                  </div>
+                `
+                : ""
+            }
             ${formattedDiscount ? `
               <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px;">
                 <span style="font-size: 12.5px; color: #236E39; font-weight: 600;">Discount / Coupon (Remise)</span>
@@ -240,7 +293,7 @@ export default function EmailPreviewModal({
             ` : ""}
             <div style="border-top: 1px solid #EADBCE; padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
               <div style="font-family: Georgia, serif; font-size: 13.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px;">
-                TOTAL AMOUNT DUE
+                ${isInternational ? "TOTAL AMOUNT (TOTAL ARTICLES)" : "TOTAL AMOUNT DUE (TOTAL À PAYER)"}
               </div>
               <div style="font-size: 18px; font-weight: 800; color: #141414;">
                 ${formattedTotal}
@@ -252,22 +305,42 @@ export default function EmailPreviewModal({
         <!-- Delivery Details Section -->
         ${deliveryDetailsHtml}
 
-        <!-- CTAs -->
-        <div style="padding: 0 35px 30px 35px; text-align: center;">
-          <a href="https://www.elhuyam.com/orders/track?orderNumber=${order.orderNumber}"
-             style="display: block; width: 85%; max-width: 360px; margin: 0 auto 10px auto; padding: 14px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 11.5px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center;">
-            TRACK YOUR ORDER LIVE →
-          </a>
-          <a href="https://wa.me/213772515448"
-             style="display: inline-block; padding: 9px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11px; font-weight: 700; border-radius: 6px; text-align: center;">
-            💬 WhatsApp: +213 772 51 54 48
-          </a>
+        <!-- Dedicated Support & Contact CTAs -->
+        <div style="padding: 0 35px 25px 35px;">
+          <div style="background: #FDFBF7; border: 1px solid #EADBCE; border-radius: 12px; padding: 18px 20px; text-align: center;">
+            <p style="font-family: Georgia, serif; font-size: 12.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px 0;">
+              💬 CLIENT CONCIERGE & SUPPORT
+            </p>
+            <p style="font-size: 12px; color: #7A5C38; line-height: 1.6; margin: 0 0 14px 0;">
+              ${
+                isInternational
+                  ? "For shipping inquiries, parcel tracking, or any assistance with your international order, our private client advisor is directly at your service via WhatsApp and Email:"
+                  : "For any assistance or questions regarding your order, our dedicated team is at your disposal:"
+              }
+            </p>
+            <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+              <a href="https://wa.me/213772515448?text=${encodeURIComponent(`Hello, I have a question regarding my confirmed order #${order.orderNumber}`)}"
+                 style="display: inline-block; padding: 10px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11.5px; font-weight: 700; border-radius: 6px; text-align: center;">
+                💬 WhatsApp: +213 772 51 54 48
+              </a>
+              <a href="mailto:elhuyamcollection09@gmail.com?subject=${encodeURIComponent(`Order #${order.orderNumber} - EL HUYAAM`)}"
+                 style="display: inline-block; padding: 10px 20px; background: #141414; color: #FAF9F6; text-decoration: none; font-size: 11.5px; font-weight: 700; border-radius: 6px; text-align: center;">
+                ✉️ Email: elhuyamcollection09@gmail.com
+              </a>
+            </div>
+            <div style="margin-top: 12px;">
+              <a href="https://www.elhuyam.com/orders/track?orderNumber=${order.orderNumber}"
+                 style="display: inline-block; color: #141414; text-decoration: underline; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+                TRACK YOUR ORDER LIVE →
+              </a>
+            </div>
+          </div>
         </div>
 
         <!-- Reassurance -->
         <div style="background-color: #FDFBF7; border-top: 1px solid #EBE4D8; border-bottom: 1px solid #EBE4D8; padding: 18px 20px; display: flex; justify-content: space-around; text-align: center;">
           <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">✦ Bespoke Tailoring</div>
-          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🚚 58 Wilayas & World</div>
+          <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">${isInternational ? "🌍 Worldwide Shipping" : "🚚 58 Wilayas & World"}</div>
           <div style="font-size: 10px; font-weight: 700; color: #3D2F24;">🤍 Dedicated Support</div>
         </div>
 
@@ -306,7 +379,7 @@ export default function EmailPreviewModal({
           </div>
           <h2 style="font-family: Georgia, serif; color: #2B2118; font-size: 22px; margin: 0 0 12px 0; font-weight: normal;">Dear ${customerName},</h2>
           <p style="color: #6B5744; font-size: 14px; line-height: 1.8; margin: 0;">
-            Wonderful news! Your order <strong>#${order.orderNumber}</strong> has been carefully packaged and handed over to our delivery partner (<strong>ZR Express</strong>). Your bespoke creation is now actively in transit to your destination.
+            Wonderful news! Your order <strong>#${order.orderNumber}</strong> has been carefully packaged and dispatched. Your bespoke creation is now actively in transit to your destination.
           </p>
         </div>
 
@@ -320,7 +393,7 @@ export default function EmailPreviewModal({
               ${trackingToUse}
             </p>
             <p style="font-size: 11px; color: #7A5C38; margin: 0;">
-              Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Tracked Express Delivery
+              ${isInternational ? "Tracked International Courier Dispatch" : "Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Tracked Express Delivery"}
             </p>
           </div>
         </div>
@@ -345,13 +418,19 @@ export default function EmailPreviewModal({
         <div style="padding: 0 35px 25px 35px;">
           <div style="background: #FAF7F2; border: 1px solid #E8D5B7; border-radius: 12px; padding: 18px 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px;">
-              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal (Sous-total)</span>
+              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Items Subtotal (Sous-total articles)</span>
               <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedSubtotal}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: ${formattedDiscount ? "8px" : "12px"};">
-              <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (Frais de livraison)</span>
-              <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedShippingFee}</span>
-            </div>
+            ${
+              !isInternational
+                ? `
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: ${formattedDiscount ? "8px" : "12px"};">
+                    <span style="font-size: 12.5px; color: #7A5C38; font-weight: 500;">Delivery Fee (Frais de livraison)</span>
+                    <span style="font-size: 13.5px; font-weight: 600; color: #141414;">${formattedShippingFee}</span>
+                  </div>
+                `
+                : ""
+            }
             ${formattedDiscount ? `
               <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px;">
                 <span style="font-size: 12.5px; color: #236E39; font-weight: 600;">Discount / Coupon (Remise)</span>
@@ -360,7 +439,7 @@ export default function EmailPreviewModal({
             ` : ""}
             <div style="border-top: 1px solid #EADBCE; padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
               <div style="font-family: Georgia, serif; font-size: 13px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1px;">
-                TOTAL AMOUNT DUE
+                ${isInternational ? "TOTAL AMOUNT (TOTAL ARTICLES)" : "TOTAL AMOUNT DUE (TOTAL À PAYER)"}
               </div>
               <div style="font-size: 17px; font-weight: 800; color: #141414;">
                 ${formattedTotal}
@@ -372,16 +451,32 @@ export default function EmailPreviewModal({
         <!-- Delivery Details Section -->
         ${deliveryDetailsHtml}
 
-        <!-- CTAs -->
-        <div style="padding: 0 35px 30px 35px; text-align: center;">
-          <a href="https://www.elhuyam.com/orders/track?orderNumber=${order.orderNumber}&phone=${trackingToUse}"
-             style="display: block; width: 85%; max-width: 360px; margin: 0 auto 10px auto; padding: 14px 0; background: #141414; color: #FAF9F6; text-decoration: none; letter-spacing: 2px; font-size: 11.5px; font-weight: bold; text-transform: uppercase; border-radius: 6px; text-align: center;">
-            TRACK YOUR SHIPMENT LIVE →
-          </a>
-          <a href="https://wa.me/213772515448"
-             style="display: inline-block; padding: 9px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11px; font-weight: 700; border-radius: 6px; text-align: center;">
-            💬 WhatsApp: +213 772 51 54 48
-          </a>
+        <!-- Dedicated Support & Contact CTAs -->
+        <div style="padding: 0 35px 25px 35px;">
+          <div style="background: #FDFBF7; border: 1px solid #EADBCE; border-radius: 12px; padding: 18px 20px; text-align: center;">
+            <p style="font-family: Georgia, serif; font-size: 12.5px; font-weight: bold; color: #4A3520; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 6px 0;">
+              💬 CLIENT CONCIERGE & SUPPORT
+            </p>
+            <p style="font-size: 12px; color: #7A5C38; line-height: 1.6; margin: 0 0 14px 0;">
+              If you have questions about your delivery status, contact us directly:
+            </p>
+            <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+              <a href="https://wa.me/213772515448?text=${encodeURIComponent(`Hello, I would like an update on my shipment #${order.orderNumber} (${trackingToUse})`)}"
+                 style="display: inline-block; padding: 10px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; font-size: 11.5px; font-weight: 700; border-radius: 6px; text-align: center;">
+                💬 WhatsApp: +213 772 51 54 48
+              </a>
+              <a href="mailto:elhuyamcollection09@gmail.com?subject=${encodeURIComponent(`Shipment #${order.orderNumber} (${trackingToUse})`)}"
+                 style="display: inline-block; padding: 10px 20px; background: #141414; color: #FAF9F6; text-decoration: none; font-size: 11.5px; font-weight: 700; border-radius: 6px; text-align: center;">
+                ✉️ Email: elhuyamcollection09@gmail.com
+              </a>
+            </div>
+            <div style="margin-top: 12px;">
+              <a href="https://www.elhuyam.com/orders/track?orderNumber=${order.orderNumber}&phone=${trackingToUse}"
+                 style="display: inline-block; color: #141414; text-decoration: underline; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+                TRACK YOUR SHIPMENT LIVE →
+              </a>
+            </div>
+          </div>
         </div>
 
         <!-- Footer -->

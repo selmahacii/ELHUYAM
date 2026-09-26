@@ -247,7 +247,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             state: order.shippingState,
             wilayaCode: order.wilayaCode,
             deliveryType: order.deliveryType,
-          }
+          },
+          order.createdAt
         ).catch((err) => console.error("[email/confirmed/patch]", err));
       }
     }
@@ -288,7 +289,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             state: order.shippingState,
             wilayaCode: order.wilayaCode,
             deliveryType: order.deliveryType,
-          }
+          },
+          order.createdAt
         ).catch((err) => console.error("[email/shipped/patch]", err));
       }
     }
