@@ -126,8 +126,8 @@ export const addressSchema = z.object({
 export const checkoutSchema = z.object({
   firstName: z.string().min(1, "Prénom requis").max(100),
   lastName: z.string().min(1, "Nom requis").max(100),
-  phone: z.string().min(9, "Téléphone requis").max(20),
-  email: z.string().transform(v => v.trim()).optional().refine((val) => !val || val === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse email valide" }),
+  phone: z.string().min(8, "Téléphone requis").max(50),
+  email: z.string().transform(v => (v ? v.trim() : "")).optional().refine((val) => !val || val === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse email valide" }),
   isInternational: z.boolean().optional().default(false),
   country: z.string().max(100).optional(),
   wilayaCode: z.string().max(5).optional(),

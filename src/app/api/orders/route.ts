@@ -49,12 +49,14 @@ export async function POST(req: NextRequest) {
       if (email && email.trim()) {
         const cleanEmail = email.trim().toLowerCase();
         if (dbUser.email !== cleanEmail) {
-          const emailUser = await db.user.findUnique({ where: { email: cleanEmail } });
+          const emailUser = await db.user.findFirst({
+            where: { email: { equals: cleanEmail, mode: "insensitive" } },
+          });
           if (!emailUser) {
             await db.user.update({
               where: { id: userId },
               data: { email: cleanEmail },
-            });
+            }).catch(() => null);
           }
         }
       }
@@ -63,12 +65,12 @@ export async function POST(req: NextRequest) {
       let existingUser = null;
 
       if (cleanEmail) {
-        existingUser = await db.user.findUnique({
-          where: { email: cleanEmail },
+        existingUser = await db.user.findFirst({
+          where: { email: { equals: cleanEmail, mode: "insensitive" } },
         });
       }
 
-      if (!existingUser) {
+      if (!existingUser && phone && phone.trim()) {
         existingUser = await db.user.findFirst({
           where: { phone: phone.trim() },
         });
@@ -79,12 +81,14 @@ export async function POST(req: NextRequest) {
         
         // 1. Update email if empty or changed
         if (cleanEmail && existingUser.email !== cleanEmail) {
-          const emailUser = await db.user.findUnique({ where: { email: cleanEmail } });
+          const emailUser = await db.user.findFirst({
+            where: { email: { equals: cleanEmail, mode: "insensitive" } },
+          });
           if (!emailUser) {
             await db.user.update({
               where: { id: userId },
               data: { email: cleanEmail },
-            });
+            }).catch(() => null);
           }
         }
 
@@ -93,19 +97,42 @@ export async function POST(req: NextRequest) {
           await db.user.update({
             where: { id: userId },
             data: { phone: phone.trim() },
-          });
+          }).catch(() => null);
         }
       } else {
         // Automatically provision a guest account (passwordless)
-        const guestUser = await db.user.create({
-          data: {
-            name: `${firstName.trim()} ${lastName.trim()}`,
-            phone: phone.trim(),
-            email: cleanEmail,
-            role: "CUSTOMER",
-          },
-        });
-        userId = guestUser.id;
+        try {
+          const guestUser = await db.user.create({
+            data: {
+              name: `${firstName.trim()} ${lastName.trim()}`,
+              phone: phone.trim() || null,
+              email: cleanEmail,
+              role: "CUSTOMER",
+            },
+          });
+          userId = guestUser.id;
+        } catch (createErr) {
+          // Fallback in case of race condition or duplicate key
+          const fallbackUser = await db.user.findFirst({
+            where: cleanEmail
+              ? { email: { equals: cleanEmail, mode: "insensitive" } }
+              : { phone: phone.trim() },
+          });
+          if (fallbackUser) {
+            userId = fallbackUser.id;
+          } else {
+            // Provision without email if email collided
+            const guestUser = await db.user.create({
+              data: {
+                name: `${firstName.trim()} ${lastName.trim()}`,
+                phone: phone.trim() || null,
+                email: null,
+                role: "CUSTOMER",
+              },
+            });
+            userId = guestUser.id;
+          }
+        }
       }
     }
 

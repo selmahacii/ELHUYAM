@@ -21,10 +21,10 @@ import { Check, Tag, Home, Store, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 const checkoutSchema = z.object({
-  firstName: z.string().min(1, "First name required"),
-  lastName: z.string().min(1, "Last name required"),
-  phone: z.string().min(1, "Phone required"),
-  email: z.string().transform(v => v.trim()).refine((val) => val.length > 0, { message: "L'adresse e-mail est obligatoire" }).refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse e-mail valide" }),
+  firstName: z.string().min(1, "Le prénom est obligatoire"),
+  lastName: z.string().min(1, "Le nom est obligatoire"),
+  phone: z.string().min(8, "Le numéro de téléphone est obligatoire"),
+  email: z.string().transform(v => (v ? v.trim() : "")).optional().refine((val) => !val || val === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse e-mail valide" }),
   isInternational: z.boolean().optional().default(false),
   country: z.string().optional(),
   wilayaCode: z.string().optional(),
@@ -39,6 +39,7 @@ const checkoutSchema = z.object({
 }).refine((data) => {
   if (data.isInternational) {
     return !!data.country && data.country.trim().length > 0 &&
+      !!data.email && data.email.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) &&
       !!data.street && data.street.trim().length > 0 &&
       !!data.city && data.city.trim().length > 0;
   } else {
@@ -53,7 +54,7 @@ const checkoutSchema = z.object({
     return true;
   }
 }, {
-  message: "Please fill all required fields",
+  message: "Veuillez remplir tous les champs obligatoires pour la livraison",
   path: ["wilayaCode"],
 });
 type CheckoutForm = z.infer<typeof checkoutSchema>;
@@ -253,6 +254,22 @@ export default function CheckoutPage() {
     }
   }
 
+  const onFormError = (formErrors: typeof errors) => {
+    console.warn("[Checkout] Validation errors:", formErrors);
+    if (formErrors.firstName) toast.error(formErrors.firstName.message ?? "Prénom requis");
+    else if (formErrors.lastName) toast.error(formErrors.lastName.message ?? "Nom requis");
+    else if (formErrors.phone) toast.error(formErrors.phone.message ?? "Téléphone requis");
+    else if (formErrors.email) toast.error(formErrors.email.message ?? "Email invalide");
+    else if (formErrors.country) toast.error("Veuillez sélectionner le pays de destination");
+    else if (formErrors.wilayaCode) toast.error("Veuillez sélectionner votre wilaya");
+    else if (formErrors.deliveryType) toast.error("Veuillez choisir le mode de livraison");
+    else if (formErrors.commune) toast.error("Veuillez sélectionner votre commune");
+    else if (formErrors.customCommune) toast.error("Veuillez préciser le nom de votre commune");
+    else if (formErrors.bureau) toast.error("Veuillez sélectionner le bureau de retrait Stop Desk");
+    else if (formErrors.street) toast.error("Veuillez préciser votre adresse");
+    else toast.error("Veuillez remplir tous les champs obligatoires");
+  };
+
   if (status === "loading") {
     return <div className="max-w-2xl mx-auto px-4 py-24 text-center"><p className="text-neutral-500">{tCommon("loading")}</p></div>;
   }
@@ -301,7 +318,7 @@ export default function CheckoutPage() {
         <h1 className="font-display text-4xl text-black uppercase font-bold tracking-wider">{t("shippingAddress")}</h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <form onSubmit={handleSubmit(onSubmit, onFormError)} className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* LEFT: Form */}
         <div className="lg:col-span-2 space-y-8">
           {/* Destination Type Toggle (Only if International is Enabled by Admin) */}
@@ -363,8 +380,10 @@ export default function CheckoutPage() {
                 {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
               </div>
               <div className="sm:col-span-2">
-                <label className={labelCls}>{t("email")} *</label>
-                <input {...register("email")} type="email" className={inputCls} placeholder="example@domain.com" autoComplete="email" />
+                <label className={labelCls}>
+                  {t("email")} {isInternational ? "*" : <span className="text-neutral-400 normal-case text-[10px] font-normal">(optionnel)</span>}
+                </label>
+                <input {...register("email")} type="text" inputMode="email" className={inputCls} placeholder="example@domain.com" autoComplete="email" />
                 {errors.email && <p className={errorCls}>{errors.email.message}</p>}
               </div>
             </div>

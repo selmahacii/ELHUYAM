@@ -79,11 +79,6 @@ function StateSync() {
     window.addEventListener("online", handleOnline, { passive: true });
     window.addEventListener("offline", handleOffline, { passive: true });
 
-    // Check current state on load
-    if (typeof window !== "undefined" && !window.navigator.onLine) {
-      handleOffline();
-    }
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);

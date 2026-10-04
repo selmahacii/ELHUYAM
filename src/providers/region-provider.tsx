@@ -51,12 +51,14 @@ export function RegionProvider({
       return;
     }
     const cookieVal = getClientCookie("region");
+    const localVal = typeof window !== "undefined" ? localStorage.getItem("elhuyaam-region") : null;
+    const resolved = cookieVal || localVal;
     const parsed: Region =
-      cookieVal === "ALGERIA" || cookieVal === "INTERNATIONAL"
-        ? (cookieVal as Region)
+      resolved === "ALGERIA" || resolved === "INTERNATIONAL"
+        ? (resolved as Region)
         : null;
     setRegionState(parsed);
-    // Show the region modal only if no region cookie is set yet
+    // Show the region modal only if no region is set yet
     setRegionModalOpen(!parsed);
   }, [isInternationalEnabled]);
 
@@ -67,16 +69,19 @@ export function RegionProvider({
 
     setRegionState(newRegion);
     if (newRegion) {
-      // Set region cookie
-      document.cookie = `region=${newRegion}; path=/; max-age=31536000`;
-      // Force English if International, else default to French (or leave current if Algerian)
-      if (newRegion === "INTERNATIONAL") {
-        document.cookie = `locale=en; path=/; max-age=31536000`;
-      }
+      // Set region cookie & localStorage
+      try {
+        document.cookie = `region=${newRegion}; path=/; max-age=31536000; SameSite=Lax`;
+        if (newRegion === "INTERNATIONAL") {
+          document.cookie = `locale=en; path=/; max-age=31536000; SameSite=Lax`;
+        }
+        if (typeof window !== "undefined") {
+          localStorage.setItem("elhuyaam-region", newRegion);
+        }
+      } catch {}
       setRegionModalOpen(false);
       
-      // Hard refresh to ensure layout and next-intl picks up the new locale/region
-      window.location.reload();
+      router.refresh();
     }
   };
 
