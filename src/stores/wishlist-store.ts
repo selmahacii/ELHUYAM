@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { signOut } from "next-auth/react";
 
 interface WishlistStore {
   productIds: string[];
@@ -34,9 +33,7 @@ export const useWishlistStore = create<WishlistStore>()(
         });
 
         if (res.status === 401) {
-          console.warn("[Wishlist Store] ToggleItem request returned 401 Unauthorized. Invalidating client-side session...");
           set({ isAuthenticated: false });
-          signOut({ redirect: false }).catch(() => null);
           throw new Error("Unauthorized");
         }
 
@@ -64,9 +61,7 @@ export const useWishlistStore = create<WishlistStore>()(
             const ids = (data.data ?? []).map((item: { productId: string }) => item.productId);
             set({ productIds: ids });
           } else if (res.status === 401) {
-            console.warn("[Wishlist Store] SyncWithServer request returned 401 Unauthorized. Invalidating client-side session...");
             set({ isAuthenticated: false });
-            signOut({ redirect: false }).catch(() => null);
           }
         } catch {
           // Silent

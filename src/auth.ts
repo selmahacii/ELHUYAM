@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { loginSchema } from "@/lib/validations";
 import { authConfig } from "./auth.config";
 
-const SESSION_MAX_AGE = 7 * 24 * 60 * 60; // 7 days (vs NextAuth default 30 days)
+const SESSION_MAX_AGE = 30 * 24 * 60 * 60; // 30 days
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,

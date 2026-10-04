@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { signOut } from "next-auth/react";
 
 interface CartItem {
   id: string;
@@ -187,9 +186,7 @@ export const useCartStore = create<CartStore>()(
           }
 
           if (res.status === 401) {
-            console.warn("[Cart Store] AddItem request returned 401 Unauthorized. Invalidating client-side session...");
             set({ isAuthenticated: false });
-            signOut({ redirect: false }).catch(() => null);
             // Guest fallback logic
             let product;
             if (productData) {
@@ -280,9 +277,7 @@ export const useCartStore = create<CartStore>()(
           if (res.ok) {
             set((state) => ({ items: state.items.filter((i) => i.id !== itemId) }));
           } else if (res.status === 401) {
-            console.warn("[Cart Store] RemoveItem request returned 401 Unauthorized. Invalidating client-side session...");
             set({ isAuthenticated: false });
-            signOut({ redirect: false }).catch(() => null);
             set((state) => ({ items: state.items.filter((i) => i.id !== itemId) }));
           }
         } catch {
@@ -311,9 +306,7 @@ export const useCartStore = create<CartStore>()(
             body: JSON.stringify({ itemId, quantity }),
           });
           if (res.status === 401) {
-            console.warn("[Cart Store] UpdateQuantity request returned 401 Unauthorized. Invalidating client-side session...");
             set({ isAuthenticated: false });
-            signOut({ redirect: false }).catch(() => null);
           } else if (!res.ok) {
             await get().syncWithServer();
           }
@@ -353,9 +346,7 @@ export const useCartStore = create<CartStore>()(
             }));
             set({ items: serverItems });
           } else if (res.status === 401) {
-            console.warn("[Cart Store] SyncWithServer request returned 401 Unauthorized. Invalidating client-side session...");
             set({ isAuthenticated: false });
-            signOut({ redirect: false }).catch(() => null);
           }
         } catch {
           // Keep local state on fetch failures
