@@ -24,7 +24,7 @@ const checkoutSchema = z.object({
   firstName: z.string().min(1, "Le prénom est obligatoire"),
   lastName: z.string().min(1, "Le nom est obligatoire"),
   phone: z.string().min(8, "Le numéro de téléphone est obligatoire"),
-  email: z.string().transform(v => (v ? v.trim() : "")).optional().refine((val) => !val || val === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse e-mail valide" }),
+  email: z.string().transform(v => (v ? v.trim() : "")).refine((val) => val.length > 0, { message: "L'adresse e-mail est obligatoire" }).refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse e-mail valide" }),
   isInternational: z.boolean().optional().default(false),
   country: z.string().optional(),
   wilayaCode: z.string().optional(),
@@ -39,7 +39,6 @@ const checkoutSchema = z.object({
 }).refine((data) => {
   if (data.isInternational) {
     return !!data.country && data.country.trim().length > 0 &&
-      !!data.email && data.email.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) &&
       !!data.street && data.street.trim().length > 0 &&
       !!data.city && data.city.trim().length > 0;
   } else {
@@ -380,9 +379,7 @@ export default function CheckoutPage() {
                 {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
               </div>
               <div className="sm:col-span-2">
-                <label className={labelCls}>
-                  {t("email")} {isInternational ? "*" : <span className="text-neutral-400 normal-case text-[10px] font-normal">(optionnel)</span>}
-                </label>
+                <label className={labelCls}>{t("email")} *</label>
                 <input {...register("email")} type="text" inputMode="email" className={inputCls} placeholder="example@domain.com" autoComplete="email" />
                 {errors.email && <p className={errorCls}>{errors.email.message}</p>}
               </div>

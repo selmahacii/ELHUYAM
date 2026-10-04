@@ -127,7 +127,7 @@ export const checkoutSchema = z.object({
   firstName: z.string().min(1, "Prénom requis").max(100),
   lastName: z.string().min(1, "Nom requis").max(100),
   phone: z.string().min(8, "Téléphone requis").max(50),
-  email: z.string().transform(v => (v ? v.trim() : "")).optional().refine((val) => !val || val === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse email valide" }),
+  email: z.string().transform(v => (v ? v.trim() : "")).refine((val) => val.length > 0, { message: "L'adresse email est obligatoire" }).refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse email valide" }),
   isInternational: z.boolean().optional().default(false),
   country: z.string().max(100).optional(),
   wilayaCode: z.string().max(5).optional(),
@@ -137,14 +137,6 @@ export const checkoutSchema = z.object({
   couponCode: z.string().max(50).optional(),
   paymentMethod: z.enum(["stripe", "cod"]),
   notes: z.string().max(500).optional(),
-}).refine((data) => {
-  if (data.isInternational) {
-    return !!data.email && data.email.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email);
-  }
-  return true;
-}, {
-  message: "L'email est requis pour les livraisons internationales.",
-  path: ["email"],
 }).refine((data) => {
   if (data.isInternational) {
     return !!data.country && data.country.trim().length > 0;
