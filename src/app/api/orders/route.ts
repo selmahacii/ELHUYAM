@@ -8,6 +8,7 @@ import { sendOrderConfirmationEmail } from "@/lib/email";
 import { auth } from "@/auth";
 import { getShippingCost, getWilayaByCode } from "@/lib/wilayas";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { revalidateTag, revalidatePath } from "next/cache";
 
 export async function POST(req: NextRequest) {
   try {
@@ -145,6 +146,7 @@ export async function POST(req: NextRequest) {
       color?: string | null;
       product: {
         id: string;
+        slug?: string;
         title: string;
         price: number;
         discountPrice: number | null;
@@ -190,6 +192,7 @@ export async function POST(req: NextRequest) {
               color: item.color,
               product: {
                 id: item.product.id,
+                slug: item.product.slug,
                 title: item.product.title,
                 price: item.product.price,
                 discountPrice: item.product.discountPrice,
@@ -237,6 +240,7 @@ export async function POST(req: NextRequest) {
           color: item.color,
           product: {
             id: product.id,
+            slug: product.slug,
             title: product.title,
             price: product.price,
             discountPrice: product.discountPrice,
@@ -359,6 +363,11 @@ export async function POST(req: NextRequest) {
           if (updatedVariant.count === 0) {
             throw new Error(`STOCK_DEPLETED:${item.product.title}`);
           }
+          // Also sync aggregate product stock
+          await tx.product.updateMany({
+            where: { id: item.productId, stock: { gte: item.quantity } },
+            data: { stock: { decrement: item.quantity } },
+          });
         } else {
           const updated = await tx.product.updateMany({
             where: { id: item.productId, stock: { gte: item.quantity } },
@@ -430,6 +439,20 @@ export async function POST(req: NextRequest) {
         },
         order.createdAt
       ).catch((err) => console.error("[email/orders/POST]", err));
+    }
+
+    // Invalidate product caches so stock updates reflect on storefront in real time
+    try {
+      revalidateTag("products", "default");
+      revalidatePath("/", "page");
+      revalidatePath("/shop", "page");
+      for (const item of cartItems) {
+        if (item.product?.slug) {
+          revalidatePath(`/shop/${item.product.slug}`, "page");
+        }
+      }
+    } catch (e) {
+      console.warn("[orders/POST] Revalidation notice:", e);
     }
 
     const response = successResponse(order, 201);

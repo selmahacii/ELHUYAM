@@ -4,6 +4,7 @@ import { productSchema } from "@/lib/validations";
 import { successResponse, errorResponse, paginatedResponse, getPaginationParams } from "@/lib/api-response";
 import { slugify } from "@/lib/utils";
 import { auth } from "@/auth";
+import { revalidateTag, revalidatePath } from "next/cache";
 
 export async function GET(req: NextRequest) {
   try {
@@ -101,6 +102,21 @@ export async function POST(req: NextRequest) {
       },
       include: { category: true },
     });
+
+    // Invalidate caches immediately so new product appears across the storefront
+    try {
+      revalidateTag("products", "default");
+      revalidateTag("categories", "default");
+      revalidatePath("/", "page");
+      revalidatePath("/shop", "page");
+      revalidatePath("/categories", "page");
+      if (product.slug) {
+        revalidatePath(`/shop/${product.slug}`, "page");
+      }
+      revalidatePath("/admin/products");
+    } catch (e) {
+      console.warn("[PRODUCT_POST] Revalidation notice:", e);
+    }
 
     return successResponse(product, 201);
   } catch {

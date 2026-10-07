@@ -17,38 +17,6 @@ interface SearchParams {
   }>;
 }
 
-function VariantStockSummary({
-  variants,
-}: {
-  variants: { id: string; stock: number; color?: string | null; size?: string | null }[];
-}) {
-  const total = variants.reduce((s, v) => s + v.stock, 0);
-  const outOfStock = variants.filter((v) => v.stock === 0).length;
-  const low = variants.filter((v) => v.stock > 0 && v.stock <= 5).length;
-
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1.5">
-        {(outOfStock > 0 || low > 0) && (
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-        )}
-        <span className={`text-xs font-bold ${total === 0 ? "text-red-500 font-extrabold" : low > 0 ? "text-amber-600 font-extrabold" : "text-slate-800 font-extrabold"}`}>
-          {total} in stock
-        </span>
-      </div>
-      <div className="flex flex-wrap gap-1 items-center">
-        <span className="text-[10px] bg-slate-50 border border-slate-100 text-slate-500 px-1.5 py-0.2 rounded font-bold font-mono shrink-0">
-          {variants.length} var.
-        </span>
-        {outOfStock > 0 && (
-          <span className="text-[9px] bg-rose-50 text-rose-600 px-1 py-0.2 rounded font-bold shrink-0">
-            {outOfStock} out of stock
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default async function AdminProductsPage({ searchParams }: SearchParams) {
   const sp = await searchParams;
@@ -344,16 +312,14 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
 
                   {/* Stocks quantity or variant tree */}
                   <td className="px-4 py-3">
-                    {product.variants.length > 0 ? (
-                      <VariantStockSummary variants={product.variants} />
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        {product.stock <= 5 && product.stock > 0 && (
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        )}
-                        <StockEditor productId={product.id} initialStock={product.stock} />
-                      </div>
-                    )}
+                    <StockEditor
+                      product={{
+                        id: product.id,
+                        title: product.title,
+                        stock: product.stock,
+                        variants: product.variants,
+                      }}
+                    />
                   </td>
 
                   {/* Visual Promotion Status Badges */}

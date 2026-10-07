@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 
 const heroSchema = z.object({
   desktopMedia: z.string().min(1, "Desktop media is required"),
@@ -55,6 +56,12 @@ export async function PUT(req: NextRequest) {
       create: { key: "hero_mobile_media", value: mobileMedia },
       update: { value: mobileMedia },
     });
+
+    try {
+      revalidatePath("/", "page");
+    } catch (e) {
+      console.warn("[HERO_SETTINGS_PUT] Revalidation notice:", e);
+    }
 
     return successResponse({ success: true });
   } catch {

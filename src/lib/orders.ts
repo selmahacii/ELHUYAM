@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { revalidateTag, revalidatePath } from "next/cache";
 
 export async function updateOrderAdmin(
   orderId: string,
@@ -12,7 +13,7 @@ export async function updateOrderAdmin(
   },
   changedById?: string
 ) {
-  return await db.$transaction(async (tx: any) => {
+  const result = await db.$transaction(async (tx: any) => {
     // 1. Fetch the order with its items to know the current state
     const order = await tx.order.findUnique({
       where: { id: orderId },
@@ -48,6 +49,11 @@ export async function updateOrderAdmin(
                 where: { id: variant.id },
                 data: { stock: { increment: item.quantity } },
               });
+              // Also keep aggregate Product.stock in sync
+              await tx.product.update({
+                where: { id: item.productId },
+                data: { stock: { increment: item.quantity } },
+              });
               continue;
             }
           }
@@ -72,7 +78,14 @@ export async function updateOrderAdmin(
                 where: { id: variant.id, stock: { gte: item.quantity } },
                 data: { stock: { decrement: item.quantity } },
               });
-              if (updated.count > 0) continue;
+              if (updated.count > 0) {
+                // Also keep aggregate Product.stock in sync
+                await tx.product.updateMany({
+                  where: { id: item.productId, stock: { gte: item.quantity } },
+                  data: { stock: { decrement: item.quantity } },
+                });
+                continue;
+              }
             }
           }
           const updated = await tx.product.updateMany({
@@ -139,7 +152,6 @@ export async function updateOrderAdmin(
         },
         coupon: {
           select: {
-            code: true,
             discountType: true,
             discountValue: true
           }
@@ -147,4 +159,20 @@ export async function updateOrderAdmin(
       }
     });
   });
+
+  // Revalidate product caches if stock was adjusted
+  try {
+    revalidateTag("products", "default");
+    revalidatePath("/", "page");
+    revalidatePath("/shop", "page");
+    for (const item of result.items || []) {
+      if (item.product?.slug) {
+        revalidatePath(`/shop/${item.product.slug}`, "page");
+      }
+    }
+  } catch (e) {
+    console.warn("[updateOrderAdmin] Revalidation notice:", e);
+  }
+
+  return result;
 }

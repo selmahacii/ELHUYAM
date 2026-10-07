@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { slugify } from "@/lib/utils";
 import { auth } from "@/auth";
+import { revalidateTag, revalidatePath } from "next/cache";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -45,6 +46,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (data.image === "") data.image = null;
 
     const category = await db.category.update({ where: { id }, data });
+
+    try {
+      revalidateTag("categories", "default");
+      revalidateTag("products", "default");
+      revalidatePath("/", "page");
+      revalidatePath("/shop", "page");
+      revalidatePath("/categories", "page");
+      revalidatePath("/admin/categories");
+    } catch (e) {
+      console.warn("[CATEGORY_PATCH] Revalidation notice:", e);
+    }
+
     return successResponse(category);
   } catch (err) {
     console.error("[CATEGORY PATCH]", err);
@@ -62,6 +75,18 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     if (hasProducts > 0) return errorResponse("Cannot delete category with active products.", 409);
 
     await db.category.delete({ where: { id } });
+
+    try {
+      revalidateTag("categories", "default");
+      revalidateTag("products", "default");
+      revalidatePath("/", "page");
+      revalidatePath("/shop", "page");
+      revalidatePath("/categories", "page");
+      revalidatePath("/admin/categories");
+    } catch (e) {
+      console.warn("[CATEGORY_DELETE] Revalidation notice:", e);
+    }
+
     return successResponse({ message: "Category deleted." });
   } catch (err) {
     console.error("[CATEGORY DELETE]", err);

@@ -4,6 +4,7 @@ import { categorySchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { slugify } from "@/lib/utils";
 import { auth } from "@/auth";
+import { revalidateTag, revalidatePath } from "next/cache";
 
 export const revalidate = 300;
 
@@ -63,6 +64,17 @@ export async function POST(req: NextRequest) {
           });
         }
       }
+    }
+
+    try {
+      revalidateTag("categories", "default");
+      revalidateTag("products", "default");
+      revalidatePath("/", "page");
+      revalidatePath("/shop", "page");
+      revalidatePath("/categories", "page");
+      revalidatePath("/admin/categories");
+    } catch (e) {
+      console.warn("[CATEGORY_POST] Revalidation notice:", e);
     }
 
     return successResponse(category, 201);

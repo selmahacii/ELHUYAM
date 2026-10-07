@@ -79,14 +79,49 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const data = parsed.data;
     if (data.title && !data.slug) data.slug = slugify(data.title);
 
+    // Fetch existing product to know current slug & variants
+    const currentProduct = await db.product.findUnique({
+      where: { id },
+      include: { variants: true },
+    });
+
+    if (!currentProduct) return errorResponse("Product not found", 404);
+
+    // If stock is updated explicitly and product has a single variant, keep variant stock in sync
+    if (data.stock !== undefined && currentProduct.variants.length === 1) {
+      await db.productVariant.update({
+        where: { id: currentProduct.variants[0].id },
+        data: { stock: data.stock },
+      });
+    }
+
     const product = await db.product.update({
       where: { id },
       data,
-      include: { category: true },
+      include: { category: true, variants: true },
     });
 
+    // Invalidate caches immediately so changes reflect on storefront in real-time
+    try {
+      revalidateTag("products", "default");
+      revalidateTag("categories", "default");
+      revalidatePath("/", "page");
+      revalidatePath("/shop", "page");
+      revalidatePath("/categories", "page");
+      if (product.slug) {
+        revalidatePath(`/shop/${product.slug}`, "page");
+      }
+      if (currentProduct.slug && currentProduct.slug !== product.slug) {
+        revalidatePath(`/shop/${currentProduct.slug}`, "page");
+      }
+      revalidatePath("/admin/products");
+    } catch (e) {
+      console.warn("[PRODUCT_PATCH] Revalidation notice:", e);
+    }
+
     return successResponse(product);
-  } catch {
+  } catch (error) {
+    console.error("[PRODUCT_PATCH_ERROR]", error);
     return errorResponse("Failed to update product.", 500);
   }
 }
