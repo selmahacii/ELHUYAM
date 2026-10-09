@@ -14,16 +14,17 @@ import { COUNTRIES } from "@/lib/countries";
 import { COMMUNES } from "@/lib/communes";
 import { BUREAUX } from "@/lib/bureaux";
 import { useRegion } from "@/providers/region-provider";
+import { cleanPhoneNumber, validatePhoneNumber } from "@/lib/validations";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
-import { Check, Tag, Home, Store, Truck } from "lucide-react";
+import { Check, Tag, Home, Store, Truck, MessageCircle, Mail, ShieldCheck, AlertTriangle, Phone, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 const checkoutSchema = z.object({
   firstName: z.string().min(1, "Le prénom est obligatoire"),
   lastName: z.string().min(1, "Le nom est obligatoire"),
-  phone: z.string().min(8, "Le numéro de téléphone est obligatoire"),
+  phone: z.string().min(1, "Le numéro de téléphone est obligatoire"),
   email: z.string().transform(v => (v ? v.trim() : "")).refine((val) => val.length > 0, { message: "L'adresse e-mail est obligatoire" }).refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse e-mail valide" }),
   isInternational: z.boolean().optional().default(false),
   country: z.string().optional(),
@@ -36,31 +37,93 @@ const checkoutSchema = z.object({
   bureau: z.string().optional(),
   paymentMethod: z.enum(["cod", "stripe"]),
   notes: z.string().optional(),
-}).refine((data) => {
-  if (data.isInternational) {
-    return !!data.country && data.country.trim().length > 0 &&
-      !!data.street && data.street.trim().length > 0 &&
-      !!data.city && data.city.trim().length > 0;
-  } else {
-    if (!data.wilayaCode || !data.deliveryType) return false;
-    if (data.deliveryType === "DOMICILE") {
-      if (!data.commune) return false;
-      if (data.commune === "AUTRE" && !data.customCommune) return false;
-      if (!data.street || data.street.trim().length === 0) return false;
-    } else if (data.deliveryType === "STOPDESK") {
-      if (!data.bureau) return false;
-    }
-    return true;
+}).superRefine((data, ctx) => {
+  // Validate Phone
+  const phoneRes = validatePhoneNumber(data.phone, data.isInternational);
+  if (!phoneRes.isValid) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: phoneRes.error || "Numéro de téléphone invalide",
+      path: ["phone"],
+    });
   }
-}, {
-  message: "Veuillez remplir tous les champs obligatoires pour la livraison",
-  path: ["wilayaCode"],
+
+  // Validate Delivery details
+  if (data.isInternational) {
+    if (!data.country || data.country.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Veuillez sélectionner le pays de destination",
+        path: ["country"],
+      });
+    }
+    if (!data.street || data.street.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Veuillez préciser votre adresse complète",
+        path: ["street"],
+      });
+    }
+    if (!data.city || data.city.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Veuillez préciser votre ville",
+        path: ["city"],
+      });
+    }
+  } else {
+    if (!data.wilayaCode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Veuillez sélectionner votre wilaya",
+        path: ["wilayaCode"],
+      });
+    }
+    if (!data.deliveryType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Veuillez choisir le mode de livraison",
+        path: ["deliveryType"],
+      });
+    }
+    if (data.deliveryType === "DOMICILE") {
+      if (!data.commune) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Veuillez sélectionner votre commune",
+          path: ["commune"],
+        });
+      }
+      if (data.commune === "AUTRE" && (!data.customCommune || data.customCommune.trim().length === 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Veuillez préciser le nom de votre commune",
+          path: ["customCommune"],
+        });
+      }
+      if (!data.street || data.street.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Veuillez préciser votre adresse (quartier, rue...)",
+          path: ["street"],
+        });
+      }
+    } else if (data.deliveryType === "STOPDESK") {
+      if (!data.bureau) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Veuillez sélectionner le bureau de retrait Stop Desk",
+          path: ["bureau"],
+        });
+      }
+    }
+  }
 });
 type CheckoutForm = z.infer<typeof checkoutSchema>;
 
 const inputCls = "w-full border border-neutral-200 px-4 py-3 text-sm text-black focus:outline-none focus:border-black transition-colors bg-white placeholder-neutral-300";
 const labelCls = "block text-xs uppercase tracking-[0.15em] text-black mb-1.5 font-bold";
-const errorCls = "mt-1 text-xs text-red-500";
+const errorCls = "mt-1 text-xs text-red-500 font-medium";
 
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
@@ -105,7 +168,10 @@ export default function CheckoutPage() {
     : isInternational ? 0 : null;
   const total = Math.max(0, sub + (shippingFee ?? 0) - couponDiscount);
 
-  const phoneValue = watch("phone");
+  const phoneValue = watch("phone") || "";
+  const phoneValidationLive = validatePhoneNumber(phoneValue, isInternational);
+  const cleanPhoneDigits = cleanPhoneNumber(phoneValue).replace(/\D/g, "");
+  const isAlgerianPhone = !isInternational || /^(\+213|00213|213|0[567])/.test(cleanPhoneNumber(phoneValue));
 
   useEffect(() => {
     if (phoneValue && isInternationalEnabled) {
@@ -369,19 +435,98 @@ export default function CheckoutPage() {
                 {errors.lastName && <p className={errorCls}>{errors.lastName.message}</p>}
               </div>
               <div className="sm:col-span-2">
-                <label className={labelCls}>{t("phone")} *</label>
-                <input {...register("phone")} type="tel" className={inputCls} placeholder={isInternational ? "E.g., +33 6 XX XX XX XX" : "05XXXXXXXX"} autoComplete="tel" />
-                {isInternational && (
-                  <p className="text-[10px] text-emerald-600 mt-1 font-semibold">
-                    ✦ WhatsApp number with country code (e.g. +33) is required for international delivery confirmation.
-                  </p>
-                )}
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs uppercase tracking-[0.15em] text-black font-bold flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-neutral-800" />
+                    <span>{t("phone")} *</span>
+                  </label>
+                  {phoneValue && phoneValue.trim().length > 0 && isAlgerianPhone && (
+                    <div>
+                      {phoneValidationLive.isValid ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          10/10 chiffres (valide)
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border ${
+                          cleanPhoneDigits.length < 10 
+                            ? "bg-amber-50 text-amber-800 border-amber-200" 
+                            : "bg-rose-50 text-rose-700 border-rose-200"
+                        }`}>
+                          <AlertTriangle className="w-3 h-3" />
+                          {cleanPhoneDigits.length}/10 chiffres
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <input
+                  {...register("phone")}
+                  type="tel"
+                  className={inputCls}
+                  placeholder={isInternational ? "Ex: +33 6 12 34 56 78 (Indicatif pays inclus)" : "Ex: 0550123456 (10 chiffres)"}
+                  autoComplete="tel"
+                />
                 {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
+
+                {/* WhatsApp Order Confirmation Notice Box */}
+                <div className="mt-3 p-4 bg-[#F0FDF4] border border-[#BBF7D0] rounded-2xl space-y-2 shadow-2xs">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                      <MessageCircle className="w-4 h-4 fill-white" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-bold text-[#14532D]">
+                          Numéro WhatsApp obligatoire pour la confirmation
+                        </p>
+                        <span className="text-[9px] uppercase font-extrabold px-2 py-0.5 bg-[#DCFCE7] text-[#166534] border border-[#86EFAC] rounded-full">
+                          Obligatoire
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#166534] leading-relaxed">
+                        Le numéro indiqué <strong>doit impérativement être relié à un compte WhatsApp actif</strong>. Notre équipe vous contactera sur WhatsApp pour confirmer les détails de votre commande avant son expédition.
+                      </p>
+                      <div className="p-2.5 bg-[#FEF2F2] border border-[#FECACA] rounded-xl text-xs text-[#991B1B] font-semibold flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-[#DC2626] shrink-0 mt-0.5" />
+                        <p className="leading-snug">
+                          <strong>Attention :</strong> Si nous ne parvenons pas à vous joindre sur WhatsApp, votre commande ne pourra être ni confirmée ni expédiée.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+
               <div className="sm:col-span-2">
-                <label className={labelCls}>{t("email")} *</label>
-                <input {...register("email")} type="text" inputMode="email" className={inputCls} placeholder="example@domain.com" autoComplete="email" />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs uppercase tracking-[0.15em] text-black font-bold flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-neutral-800" />
+                    <span>{t("email")} *</span>
+                  </label>
+                </div>
+                <input
+                  {...register("email")}
+                  type="email"
+                  inputMode="email"
+                  className={inputCls}
+                  placeholder="exemple@domaine.com"
+                  autoComplete="email"
+                />
                 {errors.email && <p className={errorCls}>{errors.email.message}</p>}
+
+                {/* Email Inbox Notice Box */}
+                <div className="mt-2.5 p-3.5 bg-brand-50/80 border border-brand-200/80 rounded-2xl flex items-start gap-3 text-xs text-brand-900 shadow-2xs">
+                  <div className="w-7 h-7 rounded-xl bg-brand-900 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                    <Mail className="w-3.5 h-3.5 text-soft-gold" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="font-bold text-brand-950 text-xs">Vérification de votre boîte e-mail</p>
+                    <p className="text-[11px] text-brand-800 leading-relaxed">
+                      Votre récapitulatif de commande et votre reçu officiel vous seront envoyés immédiatement. <strong>Veuillez consulter votre boîte e-mail</strong> (ainsi que vos courriers indésirables / spams si nécessaire).
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -647,6 +792,40 @@ export default function CheckoutPage() {
                     formatPrice(total, currency)
                   )}
                 </span>
+              </div>
+            </div>
+
+            {/* Order Confirmation Steps & Security */}
+            <div className="bg-white border border-neutral-200/90 p-4 rounded-2xl space-y-2.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-xs font-bold text-black border-b border-neutral-100 pb-2">
+                <ShieldCheck className="w-4 h-4 text-soft-gold shrink-0" />
+                <span className="uppercase tracking-wider text-[10px]">Confirmation & Expédition</span>
+              </div>
+              <div className="space-y-2 text-xs text-neutral-600">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <p className="leading-snug text-[11px]">
+                    <strong className="text-black">Confirmation WhatsApp :</strong> Obligatoire avant préparation et expédition.
+                  </p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-brand-100 text-brand-800 text-[10px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <p className="leading-snug text-[11px]">
+                    <strong className="text-black">Notification E-mail :</strong> Récapitulatif et suivi envoyés instantanément.
+                  </p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-neutral-100 text-neutral-800 text-[10px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <p className="leading-snug text-[11px]">
+                    <strong className="text-black">Livraison :</strong> Remise à ZR Express après confirmation.
+                  </p>
+                </div>
               </div>
             </div>
 

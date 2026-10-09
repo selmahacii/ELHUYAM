@@ -51,10 +51,59 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
           </div>
         )}
 
-        {/* Confirmation notification description */}
-        <p className="text-xs sm:text-sm text-brand-600 max-w-md mx-auto mb-10 leading-relaxed">
-          {t("success.emailSent")}
-        </p>
+        {/* Step-by-step Confirmation Roadmap */}
+        <div className="max-w-lg mx-auto bg-neutral-50 border border-neutral-200/90 rounded-2xl p-5 mb-8 text-left space-y-3.5 shadow-2xs">
+          <div className="flex items-center gap-2 border-b border-neutral-200/80 pb-2.5">
+            <span className="text-xs uppercase tracking-wider font-bold text-black">Prochaines Étapes de votre Commande</span>
+          </div>
+
+          <div className="space-y-3">
+            {/* Step 1: WhatsApp */}
+            <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-emerald-200 shadow-3xs">
+              <div className="w-7 h-7 rounded-lg bg-[#25D366] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                <span className="text-xs">💬</span>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-emerald-950">
+                  1. Confirmation sur WhatsApp (Obligatoire)
+                </p>
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
+                  Notre équipe va vous contacter sur votre numéro <strong>WhatsApp</strong> pour valider les pièces et l'adresse. <span className="text-rose-700 font-semibold">Votre confirmation est nécessaire pour lancer l'expédition.</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Step 2: Email */}
+            <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-brand-200 shadow-3xs">
+              <div className="w-7 h-7 rounded-lg bg-brand-900 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                <span className="text-xs text-soft-gold">✉️</span>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-brand-950">
+                  2. Consultation de votre boîte E-mail
+                </p>
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
+                  Votre reçu complet a été envoyé par e-mail. <strong>Pensez à vérifier vos courriers indésirables / spams</strong> si vous ne le trouvez pas immédiatement.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 3: Delivery */}
+            <div className="flex items-start gap-3 bg-white p-3 rounded-xl border border-neutral-200 shadow-3xs">
+              <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                <span className="text-xs">📦</span>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-black">
+                  3. Expédition & Suivi en Direct
+                </p>
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
+                  Après confirmation WhatsApp, votre commande est remise au transporteur avec un lien de suivi en direct accessible à tout moment.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Actions Button container */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { Prisma, DeliveryType } from "@prisma/client";
 import { db } from "@/lib/db";
-import { checkoutSchema } from "@/lib/validations";
+import { checkoutSchema, validatePhoneNumber, cleanPhoneNumber } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { generateOrderNumber } from "@/lib/utils";
 import { sendOrderConfirmationEmail } from "@/lib/email";
@@ -32,11 +32,12 @@ export async function POST(req: NextRequest) {
       isInternational, country,
     } = parsed.data;
 
-    // Phone numbers typed on RTL/Arabic keyboards can carry invisible Unicode
-    // bidi control characters (U+200E/F, U+202A-E, U+2066-9) around the digits.
-    // Strip everything but digits/+ at intake so it never reaches ZR Express
-    // or order-tracking phone matching in a form that fails validation there.
-    const phone = rawPhone.replace(/[^\d+]/g, "");
+    // Validate and standardize phone number
+    const phoneValidation = validatePhoneNumber(rawPhone, isInternational);
+    if (!phoneValidation.isValid) {
+      return errorResponse(phoneValidation.error || "Numéro de téléphone invalide.", 400);
+    }
+    const phone = phoneValidation.normalized || cleanPhoneNumber(rawPhone);
 
     // 2. Identify or Auto-Create Customer Account (satisfies DB foreign key constraint)
     let userId: string;

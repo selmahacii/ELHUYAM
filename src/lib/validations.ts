@@ -121,12 +121,95 @@ export const addressSchema = z.object({
   isDefault: z.boolean().optional().default(false),
 });
 
+// ─── Phone Validation Helpers ───────────────────────────────────────────────
+
+/**
+ * Normalizes a raw phone string by stripping bidi/invisible characters, spaces, hyphens, dots.
+ */
+export function cleanPhoneNumber(raw?: string | null): string {
+  if (!raw) return "";
+  return raw.replace(/[^\d+]/g, "");
+}
+
+/**
+ * Validates a phone number based on destination (Algeria vs International).
+ * - Algerian numbers: Must be 10 digits starting with 05, 06, or 07 (or international prefix +213 / 00213 / 213 followed by 5, 6, 7 and 8 digits).
+ * - International numbers: Must contain country code (+ or 00) and between 8 and 15 digits.
+ */
+export function validatePhoneNumber(
+  phoneStr?: string | null,
+  isInternational = false
+): { isValid: boolean; error?: string; normalized?: string; digitCount?: number } {
+  const cleaned = cleanPhoneNumber(phoneStr);
+  if (!cleaned) {
+    return { isValid: false, error: "Le numéro de téléphone est obligatoire." };
+  }
+
+  // Detect Algerian prefix or explicitly non-international
+  const isAlgerian = !isInternational || /^(\+213|00213|213|0[567])/.test(cleaned);
+
+  if (isAlgerian) {
+    let local = cleaned.replace(/^(\+213|00213|213)/, "0");
+    if (!local.startsWith("0") && local.length === 9) {
+      local = "0" + local;
+    }
+
+    const digitsOnly = local.replace(/\D/g, "");
+
+    if (/^0[1-489]/.test(local)) {
+      return {
+        isValid: false,
+        error: "Veuillez entrer un numéro mobile valide (05, 06 ou 07) relié à WhatsApp (les numéros fixes ne sont pas acceptés).",
+        digitCount: digitsOnly.length,
+      };
+    }
+
+    if (digitsOnly.length < 10) {
+      return {
+        isValid: false,
+        error: `Numéro incomplet (${digitsOnly.length}/10 chiffres). Le numéro algérien doit comporter 10 chiffres (ex: 0550123456).`,
+        digitCount: digitsOnly.length,
+      };
+    }
+
+    if (digitsOnly.length > 10) {
+      return {
+        isValid: false,
+        error: `Numéro trop long (${digitsOnly.length}/10 chiffres). Le numéro algérien doit comporter exactement 10 chiffres (ex: 0550123456).`,
+        digitCount: digitsOnly.length,
+      };
+    }
+
+    if (!/^0[567]\d{8}$/.test(local)) {
+      return {
+        isValid: false,
+        error: "Format invalide. Le numéro algérien doit commencer par 05, 06 ou 07 (10 chiffres).",
+        digitCount: digitsOnly.length,
+      };
+    }
+
+    return { isValid: true, normalized: local, digitCount: 10 };
+  }
+
+  // International phone validation
+  const digitsOnly = cleaned.replace(/\D/g, "");
+  if (digitsOnly.length < 8 || digitsOnly.length > 15) {
+    return {
+      isValid: false,
+      error: `Numéro international invalide (${digitsOnly.length} chiffres). Veuillez inclure l'indicatif pays complet (ex: +33 6 12 34 56 78).`,
+      digitCount: digitsOnly.length,
+    };
+  }
+
+  return { isValid: true, normalized: cleaned, digitCount: digitsOnly.length };
+}
+
 // ─── Order ─────────────────────────────────────────────────────────────────────
 
 export const checkoutSchema = z.object({
   firstName: z.string().min(1, "Prénom requis").max(100),
   lastName: z.string().min(1, "Nom requis").max(100),
-  phone: z.string().min(8, "Téléphone requis").max(50),
+  phone: z.string().min(1, "Le numéro de téléphone est obligatoire").max(50),
   email: z.string().transform(v => (v ? v.trim() : "")).refine((val) => val.length > 0, { message: "L'adresse email est obligatoire" }).refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), { message: "Veuillez saisir une adresse email valide" }),
   isInternational: z.boolean().optional().default(false),
   country: z.string().max(100).optional(),
@@ -137,15 +220,41 @@ export const checkoutSchema = z.object({
   couponCode: z.string().max(50).optional(),
   paymentMethod: z.enum(["stripe", "cod"]),
   notes: z.string().max(500).optional(),
-}).refine((data) => {
-  if (data.isInternational) {
-    return !!data.country && data.country.trim().length > 0;
-  } else {
-    return !!data.wilayaCode && !!data.deliveryType;
+}).superRefine((data, ctx) => {
+  // Validate Phone number according to destination
+  const phoneValidation = validatePhoneNumber(data.phone, data.isInternational);
+  if (!phoneValidation.isValid) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: phoneValidation.error || "Numéro de téléphone invalide",
+      path: ["phone"],
+    });
   }
-}, {
-  message: "Veuillez remplir toutes les informations requises pour l'expédition.",
-  path: ["wilayaCode"],
+
+  if (data.isInternational) {
+    if (!data.country || data.country.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Veuillez sélectionner le pays de destination.",
+        path: ["country"],
+      });
+    }
+  } else {
+    if (!data.wilayaCode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Veuillez sélectionner votre wilaya.",
+        path: ["wilayaCode"],
+      });
+    }
+    if (!data.deliveryType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Veuillez choisir le mode de livraison.",
+        path: ["deliveryType"],
+      });
+    }
+  }
 });
 
 // ─── Review ────────────────────────────────────────────────────────────────────
