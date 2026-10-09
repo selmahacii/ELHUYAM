@@ -299,7 +299,7 @@ function renderDeliveryDetailsTable(
               Delivery Method:
             </td>
             <td align="right" style="padding: 10px 0 6px 0; font-size: 12.5px; color: #141414; font-weight: 700;">
-              ${isStopdesk ? "🏢 Stop Desk (Pickup Bureau ZR Express)" : "🏠 Home Delivery (Livraison à domicile)"}
+              ${isStopdesk ? "🏢 Stop Desk (Bureau de retrait)" : "🏠 Home Delivery (Livraison à domicile)"}
             </td>
           </tr>
           <tr>
@@ -335,7 +335,7 @@ function renderDeliveryDetailsTable(
               Courier Service:
             </td>
             <td align="right" style="padding: 8px 0 0 0; font-size: 12px; color: #236E39; font-weight: 700; border-top: 1px dashed #EADBCE;">
-              🚚 ZR Express (Tracked Express Courier)
+              🚚 Entreprise de livraison (Tracked Express Courier)
             </td>
           </tr>
         </table>
@@ -502,7 +502,7 @@ export async function sendOrderConfirmationEmail(
                           ? `
                             <tr>
                               <td align="left" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
-                                Delivery Fee (Frais de livraison ZR Express)
+                                Delivery Fee (Frais de livraison)
                               </td>
                               <td align="right" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 13.5px; font-weight: 600; color: #141414;">
                                 ${formattedShippingFee}
@@ -599,7 +599,7 @@ export async function sendOrderConfirmationEmail(
                         <td width="33%" style="padding: 0 6px; border-left: 1px solid #EADBCE; border-right: 1px solid #EADBCE;">
                           <div style="font-size: 14px; margin-bottom: 4px;">${isInternational ? "🌍" : "🚚"}</div>
                           <div style="font-size: 10.5px; font-weight: 700; color: #3D2F24; text-transform: uppercase; letter-spacing: 0.5px;">${isInternational ? "Worldwide Shipping" : "58 Wilayas & Worldwide"}</div>
-                          <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">${isInternational ? "Dedicated International Care" : "ZR Express tracked courier"}</div>
+                          <div style="font-size: 9.5px; color: #8C7355; margin-top: 2px;">${isInternational ? "Dedicated International Care" : "Tracked express courier"}</div>
                         </td>
                         <td width="33%" style="padding: 0 6px;">
                           <div style="font-size: 14px; margin-bottom: 4px;">🤍</div>
@@ -749,7 +749,7 @@ export async function sendOrderShippedEmail(
                             ${trackingNumber}
                           </p>
                           <p style="font-size: 11.5px; color: #7A5C38; margin: 0;">
-                            ${isInternational ? "Tracked International Courier Dispatch" : "Courier: <strong>ZR Express</strong> • Doorstep & Stopdesk Tracked Express Delivery"}
+                            ${isInternational ? "Tracked International Courier Dispatch" : "Courier: <strong>Entreprise de livraison</strong> • Doorstep & Stopdesk Tracked Express Delivery"}
                           </p>
                         </td>
                       </tr>
@@ -793,7 +793,7 @@ export async function sendOrderShippedEmail(
                           ? `
                             <tr>
                               <td align="left" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 12.5px; color: #7A5C38; font-weight: 500;">
-                                Delivery Fee (Frais de livraison ZR Express)
+                                Delivery Fee (Frais de livraison)
                               </td>
                               <td align="right" style="padding-bottom: ${formattedDiscount ? "8px" : "12px"}; font-size: 13.5px; font-weight: 600; color: #141414;">
                                 ${formattedShippingFee}

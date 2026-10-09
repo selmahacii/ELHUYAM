@@ -445,7 +445,7 @@ export default function CheckoutPage() {
                       {phoneValidationLive.isValid ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          10/10 chiffres (valide)
+                          10/10 digits (valid)
                         </span>
                       ) : (
                         <span className={`inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full border ${
@@ -454,7 +454,7 @@ export default function CheckoutPage() {
                             : "bg-rose-50 text-rose-700 border-rose-200"
                         }`}>
                           <AlertTriangle className="w-3 h-3" />
-                          {cleanPhoneDigits.length}/10 chiffres
+                          {cleanPhoneDigits.length}/10 digits
                         </span>
                       )}
                     </div>
@@ -464,7 +464,7 @@ export default function CheckoutPage() {
                   {...register("phone")}
                   type="tel"
                   className={inputCls}
-                  placeholder={isInternational ? "Ex: +33 6 12 34 56 78 (Indicatif pays inclus)" : "Ex: 0550123456 (10 chiffres)"}
+                  placeholder={isInternational ? "E.g., +33 6 12 34 56 78 (Country code included)" : "E.g., 0550123456 (10 digits)"}
                   autoComplete="tel"
                 />
                 {errors.phone && <p className={errorCls}>{errors.phone.message}</p>}
@@ -478,19 +478,19 @@ export default function CheckoutPage() {
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
                         <p className="text-xs font-bold text-[#14532D]">
-                          Numéro WhatsApp obligatoire pour la confirmation
+                          WhatsApp Number Required for Confirmation
                         </p>
                         <span className="text-[9px] uppercase font-extrabold px-2 py-0.5 bg-[#DCFCE7] text-[#166534] border border-[#86EFAC] rounded-full">
-                          Obligatoire
+                          Required
                         </span>
                       </div>
                       <p className="text-xs text-[#166534] leading-relaxed">
-                        Le numéro indiqué <strong>doit impérativement être relié à un compte WhatsApp actif</strong>. Notre équipe vous contactera sur WhatsApp pour confirmer les détails de votre commande avant son expédition.
+                        The provided phone number <strong>must be linked to an active WhatsApp account</strong>. Our team will contact you on WhatsApp to confirm the details of your order prior to dispatch.
                       </p>
                       <div className="p-2.5 bg-[#FEF2F2] border border-[#FECACA] rounded-xl text-xs text-[#991B1B] font-semibold flex items-start gap-2">
                         <AlertTriangle className="w-4 h-4 text-[#DC2626] shrink-0 mt-0.5" />
                         <p className="leading-snug">
-                          <strong>Attention :</strong> Si nous ne parvenons pas à vous joindre sur WhatsApp, votre commande ne pourra être ni confirmée ni expédiée.
+                          <strong>Warning:</strong> If we are unable to reach you via WhatsApp, your order cannot be confirmed or dispatched.
                         </p>
                       </div>
                     </div>
@@ -510,7 +510,7 @@ export default function CheckoutPage() {
                   type="email"
                   inputMode="email"
                   className={inputCls}
-                  placeholder="exemple@domaine.com"
+                  placeholder="example@domain.com"
                   autoComplete="email"
                 />
                 {errors.email && <p className={errorCls}>{errors.email.message}</p>}
@@ -521,9 +521,9 @@ export default function CheckoutPage() {
                     <Mail className="w-3.5 h-3.5 text-soft-gold" />
                   </div>
                   <div className="space-y-0.5">
-                    <p className="font-bold text-brand-950 text-xs">Vérification de votre boîte e-mail</p>
+                    <p className="font-bold text-brand-950 text-xs">Check Your Email Inbox</p>
                     <p className="text-[11px] text-brand-800 leading-relaxed">
-                      Votre récapitulatif de commande et votre reçu officiel vous seront envoyés immédiatement. <strong>Veuillez consulter votre boîte e-mail</strong> (ainsi que vos courriers indésirables / spams si nécessaire).
+                      Your order summary and official receipt will be sent to you immediately. <strong>Please check your email inbox</strong> (including your spam / junk folder if necessary).
                     </p>
                   </div>
                 </div>
@@ -799,7 +799,7 @@ export default function CheckoutPage() {
             <div className="bg-white border border-neutral-200/90 p-4 rounded-2xl space-y-2.5 shadow-2xs">
               <div className="flex items-center gap-2 text-xs font-bold text-black border-b border-neutral-100 pb-2">
                 <ShieldCheck className="w-4 h-4 text-soft-gold shrink-0" />
-                <span className="uppercase tracking-wider text-[10px]">Confirmation & Expédition</span>
+                <span className="uppercase tracking-wider text-[10px]">Order Process & Confirmation</span>
               </div>
               <div className="space-y-2 text-xs text-neutral-600">
                 <div className="flex items-start gap-2.5">
@@ -807,7 +807,7 @@ export default function CheckoutPage() {
                     1
                   </span>
                   <p className="leading-snug text-[11px]">
-                    <strong className="text-black">Confirmation WhatsApp :</strong> Obligatoire avant préparation et expédition.
+                    <strong className="text-black">WhatsApp Confirmation:</strong> Mandatory before order preparation and dispatch.
                   </p>
                 </div>
                 <div className="flex items-start gap-2.5">
@@ -815,7 +815,7 @@ export default function CheckoutPage() {
                     2
                   </span>
                   <p className="leading-snug text-[11px]">
-                    <strong className="text-black">Notification E-mail :</strong> Récapitulatif et suivi envoyés instantanément.
+                    <strong className="text-black">Email Notification:</strong> Order summary and tracking sent immediately.
                   </p>
                 </div>
                 <div className="flex items-start gap-2.5">
@@ -823,7 +823,7 @@ export default function CheckoutPage() {
                     3
                   </span>
                   <p className="leading-snug text-[11px]">
-                    <strong className="text-black">Livraison :</strong> Remise à ZR Express après confirmation.
+                    <strong className="text-black">Delivery:</strong> Handed over to the delivery courier after confirmation.
                   </p>
                 </div>
               </div>

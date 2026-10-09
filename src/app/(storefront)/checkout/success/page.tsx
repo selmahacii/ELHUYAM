@@ -54,7 +54,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
         {/* Step-by-step Confirmation Roadmap */}
         <div className="max-w-lg mx-auto bg-neutral-50 border border-neutral-200/90 rounded-2xl p-5 mb-8 text-left space-y-3.5 shadow-2xs">
           <div className="flex items-center gap-2 border-b border-neutral-200/80 pb-2.5">
-            <span className="text-xs uppercase tracking-wider font-bold text-black">Prochaines Étapes de votre Commande</span>
+            <span className="text-xs uppercase tracking-wider font-bold text-black">Next Steps for Your Order</span>
           </div>
 
           <div className="space-y-3">
@@ -65,10 +65,10 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
               </div>
               <div className="space-y-0.5">
                 <p className="text-xs font-bold text-emerald-950">
-                  1. Confirmation sur WhatsApp (Obligatoire)
+                  1. WhatsApp Confirmation (Required)
                 </p>
                 <p className="text-[11px] text-neutral-600 leading-relaxed">
-                  Notre équipe va vous contacter sur votre numéro <strong>WhatsApp</strong> pour valider les pièces et l'adresse. <span className="text-rose-700 font-semibold">Votre confirmation est nécessaire pour lancer l'expédition.</span>
+                  Our team will contact you on your <strong>WhatsApp</strong> number to confirm your items and delivery address. <span className="text-rose-700 font-semibold">Your confirmation is required to proceed with dispatch.</span>
                 </p>
               </div>
             </div>
@@ -80,10 +80,10 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
               </div>
               <div className="space-y-0.5">
                 <p className="text-xs font-bold text-brand-950">
-                  2. Consultation de votre boîte E-mail
+                  2. Check Your Email Inbox
                 </p>
                 <p className="text-[11px] text-neutral-600 leading-relaxed">
-                  Votre reçu complet a été envoyé par e-mail. <strong>Pensez à vérifier vos courriers indésirables / spams</strong> si vous ne le trouvez pas immédiatement.
+                  Your complete receipt has been sent by email. <strong>Please check your spam / junk folder</strong> if you do not see it in your inbox immediately.
                 </p>
               </div>
             </div>
@@ -95,10 +95,10 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
               </div>
               <div className="space-y-0.5">
                 <p className="text-xs font-bold text-black">
-                  3. Expédition & Suivi en Direct
+                  3. Dispatch & Live Tracking
                 </p>
                 <p className="text-[11px] text-neutral-600 leading-relaxed">
-                  Après confirmation WhatsApp, votre commande est remise au transporteur avec un lien de suivi en direct accessible à tout moment.
+                  Upon your WhatsApp confirmation, your parcel is handed over to the delivery courier with a live tracking link available at all times.
                 </p>
               </div>
             </div>
