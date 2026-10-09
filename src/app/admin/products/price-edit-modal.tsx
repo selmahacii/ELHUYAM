@@ -12,6 +12,7 @@ interface Props {
   discountPrice: number | null;
   priceEur: number;
   discountPriceEur: number | null;
+  weight?: number | null;
 }
 
 export default function PriceEditModal({
@@ -20,7 +21,8 @@ export default function PriceEditModal({
   price: initialPrice,
   discountPrice: initialDiscount,
   priceEur: initialPriceEur,
-  discountPriceEur: initialDiscountEur
+  discountPriceEur: initialDiscountEur,
+  weight: initialWeight,
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -28,6 +30,7 @@ export default function PriceEditModal({
   const [discountPrice, setDiscountPrice] = useState(initialDiscount != null ? String(initialDiscount) : "");
   const [priceEur, setPriceEur] = useState(String(initialPriceEur));
   const [discountPriceEur, setDiscountPriceEur] = useState(initialDiscountEur != null ? String(initialDiscountEur) : "");
+  const [weight, setWeight] = useState(String(initialWeight ?? 0.5));
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -35,11 +38,13 @@ export default function PriceEditModal({
     const d = discountPrice.trim() ? Number(discountPrice) : null;
     const pEur = Number(priceEur);
     const dEur = discountPriceEur.trim() ? Number(discountPriceEur) : null;
+    const w = Number(weight);
 
     if (isNaN(p) || p <= 0) { toast.error("Invalid price (DZD)"); return; }
     if (d !== null && (isNaN(d) || d <= 0)) { toast.error("Invalid sale price (DZD)"); return; }
     if (isNaN(pEur) || pEur < 0) { toast.error("Invalid price (EUR)"); return; }
     if (dEur !== null && (isNaN(dEur) || dEur < 0)) { toast.error("Invalid sale price (EUR)"); return; }
+    if (isNaN(w) || w <= 0) { toast.error("Poids invalide (kg)"); return; }
 
     setSaving(true);
     try {
@@ -50,12 +55,13 @@ export default function PriceEditModal({
           price: p,
           discountPrice: d,
           priceEur: pEur,
-          discountPriceEur: dEur
+          discountPriceEur: dEur,
+          weight: w,
         }),
       });
       const data = await res.json();
       if (!data.success) { toast.error(data.error ?? "Error"); return; }
-      toast.success("Prices updated successfully");
+      toast.success("Produit mis à jour avec succès");
       setOpen(false);
       router.refresh();
     } finally {
@@ -141,6 +147,22 @@ export default function PriceEditModal({
                       className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-gray-700 bg-white placeholder:text-gray-300"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-widest text-gray-500 mb-1.5 font-semibold">
+                    ⚖️ Poids unitaire (kg)
+                  </label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    placeholder="0.5"
+                    className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-gray-700 bg-white"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">Utilisé pour le calcul automatique des frais de port internationaux.</p>
                 </div>
 
                 {discountPrice && Number(discountPrice) >= Number(price) && (

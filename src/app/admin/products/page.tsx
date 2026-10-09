@@ -7,6 +7,8 @@ import ProductRowActions from "./product-row-actions";
 import StockEditor from "./stock-editor";
 import PriceEditModal from "./price-edit-modal";
 import NewProductModal from "./new-product-modal";
+import ExchangeRateBanner from "./exchange-rate-banner";
+import { getEurExchangeRate } from "@/lib/settings";
 
 interface SearchParams {
   searchParams: Promise<{
@@ -54,7 +56,7 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
       : {}),
   };
 
-  const [products, total, categories, allCounts] = await Promise.all([
+  const [products, total, categories, allCounts, eurExchangeRate] = await Promise.all([
     db.product.findMany({
       where,
       include: {
@@ -86,7 +88,8 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
       ]).then(([pRaw, vRaw]) => Number(pRaw[0]?.count ?? 0) + Number(vRaw[0]?.count ?? 0)),
       db.product.count({ where: { featured: true, archived: false } }),
       db.product.count({ where: { bestseller: true, archived: false } })
-    ])
+    ]),
+    getEurExchangeRate(),
   ]);
 
   const [globalTotalProducts, globalLowStockCount, globalFeaturedCount, globalBestsellerCount] = allCounts;
@@ -104,12 +107,15 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       
+      {/* ── 💱 Global Exchange Rate Banner (Square rate applied to all products) ── */}
+      <ExchangeRateBanner initialRate={eurExchangeRate} />
+
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-100 pb-5">
         <div>
           <h1 className="font-display text-2xl text-slate-900 font-bold tracking-tight">Product Catalog</h1>
           <p className="text-slate-500 text-xs font-medium mt-1 leading-relaxed">
-            View, edit, and manage your product files, promotional prices, and variant stocks.
+            View, edit, and manage your product files, promotional prices, weights, and variant stocks.
           </p>
         </div>
         <NewProductModal categories={categories} />
@@ -228,7 +234,7 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/70">
-                {["Product", "Category", "Price", "Stock", "Status", "Date Created", ""].map((h) => (
+                {["Product", "Category", "Price", "Weight (Poids)", "Stock", "Status", "Date Created", ""].map((h) => (
                   <th key={h} className="px-4 py-3.5 text-[10px] uppercase tracking-wider text-slate-400 font-bold whitespace-nowrap">
                     {h}
                   </th>
@@ -238,7 +244,7 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
             <tbody className="divide-y divide-gray-50">
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center">
+                  <td colSpan={8} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-slate-300">
                         <Package className="w-8 h-8" />
@@ -306,8 +312,16 @@ export default async function AdminProductsPage({ searchParams }: SearchParams) 
                         discountPrice={product.discountPrice ?? null}
                         priceEur={product.priceEur}
                         discountPriceEur={product.discountPriceEur ?? null}
+                        weight={product.weight ?? 0.5}
                       />
                     </div>
+                  </td>
+
+                  {/* Weight column */}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-slate-700 bg-slate-100 border border-slate-200/80 px-2 py-0.5 rounded-lg shadow-2xs">
+                      ⚖️ {product.weight ? `${product.weight} kg` : "0.5 kg"}
+                    </span>
                   </td>
 
                   {/* Stocks quantity or variant tree */}
