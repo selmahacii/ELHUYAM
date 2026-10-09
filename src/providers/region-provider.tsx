@@ -11,6 +11,7 @@ interface RegionContextType {
   isRegionModalOpen: boolean;
   setRegionModalOpen: (open: boolean) => void;
   isInternationalEnabled: boolean;
+  eurExchangeRate: number;
 }
 
 const RegionContext = createContext<RegionContextType | undefined>(undefined);
@@ -28,10 +29,12 @@ export function RegionProvider({
   children,
   initialRegion,
   isInternationalEnabled = true,
+  eurExchangeRate = 270,
 }: {
   children: React.ReactNode;
   initialRegion: Region;
   isInternationalEnabled?: boolean;
+  eurExchangeRate?: number;
 }) {
   // Start with the server-provided initialRegion (may be null if Root Layout
   // no longer reads cookies — the client-side effect below will hydrate it).
@@ -93,6 +96,7 @@ export function RegionProvider({
         isRegionModalOpen: isInternationalEnabled ? isRegionModalOpen : false,
         setRegionModalOpen,
         isInternationalEnabled,
+        eurExchangeRate: eurExchangeRate || 270,
       }}
     >
       {children}

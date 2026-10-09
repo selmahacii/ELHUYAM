@@ -74,7 +74,7 @@ export const viewport: Viewport = {
 
 import { RegionProvider } from "@/providers/region-provider";
 import { RegionModal } from "@/components/layout/region-modal";
-import { getInternationalOrdersEnabled } from "@/lib/settings";
+import { getInternationalOrdersEnabled, getEurExchangeRate } from "@/lib/settings";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ROOT LAYOUT — Intentionally does NOT call cookies() or auth().
@@ -93,7 +93,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = await getMessages();
 
   // Safe: uses unstable_cache internally, does NOT call cookies()/headers()
-  const isInternationalEnabled = await getInternationalOrdersEnabled();
+  const [isInternationalEnabled, eurExchangeRate] = await Promise.all([
+    getInternationalOrdersEnabled(),
+    getEurExchangeRate(),
+  ]);
 
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className="scroll-smooth" suppressHydrationWarning>
@@ -160,7 +163,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       >
         <NextIntlClientProvider messages={messages} locale={locale}>
           {/* initialRegion is null — RegionProvider reads document.cookie client-side */}
-          <RegionProvider initialRegion={null} isInternationalEnabled={isInternationalEnabled}>
+          <RegionProvider initialRegion={null} isInternationalEnabled={isInternationalEnabled} eurExchangeRate={eurExchangeRate}>
             {/* No session prop — SessionProvider auto-fetches /api/auth/session client-side */}
             <Providers>
               {children}

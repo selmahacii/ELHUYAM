@@ -21,6 +21,7 @@ interface Variant {
   colorHex?: string | null;
   image?: string | null;
   stock: number;
+  weight?: number | null;
   price?: number | null;
   costPrice?: number | null;
   priceEur?: number | null;
@@ -28,7 +29,7 @@ interface Variant {
 interface ProductData {
   id: string; title: string; slug: string; description: string;
   price: number; discountPrice?: number | null; priceEur: number; discountPriceEur?: number | null; costPrice?: number | null;
-  stock: number; sku?: string | null; lowStockThreshold?: number;
+  stock: number; weight?: number; sku?: string | null; lowStockThreshold?: number;
   categoryId: string; images: string[]; videos: string[]; tags: string[];
   featured: boolean; bestseller: boolean; newArrival: boolean;
   metaTitle?: string | null; metaDescription?: string | null;
@@ -117,6 +118,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
       discountPriceEur: product?.discountPriceEur ?? undefined,
       costPrice: product?.costPrice ?? undefined,
       stock: product?.stock ?? 0,
+      weight: product?.weight ?? 0.5,
       sku: product?.sku ?? "",
       categoryId: product?.categoryId ?? "",
       images: product?.images ?? [],
@@ -478,7 +480,7 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
       {/* Pricing & Stock */}
       <section className={sectionCls}>
         <h2 className={headingCls}>Price & Inventory</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <div>
             <label className={labelCls}>Price (DZD)</label>
             <input type="number" step="1" min="0" {...register("price")} className={inputCls} />
@@ -502,6 +504,18 @@ export default function ProductForm({ categories, product, onSuccess }: ProductF
             <label className={labelCls}>Cost price (DZD)</label>
             <input type="number" step="1" min="0" {...register("costPrice")} className={inputCls} placeholder="e.g. Purchase price" />
             {errors.costPrice && <p className="mt-1 text-xs text-red-500">{errors.costPrice.message}</p>}
+          </div>
+          <div>
+            <label className={labelCls}>Poids unitaire (kg)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              {...register("weight")}
+              className={inputCls}
+              placeholder="Ex: 0.5 (kg)"
+            />
+            {errors.weight && <p className="mt-1 text-xs text-red-500">{errors.weight.message}</p>}
           </div>
           <div>
             <label className={labelCls}>

@@ -7,6 +7,8 @@ import { generateOrderNumber } from "@/lib/utils";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { auth } from "@/auth";
 import { getShippingCost, getWilayaByCode } from "@/lib/wilayas";
+import { getInternationalShippingFeeEUR } from "@/lib/international-shipping";
+import { getEurExchangeRate } from "@/lib/settings";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { revalidateTag, revalidatePath } from "next/cache";
 
@@ -145,6 +147,7 @@ export async function POST(req: NextRequest) {
       variantId?: string | null;
       size?: string | null;
       color?: string | null;
+      weight: number;
       product: {
         id: string;
         slug?: string;
@@ -153,6 +156,7 @@ export async function POST(req: NextRequest) {
         discountPrice: number | null;
         stock: number;
         images: string[];
+        weight?: number;
       };
       price: number;
       variantImage?: string | null;
@@ -185,12 +189,14 @@ export async function POST(req: NextRequest) {
             const price = isInternational
               ? (variant?.priceEur ?? item.product.discountPriceEur ?? item.product.priceEur ?? 0)
               : (variant?.price ?? item.product.discountPrice ?? item.product.price);
+            const weight = variant?.weight ?? item.product.weight ?? 0.5;
             return {
               productId: item.productId,
               quantity: item.quantity,
               variantId: item.variantId,
               size: item.size,
               color: item.color,
+              weight,
               product: {
                 id: item.product.id,
                 slug: item.product.slug,
@@ -199,6 +205,7 @@ export async function POST(req: NextRequest) {
                 discountPrice: item.product.discountPrice,
                 stock: variant?.stock ?? item.product.stock,
                 images: item.product.images,
+                weight: item.product.weight ?? 0.5,
               },
               price,
               variantImage: variant?.image ?? null,
@@ -222,6 +229,7 @@ export async function POST(req: NextRequest) {
           ? (product.discountPriceEur ?? product.priceEur ?? 0)
           : (product.discountPrice ?? product.price);
         let stock = product.stock;
+        let weight = product.weight ?? 0.5;
         let variantImage: string | null = null;
 
         if (item.variantId) {
@@ -229,6 +237,7 @@ export async function POST(req: NextRequest) {
           if (variant) {
             price = isInternational ? (variant.priceEur ?? price) : (variant.price ?? price);
             stock = variant.stock;
+            if (variant.weight) weight = variant.weight;
             variantImage = variant.image ?? null;
           }
         }
@@ -239,6 +248,7 @@ export async function POST(req: NextRequest) {
           variantId: item.variantId,
           size: item.size,
           color: item.color,
+          weight,
           product: {
             id: product.id,
             slug: product.slug,
@@ -247,6 +257,7 @@ export async function POST(req: NextRequest) {
             discountPrice: product.discountPrice,
             stock,
             images: product.images,
+            weight: product.weight ?? 0.5,
           },
           price,
           variantImage,
@@ -272,7 +283,12 @@ export async function POST(req: NextRequest) {
 
     if (isInternational) {
       if (!country) return errorResponse("Pays sélectionné invalide.", 400);
-      shippingFee = 0; // Standard initial fee, wait for manual confirmation via WhatsApp
+      const eurExchangeRate = await getEurExchangeRate();
+      const totalWeightKg = cartItems.reduce(
+        (sum: number, item: any) => sum + (item.weight || 0.5) * item.quantity,
+        0
+      );
+      shippingFee = getInternationalShippingFeeEUR(country, totalWeightKg, eurExchangeRate);
     } else {
       wilaya = getWilayaByCode(wilayaCode ?? "");
       if (!wilaya) return errorResponse("Wilaya sélectionnée invalide.", 400);

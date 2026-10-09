@@ -24,7 +24,7 @@ export async function GET() {
           select: {
             id: true, title: true, slug: true, price: true,
             discountPrice: true, priceEur: true, discountPriceEur: true,
-            images: true, stock: true,
+            images: true, stock: true, weight: true,
           },
         },
       },
@@ -38,11 +38,11 @@ export async function GET() {
     const variants = variantIds.length > 0
       ? await db.productVariant.findMany({
           where: { id: { in: variantIds } },
-          select: { id: true, price: true, priceEur: true },
+          select: { id: true, price: true, priceEur: true, weight: true },
         })
       : [];
     const variantMap = Object.fromEntries(
-      variants.map((v: any) => [v.id, { price: v.price, priceEur: v.priceEur }])
+      variants.map((v: any) => [v.id, { price: v.price, priceEur: v.priceEur, weight: v.weight }])
     );
 
     const enriched = items.map((item: any) => ({
@@ -52,6 +52,7 @@ export async function GET() {
             id: item.variantId,
             price: variantMap[item.variantId]?.price ?? null,
             priceEur: variantMap[item.variantId]?.priceEur ?? null,
+            weight: variantMap[item.variantId]?.weight ?? null,
           }
         : null,
     }));

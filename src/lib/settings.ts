@@ -34,3 +34,37 @@ export async function setInternationalOrdersEnabled(enabled: boolean): Promise<v
   });
   revalidateTag("settings", "default");
 }
+
+const getCachedExchangeRate = unstable_cache(
+  async () => {
+    try {
+      const setting = await db.setting.findUnique({
+        where: { key: "eur_exchange_rate" },
+      });
+      if (!setting) return 270;
+      const parsed = parseFloat(setting.value);
+      return isNaN(parsed) || parsed <= 0 ? 270 : parsed;
+    } catch (error) {
+      console.error("Failed to read eur_exchange_rate setting:", error);
+      return 270;
+    }
+  },
+  ["eur_exchange_rate"],
+  { revalidate: 3600, tags: ["settings"] }
+);
+
+export async function getEurExchangeRate(): Promise<number> {
+  return getCachedExchangeRate();
+}
+
+export async function setEurExchangeRate(rate: number): Promise<void> {
+  await db.setting.upsert({
+    where: { key: "eur_exchange_rate" },
+    update: { value: rate.toString() },
+    create: {
+      key: "eur_exchange_rate",
+      value: rate.toString(),
+    },
+  });
+  revalidateTag("settings", "default");
+}

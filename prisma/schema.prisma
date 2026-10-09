@@ -176,6 +176,7 @@ model Product {
   discountPriceEur Float?
   costPriceEur     Float?
   stock         Int      @default(0)
+  weight        Float    @default(0.5) // Poids unitaire en kg (ex: 0.5 kg, 0.8 kg)
   sku           String?  @unique
   lowStockThreshold Int  @default(5)
   images        Json
@@ -219,6 +220,7 @@ model ProductVariant {
   colorHex  String?
   image     String?
   stock     Int     @default(0)
+  weight    Float?  // Optionnel: surcharge de poids par variante en kg
   price        Float?
   costPrice    Float?
   priceEur     Float?

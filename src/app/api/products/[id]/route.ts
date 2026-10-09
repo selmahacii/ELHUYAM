@@ -26,6 +26,7 @@ const patchSchema = z.object({
     z.number().min(0, "Cost price must be non-negative").nullable().optional()
   ),
   stock: z.coerce.number().int().min(0).optional(),
+  weight: z.coerce.number().min(0.01).max(100).optional(),
   sku: z.string().nullable().optional(),
   lowStockThreshold: z.coerce.number().int().min(0).max(10_000).optional(),
   categoryId: z.string().min(1).optional(),

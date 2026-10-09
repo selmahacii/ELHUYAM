@@ -1,0 +1,517 @@
+/**
+ * International Shipping Module for EL HUYAAM
+ * Based on the official EMS Champion Post Algeria 2026 International Tariff Grid.
+ */
+
+export interface CountryZoneInfo {
+  name: string;
+  code: string;
+  zone: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+}
+
+export interface EmisRateRow {
+  weightKg: number;
+  ratesDzd: {
+    zone1: number;
+    zone2: number;
+    zone3: number;
+    zone4: number;
+    zone5: number;
+    zone6: number;
+    zone7: number;
+  };
+}
+
+// ─── Default Exchange Rates ──────────────────────────────────────────────────
+// Official Bank of Algeria rate: ~145 DZD/EUR
+// Parallel / Market rate: ~240 DZD/EUR
+export const DEFAULT_EUR_EXCHANGE_RATE = 145.0; // 1 EUR = 145 DZD
+
+// ─── Country to Zone Mapping (EMS 2026 Official Grid) ────────────────────────
+export const EMS_COUNTRY_ZONES: Record<string, 1 | 2 | 3 | 4 | 5 | 6 | 7> = {
+  // ── Zone 1 ───────────────────────────────────────────
+  "mauritanie": 1,
+  "mauritania": 1,
+  "tunisie": 1,
+  "tunisia": 1,
+
+  // ── Zone 2 ───────────────────────────────────────────
+  "allemagne": 2,
+  "germany": 2,
+  "belgique": 2,
+  "belgium": 2,
+  "egypte": 2,
+  "egypt": 2,
+  "espagne": 2,
+  "spain": 2,
+  "france": 2,
+  "palestine": 2,
+  "maroc": 2,
+  "morocco": 2,
+  "syrie": 2,
+  "syria": 2,
+
+  // ── Zone 3 ───────────────────────────────────────────
+  "italie": 3,
+  "italy": 3,
+  "luxembourg": 3,
+  "pays-bas": 3,
+  "pays bas": 3,
+  "netherlands": 3,
+  "holland": 3,
+  "portugal": 3,
+  "angleterre": 3,
+  "royaume-uni": 3,
+  "united kingdom": 3,
+  "uk": 3,
+  "suisse": 3,
+  "switzerland": 3,
+  "turquie": 3,
+  "turkey": 3,
+
+  // ── Zone 4 ───────────────────────────────────────────
+  "arabie saoudite": 4,
+  "saudi arabia": 4,
+  "autriche": 4,
+  "austria": 4,
+  "bahreïn": 4,
+  "bahrein": 4,
+  "bahrain": 4,
+  "biélorussie": 4,
+  "bielarussie": 4,
+  "belarus": 4,
+  "bulgarie": 4,
+  "bulgaria": 4,
+  "canada": 4,
+  "croatie": 4,
+  "croatia": 4,
+  "tchéquie": 4,
+  "czech republic": 4,
+  "republique tcheque": 4,
+  "danemark": 4,
+  "denmark": 4,
+  "émirats arabes unis": 4,
+  "emirats arabes": 4,
+  "emirats arabes unis": 4,
+  "united arab emirates": 4,
+  "uae": 4,
+  "dubaï": 4,
+  "dubai": 4,
+  "andorre": 4,
+  "andore": 4,
+  "andorra": 4,
+  "finlande": 4,
+  "finland": 4,
+  "grèce": 4,
+  "grece": 4,
+  "greece": 4,
+  "irlande": 4,
+  "ireland": 4,
+  "irlande du nord": 4,
+  "irland du nord": 4,
+  "northern ireland": 4,
+  "jordanie": 4,
+  "jordan": 4,
+  "koweït": 4,
+  "koweit": 4,
+  "kuwait": 4,
+  "liban": 4,
+  "lebanon": 4,
+  "mali": 4,
+  "malte": 4,
+  "malta": 4,
+  "niger": 4,
+  "norvège": 4,
+  "norvege": 4,
+  "norway": 4,
+  "oman": 4,
+  "pologne": 4,
+  "poland": 4,
+  "qatar": 4,
+  "roumanie": 4,
+  "romania": 4,
+  "suède": 4,
+  "suede": 4,
+  "sweden": 4,
+  "écosse": 4,
+  "ecosse": 4,
+  "scotland": 4,
+
+  // ── Zone 5 ───────────────────────────────────────────
+  "états-unis": 5,
+  "etats-unis": 5,
+  "etats unis": 5,
+  "usa": 5,
+  "united states": 5,
+  "kazakhstan": 5,
+  "kirghizistan": 5,
+  "kyrghystan": 5,
+  "kyrgyzstan": 5,
+  "albanie": 5,
+  "albania": 5,
+  "afghanistan": 5,
+  "arménie": 5,
+  "armenie": 5,
+  "armenia": 5,
+  "azerbaïdjan": 5,
+  "azerbaidjan": 5,
+  "azerbaijan": 5,
+  "bosnie-herzégovine": 5,
+  "bosnie": 5,
+  "bosnia": 5,
+  "chypre": 5,
+  "cyprus": 5,
+  "corée du sud": 5,
+  "coree du sud": 5,
+  "south korea": 5,
+  "djibouti": 5,
+  "estonie": 5,
+  "estonia": 5,
+  "géorgie": 5,
+  "georgie": 5,
+  "georgia": 5,
+  "gibraltar": 5,
+  "gibal tarek": 5,
+  "hong kong": 5,
+  "hongrie": 5,
+  "hungary": 5,
+  "irak": 5,
+  "iraq": 5,
+  "islande": 5,
+  "island": 5,
+  "iceland": 5,
+  "jersey": 5,
+  "pays de galles": 5,
+  "pays de galle": 5,
+  "wales": 5,
+  "kosovo": 5,
+  "lettonie": 5,
+  "latvia": 5,
+  "lituanie": 5,
+  "lithuania": 5,
+  "libye": 5,
+  "lybie": 5,
+  "libya": 5,
+  "macédoine du nord": 5,
+  "macedonie": 5,
+  "north macedonia": 5,
+  "moldavie": 5,
+  "moldova": 5,
+  "monténégro": 5,
+  "montenegro": 5,
+  "nigeria": 5,
+  "russie": 5,
+  "russia": 5,
+  "serbie": 5,
+  "serbia": 5,
+  "slovaquie": 5,
+  "slovakia": 5,
+  "slovénie": 5,
+  "slovenie": 5,
+  "slovenia": 5,
+  "soudan": 5,
+  "sudan": 5,
+  "soudan du sud": 5,
+  "sud sudan": 5,
+  "south sudan": 5,
+  "ukraine": 5,
+  "yémen": 5,
+  "yemen": 5,
+
+  // ── Zone 6 ───────────────────────────────────────────
+  "afrique du sud": 6,
+  "south africa": 6,
+  "argentine": 6,
+  "argentina": 6,
+  "brésil": 6,
+  "bresil": 6,
+  "brazil": 6,
+  "burkina faso": 6,
+  "cameroun": 6,
+  "cameroon": 6,
+  "côte d'ivoire": 6,
+  "cote d'ivoire": 6,
+  "ivory coast": 6,
+  "cuba": 6,
+  "ghana": 6,
+  "guinée-bissau": 6,
+  "guinee bissau": 6,
+  "guinea-bissau": 6,
+  "guinée équatoriale": 6,
+  "guinee equatoriale": 6,
+  "equatorial guinea": 6,
+  "inde": 6,
+  "india": 6,
+  "indonésie": 6,
+  "indonesie": 6,
+  "indonesia": 6,
+  "japon": 6,
+  "japan": 6,
+  "kenya": 6,
+  "malaisie": 6,
+  "malaysia": 6,
+  "mexique": 6,
+  "mexico": 6,
+  "sénégal": 6,
+  "senegal": 6,
+  "singapour": 6,
+  "singapore": 6,
+  "venezuela": 6,
+  "guinée": 6,
+  "guinee conakry": 6,
+  "guinea": 6,
+  "brunei": 6,
+  "dar es salaam": 6,
+  "daressalem": 6,
+
+  // ── Zone 7 ───────────────────────────────────────────
+  "angola": 7,
+  "australie": 7,
+  "australia": 7,
+  "bahamas": 7,
+  "bangladesh": 7,
+  "barbade": 7,
+  "barbados": 7,
+  "bénin": 7,
+  "benin": 7,
+  "bolivie": 7,
+  "bolivia": 7,
+  "botswana": 7,
+  "burundi": 7,
+  "cambodge": 7,
+  "cambodie": 7,
+  "cambodia": 7,
+  "canaries": 7,
+  "iles canaries": 7,
+  "canary islands": 7,
+  "cap-vert": 7,
+  "cap vert": 7,
+  "cape verde": 7,
+  "cayman islands": 7,
+  "iles caimans": 7,
+  "république centrafricaine": 7,
+  "centre afrique": 7,
+  "central african republic": 7,
+  "chili": 7,
+  "chile": 7,
+  "colombie": 7,
+  "colombia": 7,
+  "comores": 7,
+  "comoros": 7,
+  "congo (kinshasa)": 7,
+  "congo dem": 7,
+  "dr congo": 7,
+  "congo (brazzaville)": 7,
+  "congo rep": 7,
+  "costa rica": 7,
+  "république dominicaine": 7,
+  "dominicaine": 7,
+  "dominican republic": 7,
+  "équateur": 7,
+  "equateur": 7,
+  "ecuador": 7,
+  "érythrée": 7,
+  "erytherie": 7,
+  "eritrea": 7,
+  "éthiopie": 7,
+  "ethiopie": 7,
+  "ethiopia": 7,
+  "fidji": 7,
+  "fiji": 7,
+  "gabon": 7,
+  "gambie": 7,
+  "gambia": 7,
+  "grenade": 7,
+  "grenada": 7,
+  "guadeloupe": 7,
+  "guatemala": 7,
+  "guyane française": 7,
+  "guyane francaise": 7,
+  "french guiana": 7,
+  "haïti": 7,
+  "haiti": 7,
+  "honduras": 7,
+  "iran": 7,
+  "jamaïque": 7,
+  "jamaique": 7,
+  "jamaica": 7,
+  "lesotho": 7,
+  "liberia": 7,
+  "macao": 7,
+  "madagascar": 7,
+  "malawi": 7,
+  "maldives": 7,
+  "maldive": 7,
+  "martinique": 7,
+  "maurice": 7,
+  "ile maurice": 7,
+  "mauritius": 7,
+  "mongolie": 7,
+  "mongolia": 7,
+  "mozambique": 7,
+  "namibie": 7,
+  "namibia": 7,
+  "népal": 7,
+  "nepal": 7,
+  "nicaragua": 7,
+  "nouvelle-calédonie": 7,
+  "nouvelle calidonie": 7,
+  "new caledonia": 7,
+  "nouvelle-zélande": 7,
+  "nouvelle zelande": 7,
+  "new zealand": 7,
+  "ouganda": 7,
+  "uganda": 7,
+  "ouzbékistan": 7,
+  "uzbekistan": 7,
+  "saint-martin": 7,
+  "saint martin": 7,
+  "pakistan": 7,
+  "panama": 7,
+  "paraguay": 7,
+  "pérou": 7,
+  "perou": 7,
+  "peru": 7,
+  "philippines": 7,
+  "philippine": 7,
+  "porto rico": 7,
+  "puerto rico": 7,
+  "rwanda": 7,
+  "salvador": 7,
+  "el salvador": 7,
+  "seychelles": 7,
+  "seychelle": 7,
+  "sierra leone": 7,
+  "somalie": 7,
+  "somalia": 7,
+  "eswatini": 7,
+  "swaziland": 7,
+  "suriname": 7,
+  "sri lanka": 7,
+  "sirilanka": 7,
+  "tahiti": 7,
+  "polynésie française": 7,
+  "taiwan": 7,
+  "tadjikistan": 7,
+  "tajikistan": 7,
+  "tanzanie": 7,
+  "tanzania": 7,
+  "tchad": 7,
+  "chad": 7,
+  "thaïlande": 7,
+  "thailande": 7,
+  "thailand": 7,
+  "togo": 7,
+  "turkménistan": 7,
+  "turkmenistan": 7,
+  "uruguay": 7,
+  "vietnam": 7,
+  "zambie": 7,
+  "zambia": 7,
+  "zimbabwe": 7,
+};
+
+// ─── EMS 2026 International Tariff Grid (in DZD TTC) ─────────────────────────
+export const EMS_INTERNATIONAL_RATES: EmisRateRow[] = [
+  { weightKg: 0.25, ratesDzd: { zone1: 4242, zone2: 4545, zone3: 5050, zone4: 5555, zone5: 6060, zone6: 6262, zone7: 7070 } },
+  { weightKg: 0.50, ratesDzd: { zone1: 5050, zone2: 5757, zone3: 6262, zone4: 6767, zone5: 7373, zone6: 7575, zone7: 8383 } },
+  { weightKg: 1.00, ratesDzd: { zone1: 5454, zone2: 6262, zone3: 6666, zone4: 7171, zone5: 7777, zone6: 8080, zone7: 8989 } },
+  { weightKg: 2.00, ratesDzd: { zone1: 5757, zone2: 6565, zone3: 7070, zone4: 7575, zone5: 8181, zone6: 8686, zone7: 9797 } },
+  { weightKg: 3.00, ratesDzd: { zone1: 6464, zone2: 7272, zone3: 7676, zone4: 8282, zone5: 8787, zone6: 9696, zone7: 11211 } },
+  { weightKg: 4.00, ratesDzd: { zone1: 7070, zone2: 7878, zone3: 8282, zone4: 8888, zone5: 9393, zone6: 10504, zone7: 12221 } },
+  { weightKg: 5.00, ratesDzd: { zone1: 7878, zone2: 8888, zone3: 9292, zone4: 9999, zone5: 10706, zone6: 11514, zone7: 13332 } },
+  { weightKg: 6.00, ratesDzd: { zone1: 8484, zone2: 9494, zone3: 9999, zone4: 10605, zone5: 11413, zone6: 12625, zone7: 14443 } },
+  { weightKg: 7.00, ratesDzd: { zone1: 9191, zone2: 10201, zone3: 10605, zone4: 11312, zone5: 12019, zone6: 13736, zone7: 15554 } },
+  { weightKg: 8.00, ratesDzd: { zone1: 9797, zone2: 10807, zone3: 11312, zone4: 11918, zone5: 12726, zone6: 14847, zone7: 16665 } },
+  { weightKg: 9.00, ratesDzd: { zone1: 10504, zone2: 11514, zone3: 11918, zone4: 12625, zone5: 13938, zone6: 15958, zone7: 17776 } },
+  { weightKg: 10.00, ratesDzd: { zone1: 11514, zone2: 12524, zone3: 13130, zone4: 13736, zone5: 14746, zone6: 17069, zone7: 18887 } },
+  { weightKg: 11.00, ratesDzd: { zone1: 12221, zone2: 13130, zone3: 14039, zone4: 14645, zone5: 16059, zone6: 18180, zone7: 19998 } },
+  { weightKg: 12.00, ratesDzd: { zone1: 12827, zone2: 13837, zone3: 14948, zone4: 15554, zone5: 16968, zone6: 19291, zone7: 21109 } },
+  { weightKg: 13.00, ratesDzd: { zone1: 13534, zone2: 14544, zone3: 15857, zone4: 16362, zone5: 17877, zone6: 20402, zone7: 22220 } },
+  { weightKg: 14.00, ratesDzd: { zone1: 14140, zone2: 15150, zone3: 16766, zone4: 17271, zone5: 18685, zone6: 21513, zone7: 23331 } },
+  { weightKg: 15.00, ratesDzd: { zone1: 14847, zone2: 16059, zone3: 17877, zone4: 18382, zone5: 20301, zone6: 22624, zone7: 24442 } },
+  { weightKg: 16.00, ratesDzd: { zone1: 15554, zone2: 16766, zone3: 18685, zone4: 19291, zone5: 21210, zone6: 23735, zone7: 25553 } },
+  { weightKg: 17.00, ratesDzd: { zone1: 16160, zone2: 17372, zone3: 19594, zone4: 20200, zone5: 22018, zone6: 24846, zone7: 26664 } },
+  { weightKg: 18.00, ratesDzd: { zone1: 16867, zone2: 18079, zone3: 20503, zone4: 21109, zone5: 22927, zone6: 25957, zone7: 27775 } },
+  { weightKg: 19.00, ratesDzd: { zone1: 17473, zone2: 18685, zone3: 21412, zone4: 21917, zone5: 23836, zone6: 27068, zone7: 28886 } },
+  { weightKg: 20.00, ratesDzd: { zone1: 18483, zone2: 19594, zone3: 22523, zone4: 22624, zone5: 25957, zone6: 28280, zone7: 30098 } },
+  { weightKg: 21.00, ratesDzd: { zone1: 19190, zone2: 20200, zone3: 23432, zone4: 23533, zone5: 27068, zone6: 29593, zone7: 31411 } },
+  { weightKg: 22.00, ratesDzd: { zone1: 19796, zone2: 20907, zone3: 24240, zone4: 24442, zone5: 28179, zone6: 30906, zone7: 32724 } },
+  { weightKg: 23.00, ratesDzd: { zone1: 20503, zone2: 21513, zone3: 25149, zone4: 25250, zone5: 29290, zone6: 32320, zone7: 34037 } },
+  { weightKg: 24.00, ratesDzd: { zone1: 21210, zone2: 22220, zone3: 26058, zone4: 26159, zone5: 30401, zone6: 33633, zone7: 35350 } },
+  { weightKg: 25.00, ratesDzd: { zone1: 21816, zone2: 23028, zone3: 27068, zone4: 27977, zone5: 31512, zone6: 35047, zone7: 36764 } },
+  { weightKg: 26.00, ratesDzd: { zone1: 22523, zone2: 23634, zone3: 27977, zone4: 29088, zone5: 34340, zone6: 36360, zone7: 38077 } },
+  { weightKg: 27.00, ratesDzd: { zone1: 23129, zone2: 24341, zone3: 28886, zone4: 30199, zone5: 35451, zone6: 37673, zone7: 39491 } },
+  { weightKg: 28.00, ratesDzd: { zone1: 23836, zone2: 25048, zone3: 29795, zone4: 31310, zone5: 36562, zone6: 38986, zone7: 40804 } },
+  { weightKg: 29.00, ratesDzd: { zone1: 24543, zone2: 25654, zone3: 30704, zone4: 32421, zone5: 37673, zone6: 40299, zone7: 42117 } },
+  { weightKg: 30.00, ratesDzd: { zone1: 25553, zone2: 26765, zone3: 32017, zone4: 34138, zone5: 39491, zone6: 42218, zone7: 44137 } },
+  { weightKg: 31.00, ratesDzd: { zone1: 26159, zone2: 27573, zone3: 32926, zone4: 35249, zone5: 40703, zone6: 43430, zone7: 45450 } },
+  { weightKg: 32.00, ratesDzd: { zone1: 26866, zone2: 28381, zone3: 33734, zone4: 36360, zone5: 41915, zone6: 44642, zone7: 46763 } },
+  { weightKg: 33.00, ratesDzd: { zone1: 27472, zone2: 29088, zone3: 34643, zone4: 37471, zone5: 43127, zone6: 45854, zone7: 48076 } },
+  { weightKg: 34.00, ratesDzd: { zone1: 28179, zone2: 29896, zone3: 35552, zone4: 38582, zone5: 44339, zone6: 47066, zone7: 49490 } },
+  { weightKg: 35.00, ratesDzd: { zone1: 28886, zone2: 30704, zone3: 36461, zone4: 39693, zone5: 45551, zone6: 48379, zone7: 50803 } },
+  { weightKg: 36.00, ratesDzd: { zone1: 29492, zone2: 31411, zone3: 37370, zone4: 40804, zone5: 46763, zone6: 49591, zone7: 52116 } },
+  { weightKg: 37.00, ratesDzd: { zone1: 30199, zone2: 32219, zone3: 38178, zone4: 41915, zone5: 47975, zone6: 50803, zone7: 53429 } },
+  { weightKg: 38.00, ratesDzd: { zone1: 30805, zone2: 33027, zone3: 39087, zone4: 43026, zone5: 49187, zone6: 52015, zone7: 54742 } },
+  { weightKg: 39.00, ratesDzd: { zone1: 31512, zone2: 33734, zone3: 39996, zone4: 44137, zone5: 50399, zone6: 53227, zone7: 56156 } },
+  { weightKg: 40.00, ratesDzd: { zone1: 32219, zone2: 34542, zone3: 40905, zone4: 45248, zone5: 51712, zone6: 54439, zone7: 57469 } },
+  { weightKg: 41.00, ratesDzd: { zone1: 32825, zone2: 35350, zone3: 41814, zone4: 46359, zone5: 52924, zone6: 55651, zone7: 58782 } },
+  { weightKg: 42.00, ratesDzd: { zone1: 33532, zone2: 36158, zone3: 42622, zone4: 47470, zone5: 54136, zone6: 56863, zone7: 60095 } },
+  { weightKg: 43.00, ratesDzd: { zone1: 34239, zone2: 36966, zone3: 43430, zone4: 48581, zone5: 55348, zone6: 58075, zone7: 61408 } },
+];
+
+/**
+ * Returns the EMS Zone (1-7) for a given country name or null if not found.
+ */
+export function getCountryZone(countryName?: string | null): 1 | 2 | 3 | 4 | 5 | 6 | 7 | null {
+  if (!countryName) return null;
+  const normalized = countryName.trim().toLowerCase();
+  return EMS_COUNTRY_ZONES[normalized] ?? null;
+}
+
+/**
+ * Converts a DZD price to EUR given an exchange rate (default 145 DZD = 1 EUR).
+ */
+export function convertDzdToEur(dzdAmount: number, exchangeRate: number = DEFAULT_EUR_EXCHANGE_RATE): number {
+  if (!dzdAmount || dzdAmount <= 0) return 0;
+  return Number((dzdAmount / exchangeRate).toFixed(2));
+}
+
+/**
+ * Looks up the EMS international shipping fee in DZD for a given zone and weight in kg.
+ */
+export function getInternationalShippingFeeDZD(
+  zoneOrCountry: number | string,
+  weightKg: number = 1.0
+): number {
+  let zone: number | null = null;
+  if (typeof zoneOrCountry === "number") {
+    zone = zoneOrCountry;
+  } else {
+    zone = getCountryZone(zoneOrCountry);
+  }
+
+  if (!zone || zone < 1 || zone > 7) {
+    zone = 5; // Default fallback zone
+  }
+
+  // Find matching or next higher weight row in table
+  const matchedRow =
+    EMS_INTERNATIONAL_RATES.find((row) => row.weightKg >= weightKg) ||
+    EMS_INTERNATIONAL_RATES[EMS_INTERNATIONAL_RATES.length - 1];
+
+  const zoneKey = `zone${zone}` as keyof EmisRateRow["ratesDzd"];
+  return matchedRow.ratesDzd[zoneKey];
+}
+
+/**
+ * Looks up the EMS international shipping fee in EUR for a given zone and weight in kg.
+ */
+export function getInternationalShippingFeeEUR(
+  zoneOrCountry: number | string,
+  weightKg: number = 1.0,
+  exchangeRate: number = DEFAULT_EUR_EXCHANGE_RATE
+): number {
+  const feeDzd = getInternationalShippingFeeDZD(zoneOrCountry, weightKg);
+  return convertDzdToEur(feeDzd, exchangeRate);
+}

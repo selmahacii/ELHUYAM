@@ -2,13 +2,19 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { getZRSettings, saveZRSettings, zrTestConnection } from "@/lib/zrexpress";
-import { getInternationalOrdersEnabled, setInternationalOrdersEnabled } from "@/lib/settings";
+import {
+  getInternationalOrdersEnabled,
+  setInternationalOrdersEnabled,
+  getEurExchangeRate,
+  setEurExchangeRate,
+} from "@/lib/settings";
 import { z } from "zod";
 
 const settingsSchema = z.object({
-  secretKey: z.string().min(1, "Secret key is required"),
-  tenantId: z.string().min(1, "Tenant ID is required"),
+  secretKey: z.string().optional(),
+  tenantId: z.string().optional(),
   internationalOrdersEnabled: z.boolean().optional(),
+  eurExchangeRate: z.coerce.number().positive("Le taux de change doit être supérieur à 0").optional(),
 });
 
 export async function GET() {
@@ -16,30 +22,24 @@ export async function GET() {
     const session = await auth();
     if (session?.user?.role !== "ADMIN") return errorResponse("Unauthorized", 401);
 
-    const [settings, internationalOrdersEnabled] = await Promise.all([
+    const [settings, internationalOrdersEnabled, eurExchangeRate] = await Promise.all([
       getZRSettings(),
       getInternationalOrdersEnabled(),
+      getEurExchangeRate(),
     ]);
 
-    if (!settings) {
-      return successResponse({
-        configured: false,
-        secretKey: "",
-        tenantId: "",
-        internationalOrdersEnabled,
-      });
-    }
-
-    // Mask the secret key — show only last 8 chars
-    const maskedKey = settings.secretKey.length > 8
-      ? "•".repeat(settings.secretKey.length - 8) + settings.secretKey.slice(-8)
-      : settings.secretKey;
+    const maskedKey = settings?.secretKey
+      ? settings.secretKey.length > 8
+        ? "•".repeat(settings.secretKey.length - 8) + settings.secretKey.slice(-8)
+        : settings.secretKey
+      : "";
 
     return successResponse({
-      configured: true,
+      configured: !!settings,
       secretKey: maskedKey,
-      tenantId: settings.tenantId,
+      tenantId: settings?.tenantId ?? "",
       internationalOrdersEnabled,
+      eurExchangeRate,
     });
   } catch {
     return errorResponse("Failed to load settings", 500);
@@ -64,38 +64,59 @@ export async function PUT(req: NextRequest) {
       return errorResponse(parsed.error.errors[0].message);
     }
 
-    let { secretKey, tenantId, internationalOrdersEnabled } = parsed.data;
+    let { secretKey, tenantId, internationalOrdersEnabled, eurExchangeRate } = parsed.data;
 
     if (typeof internationalOrdersEnabled === "boolean") {
       await setInternationalOrdersEnabled(internationalOrdersEnabled);
     }
 
-    // "__KEEP__" is a sentinel sent from the UI when testing without changing the key
-    if (secretKey === "__KEEP__") {
-      const existing = await getZRSettings();
-      if (!existing) {
-        return errorResponse("No stored credentials to test");
-      }
-      secretKey = existing.secretKey;
+    if (typeof eurExchangeRate === "number" && eurExchangeRate > 0) {
+      await setEurExchangeRate(eurExchangeRate);
     }
 
-    await saveZRSettings({ secretKey, tenantId });
+    let connected: boolean | null = null;
+    let errorDetails: any = null;
 
-    // Test the connection with credentials
-    const testResult = await zrTestConnection({ secretKey, tenantId });
+    // Only update ZR settings if secretKey and tenantId are provided
+    if (secretKey && tenantId) {
+      // "__KEEP__" is a sentinel sent from the UI when testing without changing the key
+      if (secretKey === "__KEEP__") {
+        const existing = await getZRSettings();
+        if (!existing) {
+          return errorResponse("No stored credentials to test");
+        }
+        secretKey = existing.secretKey;
+      }
+
+      await saveZRSettings({ secretKey, tenantId });
+
+      // Test the connection with credentials
+      const testResult = await zrTestConnection({ secretKey, tenantId });
+      connected = testResult.ok;
+      if (!testResult.ok) {
+        errorDetails = {
+          status: testResult.status,
+          error: testResult.error,
+          rawBody: testResult.rawBody,
+        };
+      }
+    }
+
+    const [updatedIntl, updatedRate, updatedSettings] = await Promise.all([
+      getInternationalOrdersEnabled(),
+      getEurExchangeRate(),
+      getZRSettings(),
+    ]);
 
     return successResponse({ 
-      configured: true, 
-      connected: testResult.ok,
-      internationalOrdersEnabled: await getInternationalOrdersEnabled(),
-      errorDetails: testResult.ok ? null : {
-        status: testResult.status,
-        error: testResult.error,
-        rawBody: testResult.rawBody
-      }
+      configured: !!updatedSettings, 
+      connected,
+      internationalOrdersEnabled: updatedIntl,
+      eurExchangeRate: updatedRate,
+      errorDetails,
     });
   } catch (error) {
-    console.error("[ZR Settings API] Unexpected error in PUT delivery-settings:", error);
+    console.error("[Settings API] Unexpected error in PUT delivery-settings:", error);
     return errorResponse("Failed to save settings", 500);
   }
 }

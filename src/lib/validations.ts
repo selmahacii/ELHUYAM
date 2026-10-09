@@ -48,6 +48,7 @@ export const productSchema = z.object({
     z.number().min(0, "Cost price must be non-negative").max(1_000_000).nullable().optional()
   ),
   stock: z.coerce.number().int().min(0).max(100_000),
+  weight: z.coerce.number().min(0.01, "Weight must be greater than 0").max(100).optional().default(0.5),
   sku: z.string().max(100).optional().nullable(),
   lowStockThreshold: z.coerce.number().int().min(0).max(10_000).optional().default(5),
   categoryId: z.string().min(1, "Category is required").max(50),
@@ -67,6 +68,10 @@ export const productVariantSchema = z.object({
   colorHex: z.string().max(7).optional().nullable(),
   image: z.string().max(500).optional().nullable(),
   stock: z.coerce.number().int().min(0).max(100_000),
+  weight: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+    z.number().positive().max(100).nullable().optional()
+  ),
   price: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
     z.number().positive().max(1_000_000).nullable().optional()

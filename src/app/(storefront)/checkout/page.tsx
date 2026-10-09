@@ -15,6 +15,7 @@ import { COMMUNES } from "@/lib/communes";
 import { BUREAUX } from "@/lib/bureaux";
 import { useRegion } from "@/providers/region-provider";
 import { cleanPhoneNumber, validatePhoneNumber } from "@/lib/validations";
+import { getInternationalShippingFeeEUR, getCountryZone } from "@/lib/international-shipping";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -129,7 +130,7 @@ export default function CheckoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { items, subtotal, clearCart } = useCartStore();
-  const { region, isInternationalEnabled } = useRegion();
+  const { region, isInternationalEnabled, eurExchangeRate } = useRegion();
   const [placing, setPlacing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -163,9 +164,21 @@ export default function CheckoutPage() {
   const deliveryType = watch("deliveryType");
   const selectedCountry = watch("country");
   const selectedCommune = watch("commune");
+
+  // Total cart weight in kg (sum of each item's weight * quantity)
+  const cartWeight = items.reduce((acc, item) => acc + (item.weight || 0.5) * item.quantity, 0);
+
+  // Dynamic International shipping calculation using EMS 2026 tariff grid + Square EUR rate
+  const internationalShippingFee = (isInternational && selectedCountry)
+    ? getInternationalShippingFeeEUR(selectedCountry, cartWeight, eurExchangeRate || 270)
+    : null;
+
   const shippingFee = !isInternational && selectedWilaya
     ? getShippingCost(selectedWilaya, deliveryType!, sub)
-    : isInternational ? 0 : null;
+    : isInternational
+    ? internationalShippingFee
+    : null;
+
   const total = Math.max(0, sub + (shippingFee ?? 0) - couponDiscount);
 
   const phoneValue = watch("phone") || "";
@@ -358,13 +371,13 @@ export default function CheckoutPage() {
               <span className="text-3xl">🌍</span>
               <h3 className="font-display text-lg font-bold text-black">International Delivery</h3>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Shipping fees for international orders vary depending on the destination country and package weight. They will be calculated and confirmed with you after validation.
+                Shipping fees are automatically calculated live based on your destination country and cart weight ({cartWeight.toFixed(2)} kg).
               </p>
             </div>
             <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl text-xs text-emerald-800 space-y-1.5 font-medium">
-              <p className="font-bold">⚠️ Action Required:</p>
+              <p className="font-bold">⚠️ WhatsApp Confirmation:</p>
               <p>
-                Please provide a valid phone number with <strong className="font-extrabold text-emerald-950">WhatsApp</strong> (including your country code, e.g. +33 for France). We will contact you on WhatsApp to confirm the final shipping fees before dispatch.
+                Please ensure your phone number is linked to an active <strong className="font-extrabold text-emerald-950">WhatsApp</strong> account. Our team will contact you on WhatsApp to confirm your order details before dispatch.
               </p>
             </div>
             <button
@@ -538,18 +551,42 @@ export default function CheckoutPage() {
             </h2>
 
             {isInternational ? (
-              <div>
-                <label className={labelCls}>Destination Country *</label>
-                <select
-                  {...register("country")}
-                  className={inputCls}
-                >
-                  <option value="">Select a country</option>
-                  {COUNTRIES.map((c) => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-                {errors.country && <p className={errorCls}>{errors.country.message}</p>}
+              <div className="space-y-3">
+                <div>
+                  <label className={labelCls}>Destination Country *</label>
+                  <select
+                    {...register("country")}
+                    className={inputCls}
+                  >
+                    <option value="">Select a country</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.name} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                  {errors.country && <p className={errorCls}>{errors.country.message}</p>}
+                </div>
+
+                {selectedCountry && shippingFee !== null && (
+                  <div className="flex items-center justify-between p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-medium">
+                    <div className="flex items-center gap-2.5">
+                      <Truck className="w-4 h-4 text-emerald-700 shrink-0" />
+                      <div>
+                        <p className="font-bold text-emerald-950">
+                          Express International Courier (Zone {getCountryZone(selectedCountry) ?? "EMS"})
+                        </p>
+                        <p className="text-[11px] text-emerald-800">
+                          Package Weight: <strong className="font-mono font-semibold">{cartWeight.toFixed(2)} kg</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-emerald-700 uppercase font-bold tracking-wider block">Shipping Cost</span>
+                      <strong className="text-sm font-extrabold text-emerald-950 font-mono">
+                        {formatPrice(shippingFee, "EUR")}
+                      </strong>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -768,7 +805,11 @@ export default function CheckoutPage() {
                 <span>{t("shipping")}</span>
                 <span>
                   {isInternational ? (
-                    <span className="text-emerald-600 font-semibold">Calculated after confirmation</span>
+                    shippingFee === null ? (
+                      <span className="text-neutral-400 italic">Select country</span>
+                    ) : (
+                      formatPrice(shippingFee, currency)
+                    )
                   ) : shippingFee === null ? (
                     <span className="text-neutral-400 italic">{t("selectWilayaFirst")}</span>
                   ) : (
@@ -784,9 +825,7 @@ export default function CheckoutPage() {
               <div className="flex justify-between font-bold text-black border-t border-neutral-200 pt-3 text-base">
                 <span>{t("total")}</span>
                 <span>
-                  {isInternational ? (
-                    <span className="text-emerald-700 font-extrabold uppercase">Under Quote</span>
-                  ) : shippingFee === null ? (
+                  {shippingFee === null ? (
                     "—"
                   ) : (
                     formatPrice(total, currency)
@@ -837,7 +876,8 @@ export default function CheckoutPage() {
                 (selectedWilaya &&
                   (deliveryType === "STOPDESK"
                     ? WILAYAS.find((w) => w.code === selectedWilaya)?.stopdesk === 0
-                    : WILAYAS.find((w) => w.code === selectedWilaya)?.domicile === 0)))))
+                    : WILAYAS.find((w) => w.code === selectedWilaya)?.domicile === 0))))) ||
+                (isInternational && (!selectedCountry || shippingFee === null))
               }
               className="w-full bg-black text-white py-4 text-xs uppercase tracking-[0.25em] font-bold border border-black hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >

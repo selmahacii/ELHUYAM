@@ -7,6 +7,7 @@ interface CartItem {
   title: string;
   price: number;
   priceEur: number;
+  weight?: number;
   image?: string;
   quantity: number;
   size?: string | null;
@@ -26,6 +27,7 @@ interface AddItemPayload {
     discountPrice?: number | null;
     priceEur: number;
     discountPriceEur?: number | null;
+    weight?: number;
     images: string[] | any;
     variants?: any[];
     stock: number;
@@ -42,6 +44,7 @@ interface CartStore {
   clearCart: () => void;
   syncWithServer: () => Promise<void>;
   subtotal: (isInternational?: boolean) => number;
+  totalWeight: () => number;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -59,7 +62,7 @@ export const useCartStore = create<CartStore>()(
         try {
           // If not authenticated, bypass server and run guest logic directly
           if (!get().isAuthenticated) {
-            let product;
+            let product: any;
             if (productData) {
               product = productData;
             } else {
@@ -73,6 +76,7 @@ export const useCartStore = create<CartStore>()(
 
             let price = product.discountPrice ?? product.price;
             let priceEur = product.discountPriceEur ?? product.priceEur ?? 0;
+            let weight = product.weight ?? 0.5;
             let maxStock = product.stock;
             let productImages = Array.isArray(product.images) 
               ? product.images 
@@ -84,6 +88,7 @@ export const useCartStore = create<CartStore>()(
               if (variant) {
                 price = variant.price ?? price;
                 priceEur = variant.priceEur ?? priceEur;
+                if (variant.weight) weight = variant.weight;
                 maxStock = variant.stock;
                 if (variant.image) image = variant.image;
               }
@@ -102,6 +107,7 @@ export const useCartStore = create<CartStore>()(
               updatedItems[existingIndex] = {
                 ...updatedItems[existingIndex],
                 quantity: newQty,
+                weight: weight,
               };
               set({ items: updatedItems });
             } else {
@@ -114,6 +120,7 @@ export const useCartStore = create<CartStore>()(
                 title: product.title,
                 price,
                 priceEur,
+                weight,
                 image,
                 quantity,
                 size: size ?? null,
@@ -152,6 +159,7 @@ export const useCartStore = create<CartStore>()(
                 let product = productData;
                 let price = product?.discountPrice ?? product?.price ?? dbItem.product?.price ?? 0;
                 let priceEur = product?.discountPriceEur ?? product?.priceEur ?? dbItem.product?.priceEur ?? 0;
+                let weight = product?.weight ?? dbItem.product?.weight ?? 0.5;
                 let productImages = product ? (Array.isArray(product.images) ? product.images : (typeof product.images === "string" ? JSON.parse(product.images) : [])) : (dbItem.product?.images ?? []);
                 let image = productImages?.[0] ?? "/placeholder-product.jpg";
 
@@ -159,7 +167,8 @@ export const useCartStore = create<CartStore>()(
                   const variant = product.variants.find((v: { id: string }) => v.id === variantId);
                   if (variant) {
                     price = variant.price ?? price;
-                priceEur = variant.priceEur ?? priceEur;
+                    priceEur = variant.priceEur ?? priceEur;
+                    if (variant.weight) weight = variant.weight;
                     if (variant.image) image = variant.image;
                   }
                 }
@@ -169,6 +178,7 @@ export const useCartStore = create<CartStore>()(
                   title: product?.title ?? dbItem.product?.title ?? "",
                   price,
                   priceEur,
+                  weight,
                   image,
                   quantity: dbItem.quantity,
                   size: size ?? null,
@@ -188,7 +198,7 @@ export const useCartStore = create<CartStore>()(
           if (res.status === 401) {
             set({ isAuthenticated: false });
             // Guest fallback logic
-            let product;
+            let product: any;
             if (productData) {
               product = productData;
             } else {
@@ -202,6 +212,7 @@ export const useCartStore = create<CartStore>()(
 
             let price = product.discountPrice ?? product.price;
             let priceEur = product.discountPriceEur ?? product.priceEur ?? 0;
+            let weight = product.weight ?? 0.5;
             let maxStock = product.stock;
             let productImages = Array.isArray(product.images) 
               ? product.images 
@@ -213,6 +224,7 @@ export const useCartStore = create<CartStore>()(
               if (variant) {
                 price = variant.price ?? price;
                 priceEur = variant.priceEur ?? priceEur;
+                if (variant.weight) weight = variant.weight;
                 maxStock = variant.stock;
                 if (variant.image) image = variant.image;
               }
@@ -231,6 +243,7 @@ export const useCartStore = create<CartStore>()(
               updatedItems[existingIndex] = {
                 ...updatedItems[existingIndex],
                 quantity: newQty,
+                weight,
               };
               set({ items: updatedItems });
             } else {
@@ -243,6 +256,7 @@ export const useCartStore = create<CartStore>()(
                 title: product.title,
                 price,
                 priceEur,
+                weight,
                 image,
                 quantity,
                 size: size ?? null,
@@ -326,8 +340,8 @@ export const useCartStore = create<CartStore>()(
             const serverItems = (data.data ?? []).map((item: {
               id: string;
               productId: string;
-              product: { title: string; price: number; discountPrice?: number | null; priceEur: number; discountPriceEur?: number | null; images: string[] };
-              variant?: { id: string; price?: number | null; priceEur?: number | null } | null;
+              product: { title: string; price: number; discountPrice?: number | null; priceEur: number; discountPriceEur?: number | null; images: string[]; weight?: number };
+              variant?: { id: string; price?: number | null; priceEur?: number | null; weight?: number | null } | null;
               quantity: number;
               size?: string | null;
               color?: string | null;
@@ -338,6 +352,7 @@ export const useCartStore = create<CartStore>()(
               title: item.product.title,
               price: item.variant?.price ?? item.product.discountPrice ?? item.product.price,
               priceEur: item.variant?.priceEur ?? item.product.discountPriceEur ?? item.product.priceEur ?? 0,
+              weight: item.variant?.weight ?? item.product?.weight ?? 0.5,
               image: item.product.images[0],
               quantity: item.quantity,
               size: item.size,
@@ -354,6 +369,7 @@ export const useCartStore = create<CartStore>()(
       },
 
       subtotal: (isInternational?: boolean) => get().items.reduce((sum, item) => sum + (isInternational ? (item.priceEur || 0) : item.price) * item.quantity, 0),
+      totalWeight: () => get().items.reduce((sum, item) => sum + (item.weight || 0.5) * item.quantity, 0),
     }),
     {
       name: "el-huyaam-cart",

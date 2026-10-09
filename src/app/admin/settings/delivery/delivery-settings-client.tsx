@@ -17,7 +17,9 @@ import {
   ShieldCheck,
   Truck,
   HelpCircle,
-  Globe
+  Globe,
+  Coins,
+  Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,12 +27,14 @@ interface Props {
   initialConfigured: boolean;
   initialTenantId: string;
   initialInternationalOrdersEnabled?: boolean;
+  initialEurExchangeRate?: number;
 }
 
 export default function DeliverySettingsClient({
   initialConfigured,
   initialTenantId,
   initialInternationalOrdersEnabled = true,
+  initialEurExchangeRate = 270,
 }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -47,6 +51,34 @@ export default function DeliverySettingsClient({
 
   const [intlEnabled, setIntlEnabled] = useState(initialInternationalOrdersEnabled);
   const [savingIntl, setSavingIntl] = useState(false);
+
+  const [eurRate, setEurRate] = useState<number>(initialEurExchangeRate);
+  const [savingRate, setSavingRate] = useState(false);
+
+  async function handleSaveRate() {
+    if (isNaN(eurRate) || eurRate <= 0) {
+      toast.error("Veuillez saisir un taux de change valide (ex: 270)");
+      return;
+    }
+    setSavingRate(true);
+    try {
+      const res = await fetch("/api/admin/delivery-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eurExchangeRate: eurRate }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`💱 Taux de change mis à jour : 1 € = ${eurRate} DA`);
+      } else {
+        toast.error(data.error || "Erreur lors de l'enregistrement du taux");
+      }
+    } catch {
+      toast.error("Erreur réseau");
+    } finally {
+      setSavingRate(false);
+    }
+  }
 
   async function handleToggleInternational(enabled: boolean) {
     setSavingIntl(true);
@@ -206,7 +238,7 @@ export default function DeliverySettingsClient({
             <>
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
-                <strong>Activé :</strong> Le sélecteur de région/devise (EUR) et l'option de demande de devis international sont disponibles sur la boutique.
+                <strong>Activé :</strong> Le sélecteur de région/devise (EUR) et le calcul automatique des frais de port internationaux sont disponibles sur la boutique.
               </span>
             </>
           ) : (
@@ -217,6 +249,88 @@ export default function DeliverySettingsClient({
               </span>
             </>
           )}
+        </div>
+      </div>
+
+      {/* ── 💱 Taux de Change Dynamique (EUR -> DZD) Card ─────────────────── */}
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shrink-0">
+              <Coins className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-display text-base font-bold text-slate-900">
+                Taux de Change Square / Marché (EUR ➔ DZD)
+              </h2>
+              <p className="text-slate-500 text-xs mt-0.5">
+                Utilisé pour calculer automatiquement le coût de livraison internationale en Euros (€) selon le poids du panier et la grille tarifaire EMS 2026.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+          <div className="md:col-span-6 space-y-1.5">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
+              Taux de conversion : 1 EUR = ? DZD
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 text-xs font-bold text-slate-400">1 € =</span>
+              <input
+                type="number"
+                step="0.5"
+                min="1"
+                value={eurRate}
+                onChange={(e) => setEurRate(parseFloat(e.target.value) || 0)}
+                placeholder="270"
+                className="w-full border border-gray-200 rounded-xl pl-12 pr-12 py-2 text-sm font-bold font-mono text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all h-10"
+              />
+              <span className="absolute right-3 text-xs font-bold text-slate-500">DA</span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Taux par défaut : <strong className="text-slate-800">270 DA</strong> (Taux du Square). Modifiable en temps réel selon les fluctuations.
+            </p>
+          </div>
+
+          <div className="md:col-span-6 flex flex-col justify-between h-full space-y-3">
+            <div className="text-[11px] bg-white p-3 rounded-lg border border-slate-200 text-slate-600 space-y-1">
+              <span className="font-bold text-slate-800 block text-[10px] uppercase tracking-wider">
+                💡 Aperçu du calcul automatique :
+              </span>
+              <p>
+                Colis <strong>1.0 kg</strong> vers l'Europe (Zone 1 = 3 320 DA) :{" "}
+                <strong className="text-amber-700 font-mono">
+                  {eurRate > 0 ? (3320 / eurRate).toFixed(2) : "0.00"} €
+                </strong>
+              </p>
+              <p>
+                Colis <strong>2.0 kg</strong> vers le Golfe / Moyen-Orient (Zone 2 = 6 010 DA) :{" "}
+                <strong className="text-amber-700 font-mono">
+                  {eurRate > 0 ? (6010 / eurRate).toFixed(2) : "0.00"} €
+                </strong>
+              </p>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleSaveRate}
+                disabled={savingRate}
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 h-9"
+              >
+                {savingRate ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" /> Enregistrer le Taux
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
       
