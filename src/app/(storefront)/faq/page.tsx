@@ -8,41 +8,115 @@ export const metadata: Metadata = { title: "FAQ — EL HUYAM" };
 export const revalidate = false;
 
 const faqsEn = [
-  { q: "How do I find my size?", a: "We provide a detailed size guide on each product page. Our abayas are available from XS to XXXL. For custom sizing requests, please contact us." },
-  { q: "What materials do you use?", a: "We use premium fabrics: breathable linen, silky crepe de chine, luxurious chiffon, and soft cotton blends. Material details are specified on each product page." },
-  { q: "What is the delivery time?", a: "Standard delivery in Algeria takes 3 to 5 business days. Express delivery takes 1 to 2 business days. International orders take 7 to 14 business days." },
-  { q: "Is shipping free?", a: "Yes! We offer free standard shipping for all orders over 5,000 DZD in Algeria. Below this amount, flat shipping rates apply." },
-  { q: "What is your return policy?", a: "We accept returns within 30 days of delivery. Items must be unworn, unwashed, in their original packaging with tags attached. Please check our return policy for full details." },
-  { q: "Can I exchange an item?", a: "Yes, exchanges are possible for different sizes or colors, subject to availability. Contact our team within 30 days of receiving your order." },
-  { q: "Do you deliver internationally?", a: "Yes, we ship worldwide. International shipping rates and times vary depending on the destination. Customs duties and taxes may apply." },
-  { q: "How can I track my order?", a: "Once your order is shipped, you will receive a tracking number via email. You can also track your order from your account dashboard." },
-  { q: "Do your products respect Islamic modesty?", a: "Absolutely. Each piece in our collection is designed with the principles of Islamic modesty in mind — fully loose, opaque, and non-form-fitting." },
-  { q: "Do you offer gift wrapping?", a: "Yes! Select gift wrapping at checkout. Every order comes in our signature EL HUYAM box with tissue paper and a handwritten card option." },
+  // ── About EL HUYAM ──
+  {
+    q: "What is EL HUYAM?",
+    a: "EL HUYAM is a modest fashion house dedicated to creating luxury abayas and refined modest wear. We unite timeless elegance with authentic Islamic modesty, using only premium fabrics and meticulous craftsmanship.",
+  },
+  {
+    q: "Do your creations strictly respect Islamic modesty?",
+    a: "Yes, absolutely. Every piece is designed according to Islamic modesty standards: loose-fitting silhouettes, opaque non-transparent fabrics, and flowing cuts that do not reveal body contours.",
+  },
+  {
+    q: "What fabrics and quality standards does EL HUYAM use?",
+    a: "We carefully select high-grade fabrics, including premium crepe, breathable linen, fluid chiffon, and luxury blends, ensuring lasting quality, comfort, and an elegant drape.",
+  },
+
+  // ── How It Works ──
+  {
+    q: "How does the ordering process work?",
+    a: "Browse our collection, select your desired piece, choose your size and color, add it to your shopping bag, and enter your details at checkout with a valid phone number linked to WhatsApp.",
+  },
+  {
+    q: "Why is WhatsApp confirmation mandatory?",
+    a: "To ensure accuracy and avoid errors, our team contacts you directly on WhatsApp to confirm your order details and delivery information before preparation. An official receipt and order summary are also sent immediately to your email address.",
+  },
+  {
+    q: "How does delivery work?",
+    a: "Once your order is confirmed with you on WhatsApp, your parcel is carefully prepared and handed over to our delivery partner company to be transported directly to your address (home delivery) or to your selected Stop Desk pickup point.",
+  },
+  {
+    q: "What payment methods are accepted?",
+    a: "We accept Cash on Delivery (COD) across all wilayas in Algeria, as well as secure online credit/debit card payments for international orders.",
+  },
+
+  // ── Claims Service (Service de Réclamation) ──
+  {
+    q: "How does the Claims Service (Service de Réclamation) work?",
+    a: "Customer satisfaction and trust are our utmost priorities. If you notice any issue upon receiving your parcel (manufacturing defect, incorrect item, or sizing concern), contact our dedicated Claims Service immediately via WhatsApp or email with your order number and clear photos of the item.",
+  },
+  {
+    q: "What solutions does the Claims Service provide?",
+    a: "Our customer care team reviews your claim promptly to provide the most appropriate resolution: exchange, replacement, or rectification of the issue, ensuring a worry-free experience.",
+  },
+  {
+    q: "How can I contact the customer support and claims team?",
+    a: "You can reach our team directly via our official WhatsApp number or by sending an email to contact@elhuyam.com. We are at your service to assist you at every step.",
+  },
 ];
 
 const faqsAr = [
-  { q: "كيف أجد مقاسي؟", a: "نوفر دليل مقاسات مفصل في صفحة كل منتج. عباياتنا متوفرة من XS إلى XXXL. للطلبات الخاصة والمقاسات المخصصة، يرجى التواصل معنا." },
-  { q: "ما هي المواد التي تستخدمونها؟", a: "نستخدم أقمشة فاخرة: كتان مريح، كريب دي شين حريري، شيفون فاخر، وخامات قطنية ناعمة. تفاصيل الخامات موضحة في صفحة كل منتج." },
-  { q: "ما هي مدة التوصيل؟", a: "التوصيل العادي في الجزائر يستغرق من 3 إلى 5 أيام عمل. التوصيل السريع يستغرق من يوم إلى يومين عمل. الطلبات الدولية تستغرق من 7 إلى 14 يوم عمل." },
-  { q: "هل التوصيل مجاني؟", a: "نعم! نوفر توصيلاً عاديًا مجانيًا لجميع الطلبات التي تتجاوز 5,000 د.ج في الجزائر. للطلبات الأقل من هذه القيمة، تطبق رسوم شحن ثابتة." },
-  { q: "ما هي سياسة الإرجاع لديكم؟", a: "نقبل الإرجاع خلال 30 يومًا من التوصيل. يجب أن تكون المنتجات غير ملبوسة، غير مغسولة، وفي تغليفها الأصلي مع البطاقات. يرجى مراجعة سياسة الإرجاع للتفاصيل الكاملة." },
-  { q: "هل يمكنني استبدال منتج؟", a: "نعم، الاستبدال ممكن للمقاسات أو الألوان المختلفة، حسب توفرها. يرجى التواصل مع فريقنا خلال 30 يومًا من استلام طلبك." },
-  { q: "هل تقومون بالشحن الدولي؟", a: "نعم، نشحن لجميع أنحاء العالم. تختلف أسعار ومدد الشحن الدولي حسب الوجهة. قد تطبق رسوم جمركية وضرائب." },
-  { q: "كيف يمكنني تتبع طلبي؟", a: "بمجرد شحن طلبك، ستتلقين رقم التتبع عبر البريد الإلكتروني. يمكنك أيضًا تتبع طلبك من لوحة تحكم حسابك." },
-  { q: "هل تحترم منتجاتكم ضوابط الحشمة الإسلامية؟", a: "بكل تأكيد. كل قطعة في مجموعتنا مصممة وفقًا لمبادئ الحشمة والستر — فضفاضة تمامًا، غير شفافة وغير واصفة." },
-  { q: "هل توفرون تغليف هدايا؟", a: "نعم! يمكنك اختيار تغليف الهدايا عند الدفع. تأتي كل طلبية في علبة EL HUYAM المميزة مع ورق حريري وبطاقة إهداء مكتوبة بخط اليد." },
+  // ── عن EL HUYAM ──
+  {
+    q: "ما هي دار EL HUYAM؟",
+    a: "EL HUYAM هي علامة أزياء محتشمة متخصصة في تصميم العبايات الفاخرة والملابس الراقية. نجمع بين الحشمة الإسلامية الأصيلة والأناقة الرفيعة، معتمدين على أقمشة فاخرة وخياطة متقنة بأعلى معايير الجودة.",
+  },
+  {
+    q: "هل تحترم تصاميمكم ضوابط الحشمة الإسلامية؟",
+    a: "بكل تأكيد. جميع تصاميمنا مطابقة لضوابط الحشمة والستر: قصات فضفاضة وواسعة، أقمشة غير شفافة وغير واصفة لتمنحكِ وقارًا وأناقة تليق بكِ.",
+  },
+  {
+    q: "ما هي نوعية الأقمشة وجودة الخياطة لدى EL HUYAM؟",
+    a: "نختار بعناية فائقة أرقى الخامات التي تشمل الكريب الفاخر، الكتان الطبيعي المريح، الشيفون الانسيابي والمنسوجات الناعمة، مع عناية دقيقة بأدق التفاصيل والتشطيبات.",
+  },
+
+  // ── كيف تتم عملية الطلب؟ ──
+  {
+    q: "كيف تتم عملية الطلب؟",
+    a: "اختاري الموديل المفضل لديكِ، حددي المقاس واللون، أضيفي المنتج إلى سلة التسوق ثم أكملي إدخال معلوماتكِ في صفحة الدفع مع التأكد من إدخال رقم هاتف مرتبط بحساب واتساب نشط.",
+  },
+  {
+    q: "لماذا يعد تأكيد الطلب عبر الواتساب إلزاميًا؟",
+    a: "لضمان دقة البيانات وتفادي أي خطأ، يتواصل معكِ فريقنا مباشرة عبر الواتساب لتأكيد تفاصيل الطلب وعنوان الاستلام قبل تجهيزه. كما يصلكِ إشعار فوري وفاتورة رسمية عبر بريدكِ الإلكتروني.",
+  },
+  {
+    q: "كيف تتم معالجة الشحن والتوصيل؟",
+    a: "بمجرد تأكيد طلبكِ عبر الواتساب، يتم تجهيز الطرد بعناية وتسليمه لشركة التوصيل الشريكة لنقله بأمان إلى باب منزلكِ (توصيل للمنزل) أو إلى مكتب الاستلام المختار (Stop Desk).",
+  },
+  {
+    q: "ما هي طرق الدفع المتاحة؟",
+    a: "نوفر خدمة الدفع عند الاستلام (COD) في جميع الولايات، بالإضافة إلى خيارات الدفع الإلكتروني الآمن بالبطاقة البنكية لطلبات زبائننا الدوليين.",
+  },
+
+  // ── مصلحة الشكاوى وخدمة الزبائن ──
+  {
+    q: "كيف تعمل مصلحة الشكاوى (Service de Réclamation) في حال وجود مشكلة؟",
+    a: "رضاكِ التام وثقتكِ بنا هما أولويتنا القصوى. إذا واجهتِ أي مشكلة عند استلام طردكِ (عيب مصنعي، خطأ في المقاس أو الموديل)، يرجى التواصل فورًا مع مصلحة الشكاوى عبر الواتساب أو البريد الإلكتروني مع إرفاق رقم الطلب وصور واضحة للمنتج.",
+  },
+  {
+    q: "ما هي الحلول التي تقدمها مصلحة الشكاوى؟",
+    a: "يقوم فريق خدمة ما بعد البيع بمعالجة طلبكِ على الفور لتقديم الحل الأنسب: استبدال المنتج، معالجة الخلل أو تصحيح الطلب بما يضمن راحة بالكِ التامة.",
+  },
+  {
+    q: "كيف يمكنني التواصل مع خدمة الزبائن وقسم الشكاوى؟",
+    a: "يمكنكِ التواصل معنا مباشرة عبر رقم الواتساب المخصص أو عبر البريد الإلكتروني contact@elhuyam.com. فريقنا مستعد دائمًا لمساعدتكِ والإجابة على استفساراتكِ.",
+  },
 ];
 
 export default async function FAQPage() {
   const locale = await getLocale();
   const isAr = locale === "ar";
-  
+
   const faqs = isAr ? faqsAr : faqsEn;
-  
+
   const heading = isAr ? "الأسئلة الشائعة" : "Frequently Asked Questions";
-  const subHeading = isAr ? "كل ما تحتاجين لمعرفته عن التسوق لدى EL HUYAM." : "Everything you need to know about shopping with EL HUYAM.";
-  const ctaHeading = isAr ? "هل لديك أسئلة أخرى؟" : "Still have questions?";
-  const ctaSub = isAr ? "فريقنا مستعد لمساعدتك عبر البريد الإلكتروني أو الواتساب." : "Our team is available to help you via email or WhatsApp.";
+  const subHeading = isAr
+    ? "كل ما تحتاجين لمعرفته عن علامة EL HUYAM، طريقة الطلب ومصلحة الشكاوى."
+    : "Everything you need to know about EL HUYAM, our ordering process, and our claims service.";
+  const ctaHeading = isAr ? "هل لديكِ استفسار آخر؟" : "Still have questions?";
+  const ctaSub = isAr
+    ? "فريق مصلحة الزبائن والشكاوى متواجد لمساعدتكِ بكل سرور عبر الواتساب أو البريد الإلكتروني."
+    : "Our customer service and claims team is available to assist you via WhatsApp or email.";
   const ctaBtn = isAr ? "تواصل معنا" : "Contact Us";
 
   return (
@@ -50,7 +124,7 @@ export default async function FAQPage() {
       <div className="text-center mb-14">
         <p className="text-xs uppercase tracking-[0.3em] text-brand-400 mb-2 font-arabic">✦ FAQ ✦</p>
         <h1 className="font-display text-4xl md:text-5xl text-brand-900 mb-4">{heading}</h1>
-        <p className="text-brand-400 text-sm">{subHeading}</p>
+        <p className="text-brand-400 text-sm max-w-xl mx-auto">{subHeading}</p>
         <div className="flex items-center gap-3 mt-6 max-w-xs mx-auto">
           <div className="h-px flex-1 bg-brand-100" />
           <span className="text-soft-gold">✦</span>
@@ -75,7 +149,10 @@ export default async function FAQPage() {
       <div className="mt-16 bg-brand-900 p-8 text-center">
         <h3 className="font-display text-xl text-white mb-3">{ctaHeading}</h3>
         <p className="text-white/60 text-sm mb-6">{ctaSub}</p>
-        <Link href="/contact" className="inline-flex items-center gap-2 border border-soft-gold text-soft-gold px-6 py-3 text-xs uppercase tracking-widest hover:bg-soft-gold hover:text-brand-900 transition-colors font-medium">
+        <Link
+          href="/contact"
+          className="inline-flex items-center gap-2 border border-soft-gold text-soft-gold px-6 py-3 text-xs uppercase tracking-widest hover:bg-soft-gold hover:text-brand-900 transition-colors font-medium"
+        >
           {ctaBtn}
         </Link>
       </div>
