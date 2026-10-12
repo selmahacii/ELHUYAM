@@ -8,98 +8,72 @@ export const metadata: Metadata = { title: "FAQ — EL HUYAM" };
 export const revalidate = false;
 
 const faqsEn = [
-  // ── About EL HUYAM ──
   {
     q: "What is EL HUYAM?",
-    a: "EL HUYAM is a modest fashion house dedicated to creating luxury abayas and refined modest wear. We unite timeless elegance with authentic Islamic modesty, using only premium fabrics and meticulous craftsmanship.",
+    a: "EL HUYAM is a modest fashion house offering refined abayas and modest attire, crafted with quality fabrics and elegant cuts.",
   },
   {
-    q: "Do your creations strictly respect Islamic modesty?",
-    a: "Yes, absolutely. Every piece is designed according to Islamic modesty standards: loose-fitting silhouettes, opaque non-transparent fabrics, and flowing cuts that do not reveal body contours.",
+    q: "Do your creations respect Islamic modesty?",
+    a: "Yes, our designs feature loose, opaque, and modest silhouettes suitable for modern modest wear.",
   },
   {
-    q: "What fabrics and quality standards does EL HUYAM use?",
-    a: "We carefully select high-grade fabrics, including premium crepe, breathable linen, fluid chiffon, and luxury blends, ensuring lasting quality, comfort, and an elegant drape.",
+    q: "How do I choose my size?",
+    a: "You can refer to the size indications on each product page, or contact our team if you need guidance.",
   },
-
-  // ── How It Works ──
   {
     q: "How does the ordering process work?",
-    a: "Browse our collection, select your desired piece, choose your size and color, add it to your shopping bag, and enter your details at checkout with a valid phone number linked to WhatsApp.",
+    a: "Select your piece, add it to your cart, and enter your details. Our team will contact you directly on WhatsApp to confirm everything before dispatch.",
   },
   {
-    q: "Why is WhatsApp confirmation mandatory?",
-    a: "To ensure accuracy and avoid errors, our team contacts you directly on WhatsApp to confirm your order details and delivery information before preparation. An official receipt and order summary are also sent immediately to your email address.",
+    q: "How is delivery carried out?",
+    a: "Once confirmed on WhatsApp, parcels are prepared and handed over to our partner delivery company for transport to your address or Stop Desk.",
   },
-  {
-    q: "How does delivery work?",
-    a: "Once your order is confirmed with you on WhatsApp, your parcel is carefully prepared and handed over to our delivery partner company to be transported directly to your address (home delivery) or to your selected Stop Desk pickup point.",
-  },
-  {
-    q: "What payment methods are accepted?",
-    a: "We accept Cash on Delivery (COD) across all wilayas in Algeria, as well as secure online credit/debit card payments for international orders.",
-  },
-
-  // ── Claims Service (Service de Réclamation) ──
   {
     q: "How does the Claims Service (Service de Réclamation) work?",
-    a: "Customer satisfaction and trust are our utmost priorities. If you notice any issue upon receiving your parcel (manufacturing defect, incorrect item, or sizing concern), contact our dedicated Claims Service immediately via WhatsApp or email with your order number and clear photos of the item.",
+    a: "Our customer service is here to assist you. Simply reach out via WhatsApp or email with your order details so our team can help you find an appropriate solution.",
   },
   {
-    q: "What solutions does the Claims Service provide?",
-    a: "Our customer care team reviews your claim promptly to provide the most appropriate resolution: exchange, replacement, or rectification of the issue, ensuring a worry-free experience.",
+    q: "Can I exchange an item?",
+    a: "Yes, you can contact our customer support team directly to review your request.",
   },
   {
-    q: "How can I contact the customer support and claims team?",
-    a: "You can reach our team directly via our official WhatsApp number or by sending an email to contact@elhuyam.com. We are at your service to assist you at every step.",
+    q: "What payment methods are available?",
+    a: "We offer Cash on Delivery in Algeria, as well as secure online card payment for international orders.",
   },
 ];
 
 const faqsAr = [
-  // ── عن EL HUYAM ──
   {
-    q: "ما هي دار EL HUYAM؟",
-    a: "EL HUYAM هي علامة أزياء محتشمة متخصصة في تصميم العبايات الفاخرة والملابس الراقية. نجمع بين الحشمة الإسلامية الأصيلة والأناقة الرفيعة، معتمدين على أقمشة فاخرة وخياطة متقنة بأعلى معايير الجودة.",
+    q: "ما هي علامة EL HUYAM؟",
+    a: "دار أزياء محتشمة تقدم عبايات وتصاميم راقية تجمع بين الأناقة والستر.",
   },
   {
-    q: "هل تحترم تصاميمكم ضوابط الحشمة الإسلامية؟",
-    a: "بكل تأكيد. جميع تصاميمنا مطابقة لضوابط الحشمة والستر: قصات فضفاضة وواسعة، أقمشة غير شفافة وغير واصفة لتمنحكِ وقارًا وأناقة تليق بكِ.",
+    q: "هل التصاميم محتشمة وساترة؟",
+    a: "نعم، جميع تصاميمنا واسعة وفضفاضة وبأقمشة غير شفافة تراعي الحشمة والوقار.",
   },
   {
-    q: "ما هي نوعية الأقمشة وجودة الخياطة لدى EL HUYAM؟",
-    a: "نختار بعناية فائقة أرقى الخامات التي تشمل الكريب الفاخر، الكتان الطبيعي المريح، الشيفون الانسيابي والمنسوجات الناعمة، مع عناية دقيقة بأدق التفاصيل والتشطيبات.",
+    q: "كيف أختار مقاسي؟",
+    a: "يمكنكِ مراجعة تفاصيل المقاس في صفحة المنتج، أو التواصل مع فريقنا لمساعدتكِ في الاختيار.",
   },
-
-  // ── كيف تتم عملية الطلب؟ ──
   {
     q: "كيف تتم عملية الطلب؟",
-    a: "اختاري الموديل المفضل لديكِ، حددي المقاس واللون، أضيفي المنتج إلى سلة التسوق ثم أكملي إدخال معلوماتكِ في صفحة الدفع مع التأكد من إدخال رقم هاتف مرتبط بحساب واتساب نشط.",
+    a: "اختاري قطعتكِ وقومي بطلبها، ثم يتواصل معكِ فريقنا عبر الواتساب لتأكيد التفاصيل قبل الإرسال.",
   },
   {
-    q: "لماذا يعد تأكيد الطلب عبر الواتساب إلزاميًا؟",
-    a: "لضمان دقة البيانات وتفادي أي خطأ، يتواصل معكِ فريقنا مباشرة عبر الواتساب لتأكيد تفاصيل الطلب وعنوان الاستلام قبل تجهيزه. كما يصلكِ إشعار فوري وفاتورة رسمية عبر بريدكِ الإلكتروني.",
+    q: "كيف يتم التوصيل؟",
+    a: "بعد تأكيد الطلب، يُسلَّم الطرد إلى شركة التوصيل المعتمدة لنقله إلى عنوانكِ أو مكتب الاستلام.",
   },
   {
-    q: "كيف تتم معالجة الشحن والتوصيل؟",
-    a: "بمجرد تأكيد طلبكِ عبر الواتساب، يتم تجهيز الطرد بعناية وتسليمه لشركة التوصيل الشريكة لنقله بأمان إلى باب منزلكِ (توصيل للمنزل) أو إلى مكتب الاستلام المختار (Stop Desk).",
+    q: "كيف تعمل مصلحة الشكاوى في حال وجود أي مشكلة؟",
+    a: "فريق خدمة الزبائن والشكاوى في خدمتكم دائماً؛ يكفي التواصل عبر الواتساب أو البريد الإلكتروني لمراجعة طلبكم وتقديم الحل المناسب.",
   },
   {
-    q: "ما هي طرق الدفع المتاحة؟",
-    a: "نوفر خدمة الدفع عند الاستلام (COD) في جميع الولايات، بالإضافة إلى خيارات الدفع الإلكتروني الآمن بالبطاقة البنكية لطلبات زبائننا الدوليين.",
-  },
-
-  // ── مصلحة الشكاوى وخدمة الزبائن ──
-  {
-    q: "كيف تعمل مصلحة الشكاوى (Service de Réclamation) في حال وجود مشكلة؟",
-    a: "رضاكِ التام وثقتكِ بنا هما أولويتنا القصوى. إذا واجهتِ أي مشكلة عند استلام طردكِ (عيب مصنعي، خطأ في المقاس أو الموديل)، يرجى التواصل فورًا مع مصلحة الشكاوى عبر الواتساب أو البريد الإلكتروني مع إرفاق رقم الطلب وصور واضحة للمنتج.",
+    q: "هل يمكن استبدال منتج؟",
+    a: "نعم، يمكنكِ التواصل مع فريق الدعم لمتابعة طلبكِ وإرشادكِ لأفضل خيار.",
   },
   {
-    q: "ما هي الحلول التي تقدمها مصلحة الشكاوى؟",
-    a: "يقوم فريق خدمة ما بعد البيع بمعالجة طلبكِ على الفور لتقديم الحل الأنسب: استبدال المنتج، معالجة الخلل أو تصحيح الطلب بما يضمن راحة بالكِ التامة.",
-  },
-  {
-    q: "كيف يمكنني التواصل مع خدمة الزبائن وقسم الشكاوى؟",
-    a: "يمكنكِ التواصل معنا مباشرة عبر رقم الواتساب المخصص أو عبر البريد الإلكتروني contact@elhuyam.com. فريقنا مستعد دائمًا لمساعدتكِ والإجابة على استفساراتكِ.",
+    q: "ما هي طرق الدفع المتوفرة؟",
+    a: "الدفع عند الاستلام داخل الجزائر، والدفع الإلكتروني الآمن للطلبات الدولية.",
   },
 ];
 
@@ -111,12 +85,12 @@ export default async function FAQPage() {
 
   const heading = isAr ? "الأسئلة الشائعة" : "Frequently Asked Questions";
   const subHeading = isAr
-    ? "كل ما تحتاجين لمعرفته عن علامة EL HUYAM، طريقة الطلب ومصلحة الشكاوى."
-    : "Everything you need to know about EL HUYAM, our ordering process, and our claims service.";
+    ? "كل ما تحتاجين لمعرفته عن علامة EL HUYAM، طريقة الطلب وخدمة الشكاوى."
+    : "Everything you need to know about EL HUYAM, our order process, and customer claims.";
   const ctaHeading = isAr ? "هل لديكِ استفسار آخر؟" : "Still have questions?";
   const ctaSub = isAr
-    ? "فريق مصلحة الزبائن والشكاوى متواجد لمساعدتكِ بكل سرور عبر الواتساب أو البريد الإلكتروني."
-    : "Our customer service and claims team is available to assist you via WhatsApp or email.";
+    ? "فريق مصلحة الزبائن متواجد لمساعدتكِ عبر الواتساب أو البريد الإلكتروني."
+    : "Our customer service team is available to assist you via WhatsApp or email.";
   const ctaBtn = isAr ? "تواصل معنا" : "Contact Us";
 
   return (
