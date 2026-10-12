@@ -10,11 +10,11 @@ export const revalidate = false;
 const faqsEn = [
   {
     q: "What is EL HUYAM?",
-    a: "EL HUYAM is a modest fashion house offering refined abayas and modest attire, crafted with quality fabrics and elegant cuts.",
+    a: "EL HUYAM is a modest fashion house offering refined abayas, niqabs, gloves, and complete Islamic modest attire, crafted with quality fabrics and elegant cuts.",
   },
   {
     q: "Do your creations respect Islamic modesty?",
-    a: "Yes, our designs feature loose, opaque, and modest silhouettes suitable for modern modest wear.",
+    a: "Yes, our designs strictly follow the principles of Islamic modesty — featuring loose, opaque, and elegant silhouettes.",
   },
   {
     q: "How do I choose my size?",
@@ -22,58 +22,58 @@ const faqsEn = [
   },
   {
     q: "How does the ordering process work?",
-    a: "Select your piece, add it to your cart, and enter your details. Our team will contact you directly on WhatsApp to confirm everything before dispatch.",
+    a: "Select your items, add them to your cart, and submit your details. Our team will contact you directly on WhatsApp to confirm your order details before preparation.",
   },
   {
     q: "How is delivery carried out?",
-    a: "Once confirmed on WhatsApp, parcels are prepared and handed over to our partner delivery company for transport to your address or Stop Desk.",
+    a: "Once confirmed on WhatsApp, parcels are handed over to our partner delivery company for transport to your home address or pickup desk.",
   },
   {
     q: "How does the Claims Service (Service de Réclamation) work?",
-    a: "Our customer service is here to assist you. Simply reach out via WhatsApp or email with your order details so our team can help you find an appropriate solution.",
+    a: "Our customer service is at your service: contact us directly on WhatsApp at +213 772 51 54 48 or by email at contact@elhuyaam.com with your order details so our team can assist you.",
   },
   {
     q: "Can I exchange an item?",
-    a: "Yes, you can contact our customer support team directly to review your request.",
+    a: "Yes, you can contact our customer service team directly to review your request and guide you.",
   },
   {
     q: "What payment methods are available?",
-    a: "We offer Cash on Delivery in Algeria, as well as secure online card payment for international orders.",
+    a: "We offer Cash on Delivery in Algeria. For international orders, payment details and instructions will be communicated directly via WhatsApp once you place your order.",
   },
 ];
 
 const faqsAr = [
   {
     q: "ما هي علامة EL HUYAM؟",
-    a: "دار أزياء محتشمة تقدم عبايات وتصاميم راقية تجمع بين الأناقة والستر.",
+    a: "دار أزياء إسلامية محتشمة تقدم عبايات راقية، نقابات، قفازات، وكل ما يتعلق باللباس الشرعي الساتر، بأقمشة فاخرة وقصات أنيقة.",
   },
   {
-    q: "هل التصاميم محتشمة وساترة؟",
-    a: "نعم، جميع تصاميمنا واسعة وفضفاضة وبأقمشة غير شفافة تراعي الحشمة والوقار.",
+    q: "هل التصاميم محتشمة وساترة وفق الضوابط الشرعية؟",
+    a: "نعم، جميع تصاميمنا واسعة، فضفاضة، وبأقمشة غير شفافة تراعي الحشمة والوقار التام.",
   },
   {
     q: "كيف أختار مقاسي؟",
-    a: "يمكنكِ مراجعة تفاصيل المقاس في صفحة المنتج، أو التواصل مع فريقنا لمساعدتكِ في الاختيار.",
+    a: "يمكنكِ مراجعة تفاصيل المقاس في صفحة المنتج، أو التواصل مع فريقنا لمساعدتكِ في الاختيار المناسب.",
   },
   {
     q: "كيف تتم عملية الطلب؟",
-    a: "اختاري قطعتكِ وقومي بطلبها، ثم يتواصل معكِ فريقنا عبر الواتساب لتأكيد التفاصيل قبل الإرسال.",
+    a: "اختاري قطعكِ وسجلي طلبكِ عبر الموقع، وسيتواصل معكِ فريقنا مباشرة عبر الواتساب لتأكيد التفاصيل قبل التجهيز والإرسال.",
   },
   {
     q: "كيف يتم التوصيل؟",
-    a: "بعد تأكيد الطلب، يُسلَّم الطرد إلى شركة التوصيل المعتمدة لنقله إلى عنوانكِ أو مكتب الاستلام.",
+    a: "بعد تأكيد الطلب، يُسلَّم الطرد إلى شركة التوصيل المعتمدة لنقله إلى باب منزلكِ أو مكتب الاستلام.",
   },
   {
-    q: "كيف تعمل مصلحة الشكاوى في حال وجود أي مشكلة؟",
-    a: "فريق خدمة الزبائن والشكاوى في خدمتكم دائماً؛ يكفي التواصل عبر الواتساب أو البريد الإلكتروني لمراجعة طلبكم وتقديم الحل المناسب.",
+    q: "كيف تعمل مصلحة الشكاوى في حال وجود أي استفسار أو مشكلة؟",
+    a: "فريق مصلحة الزبائن والشكاوى في خدمتكم دائماً: تواصلوا معنا مباشرة عبر الواتساب على الرقم 48 54 51 772 213+ أو عبر البريد الإلكتروني contact@elhuyaam.com لمتابعة طلبكم وتقديم الحل الأنسب.",
   },
   {
     q: "هل يمكن استبدال منتج؟",
-    a: "نعم، يمكنكِ التواصل مع فريق الدعم لمتابعة طلبكِ وإرشادكِ لأفضل خيار.",
+    a: "نعم، يمكنكِ التواصل مع فريق الدعم لمراجعة طلبكِ وإرشادكِ بكل سهولة.",
   },
   {
     q: "ما هي طرق الدفع المتوفرة؟",
-    a: "الدفع عند الاستلام داخل الجزائر، والدفع الإلكتروني الآمن للطلبات الدولية.",
+    a: "نوفر الدفع عند الاستلام داخل الجزائر. أما للطلبات الدولية، فسيتم إرسال تفاصيل وإجراءات الدفع مباشرة عبر الواتساب فور تسجيل الطلب.",
   },
 ];
 
